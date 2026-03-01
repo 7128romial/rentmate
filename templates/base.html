@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}RentMate{% endblock %} — Swipe. Match. Move In.</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{{ url_for('landing') }}" class="navbar-logo">🏠 RentMate</a>
+      <ul class="navbar-links">
+        {% if current_user.is_authenticated %}
+        <li><a href="{{ url_for('matches') }}" class="{% if request.endpoint == 'matches' %}active{% endif %}">התאמות</a></li>
+        <li><a href="{{ url_for('property_search') }}" class="{% if request.endpoint == 'property_search' %}active{% endif %}">חיפוש</a></li>
+        <li><a href="{{ url_for('create_listing') }}" class="{% if request.endpoint == 'create_listing' %}active{% endif %}">פרסום מודעה</a></li>
+        <li><a href="{{ url_for('chat') }}" class="{% if request.endpoint == 'chat' %}active{% endif %}">הודעות</a></li>
+        <li><a href="{{ url_for('profile') }}" class="{% if request.endpoint == 'profile' %}active{% endif %}">פרופיל</a></li>
+        {% else %}
+        <li><a href="{{ url_for('property_search') }}">חיפוש דירות</a></li>
+        {% endif %}
+      </ul>
+      <div class="navbar-actions">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">התנתק</a>
+        {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">התחברות</a>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">הצטרף בחינם</a>
+        {% endif %}
+      </div>
+      <button class="mobile-menu-btn" onclick="document.querySelector('.navbar-links').classList.toggle('show')" aria-label="Menu">☰</button>
+    </div>
+  </nav>
+
+  <!-- Toast container -->
+  <div id="toast" class="toast"></div>
+
+  {% block content %}{% endblock %}
+
+  <script>
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast toast-' + (type || 'success') + ' show';
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
