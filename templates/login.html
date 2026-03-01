@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}התחברות{% endblock %}
+
+{% block content %}
+<div class="login-bg-orbs"></div>
+<div class="auth-page" style="position:relative;z-index:1;">
+  <div class="login-card">
+    <div class="text-center" style="margin-bottom: 24px;">
+      <span style="font-size: 2.5rem;">🏠</span>
+      <h2 style="background: var(--coral-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">ברוכים הבאים</h2>
+      <p class="text-muted">
+        אין לך חשבון? <a href="{{ url_for('register') }}">הצטרף בחינם</a>
+      </p>
+    </div>
+
+    {% if error %}
+    <div class="auth-errors">
+      <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label>אימייל</label>
+        <input type="email" name="email" class="form-control" required placeholder="email@example.com" dir="ltr">
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label>סיסמה</label>
+          <a href="#" style="font-size:0.8rem;">שכחת סיסמה?</a>
+        </div>
+        <input type="password" name="password" class="form-control" required placeholder="הזן סיסמה">
+      </div>
+
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
+        <input type="checkbox" name="remember" id="remember" style="width:18px;height:18px; accent-color: var(--coral);">
+        <label for="remember" style="font-size:0.9rem; color:var(--text-light); margin:0;">זכור אותי</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg">התחבר</button>
+    </form>
+
+    <p class="text-center mt-2">
+      <a href="{{ url_for('property_search') }}" style="color: var(--text-muted); font-size: 0.9rem;">המשך כאורח</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

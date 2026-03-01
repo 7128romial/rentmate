@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}מודעה פורסמה!{% endblock %}
+
+{% block content %}
+<div class="success-page">
+  <div class="icon">🎉</div>
+  <h2>המודעה פורסמה בהצלחה!</h2>
+  <p>המודעה שלך זמינה כעת לכל המשתמשים ב-RentMate</p>
+  <div class="btns">
+    <a href="{{ url_for('profile') }}" class="btn btn-primary">צפה במודעות שלי</a>
+    <a href="{{ url_for('property_search') }}" class="btn btn-outline">עיין בדירות</a>
+  </div>
+</div>
+{% endblock %}

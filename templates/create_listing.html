@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block title %}פרסום מודעה{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+  <div class="page-header text-center">
+    <h1>פרסום מודעה חדשה</h1>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="wizard-steps">
+    <span class="wizard-step active" data-step="1" onclick="goStep(1)">1. פרטים בסיסיים</span>
+    <span class="wizard-step" data-step="2" onclick="goStep(2)">2. תנאים ותכונות</span>
+    <span class="wizard-step" data-step="3" onclick="goStep(3)">3. תמונות</span>
+    <span class="wizard-step" data-step="4" onclick="goStep(4)">4. סיכום ופרסום</span>
+  </div>
+
+  <form method="POST" action="{{ url_for('create_listing') }}" id="listing-form">
+
+    <!-- Step 1: Basic Info -->
+    <div class="wizard-panel" id="step-1">
+      <h3 style="margin-bottom:20px;">פרטים בסיסיים</h3>
+
+      <label style="font-weight:600; margin-bottom:8px; display:block;">סוג נכס</label>
+      <div class="type-tiles">
+        <label class="type-tile active" onclick="selectType(this,'apartment')">
+          <span class="icon">🏠</span>
+          <span>דירה</span>
+          <input type="radio" name="property_type" value="apartment" checked>
+        </label>
+        <label class="type-tile" onclick="selectType(this,'room')">
+          <span class="icon">🛏</span>
+          <span>חדר</span>
+          <input type="radio" name="property_type" value="room">
+        </label>
+        <label class="type-tile" onclick="selectType(this,'studio')">
+          <span class="icon">🏙️</span>
+          <span>סטודיו</span>
+          <input type="radio" name="property_type" value="studio">
+        </label>
+        <label class="type-tile" onclick="selectType(this,'house')">
+          <span class="icon">🏡</span>
+          <span>בית</span>
+          <input type="radio" name="property_type" value="house">
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>כותרת המודעה *</label>
+        <input type="text" name="title" class="form-control" required placeholder="למשל: דירת 3 חדרים מרווחת בצפון תל אביב">
+      </div>
+
+      <div class="form-group">
+        <label>תיאור (אופציונלי)</label>
+        <textarea name="description" class="form-control" placeholder="ספר על הדירה..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>עיר *</label>
+          <select name="city" class="form-control" required>
+            <option value="">בחר עיר</option>
+            {% for c in cities %}
+            <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>שכונה</label>
+          <input type="text" name="neighborhood" class="form-control" placeholder="שם השכונה">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>כתובת (משוערת)</label>
+        <input type="text" name="address" class="form-control" placeholder="רחוב ומספר">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>חדרים</label>
+          <select name="rooms" class="form-control">
+            <option value="1">1</option>
+            <option value="1.5">1.5</option>
+            <option value="2">2</option>
+            <option value="2.5">2.5</option>
+            <option value="3" selected>3</option>
+            <option value="3.5">3.5</option>
+            <option value="4">4</option>
+            <option value="4.5">4.5</option>
+            <option value="5">5</option>
+            <option value="6">6+</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>קומה</label>
+          <input type="number" name="floor" class="form-control" min="0" max="50" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>שטח (מ"ר)</label>
+          <input type="number" name="size_sqm" class="form-control" min="10" placeholder="80">
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <span></span>
+        <button type="button" class="btn btn-primary" onclick="goStep(2)">הבא →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Terms & Features -->
+    <div class="wizard-panel" id="step-2" hidden>
+      <h3 style="margin-bottom:20px;">תנאים ותכונות</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>שכירות חודשית (₪) *</label>
+          <input type="number" name="rent_price" class="form-control" required min="500" placeholder="4500">
+        </div>
+        <div class="form-group">
+          <label>זמין מתאריך</label>
+          <input type="date" name="available_from" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>תקופה מינימלית</label>
+          <select name="min_rental_months" class="form-control">
+            <option value="1">חודש</option>
+            <option value="3">3 חודשים</option>
+            <option value="6">6 חודשים</option>
+            <option value="12" selected>שנה</option>
+            <option value="24">שנתיים</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="font-weight:600; margin-bottom:12px; display:block;">תכונות הנכס</label>
+      <div class="feature-chips">
+        <label class="feature-chip" onclick="this.classList.toggle('active')">
+          🛋 מרוהטת
+          <input type="checkbox" name="furnished">
+        </label>
+        <label class="feature-chip" onclick="this.classList.toggle('active')">
+          🚗 חנייה
+          <input type="checkbox" name="parking">
+        </label>
+        <label class="feature-chip" onclick="this.classList.toggle('active')">
+          🛗 מעלית
+          <input type="checkbox" name="elevator">
+        </label>
+        <label class="feature-chip" onclick="this.classList.toggle('active')">
+          🌅 מרפסת
+          <input type="checkbox" name="balcony">
+        </label>
+        <label class="feature-chip" onclick="this.classList.toggle('active')">
+          ❄️ מיזוג
+          <input type="checkbox" name="ac">
+        </label>
+        <label class="feature-chip" onclick="this.classList.toggle('active')">
+          📦 מחסן
+          <input type="checkbox" name="storage">
+        </label>
+      </div>
+
+      <div class="form-row">
+        <div class="toggle-switch" style="flex:1;">
+          <label for="pets_allowed">חיות מחמד מותר</label>
+          <input type="checkbox" id="pets_allowed" name="pets_allowed">
+        </div>
+        <div class="toggle-switch" style="flex:1;">
+          <label for="smoking_allowed">עישון מותר</label>
+          <input type="checkbox" id="smoking_allowed" name="smoking_allowed">
+        </div>
+      </div>
+
+      <div id="roommate-fields" style="display:none; margin-top:16px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>מגדר שותפים מועדף</label>
+            <select name="roommate_gender" class="form-control">
+              <option value="">לא משנה</option>
+              <option value="male">זכר</option>
+              <option value="female">נקבה</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>מספר שותפים מקסימלי</label>
+            <input type="number" name="max_roommates" class="form-control" min="1" max="10" placeholder="3">
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button type="button" class="btn btn-ghost" onclick="goStep(1)">← חזרה</button>
+        <button type="button" class="btn btn-primary" onclick="goStep(3)">הבא →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Photos -->
+    <div class="wizard-panel" id="step-3" hidden>
+      <h3 style="margin-bottom:20px;">תמונות</h3>
+
+      <div class="upload-zone" id="upload-zone">
+        <div class="icon">📷</div>
+        <p>לחץ להעלאה או גרור תמונות לכאן</p>
+        <p style="font-size:0.8rem; margin-top:8px;">PNG, JPG — עד 16MB</p>
+      </div>
+
+      <p class="text-muted text-center mt-2" style="font-size:0.85rem;">
+        💡 מודעות עם תמונות מקבלות פי 3 פניות
+      </p>
+
+      <div class="wizard-nav">
+        <button type="button" class="btn btn-ghost" onclick="goStep(2)">← חזרה</button>
+        <button type="button" class="btn btn-primary" onclick="buildReview(); goStep(4)">הבא →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Review & Publish -->
+    <div class="wizard-panel" id="step-4" hidden>
+      <h3 style="margin-bottom:20px;">סיכום ופרסום</h3>
+
+      <table class="review-table" id="review-table">
+        <!-- Filled by JS -->
+      </table>
+
+      <div class="wizard-nav" style="margin-top:32px;">
+        <button type="button" class="btn btn-ghost" onclick="goStep(3)">← חזרה</button>
+        <button type="submit" class="btn btn-primary btn-lg">🎉 פרסם מודעה</button>
+      </div>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentStep = 1;
+
+function goStep(n) {
+  document.querySelectorAll('.wizard-panel').forEach(p => p.hidden = true);
+  document.getElementById('step-' + n).hidden = false;
+
+  document.querySelectorAll('.wizard-step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i + 1 < n) s.classList.add('done');
+    if (i + 1 === n) s.classList.add('active');
+  });
+  currentStep = n;
+}
+
+function selectType(el, type) {
+  document.querySelectorAll('.type-tile').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  el.querySelector('input').checked = true;
+  document.getElementById('roommate-fields').style.display = type === 'room' ? '' : 'none';
+}
+
+function buildReview() {
+  const form = document.getElementById('listing-form');
+  const fd = new FormData(form);
+  const typeLabels = { apartment: 'דירה', room: 'חדר', studio: 'סטודיו', house: 'בית' };
+  const rows = [
+    ['סוג נכס', typeLabels[fd.get('property_type')] || fd.get('property_type')],
+    ['כותרת', fd.get('title')],
+    ['עיר', fd.get('city')],
+    ['שכונה', fd.get('neighborhood') || '-'],
+    ['כתובת', fd.get('address') || '-'],
+    ['חדרים', fd.get('rooms')],
+    ['קומה', fd.get('floor') || '-'],
+    ['שטח', (fd.get('size_sqm') || '-') + ' מ"ר'],
+    ['שכירות', '₪' + (fd.get('rent_price') || '0')],
+    ['זמין מ-', fd.get('available_from') || 'מיידי'],
+    ['תקופה מינימלית', fd.get('min_rental_months') + ' חודשים'],
+  ];
+
+  const features = [];
+  if (fd.has('furnished')) features.push('מרוהטת');
+  if (fd.has('parking')) features.push('חנייה');
+  if (fd.has('elevator')) features.push('מעלית');
+  if (fd.has('balcony')) features.push('מרפסת');
+  if (fd.has('ac')) features.push('מיזוג');
+  if (fd.has('storage')) features.push('מחסן');
+  if (fd.has('pets_allowed')) features.push('חיות מחמד');
+  if (fd.has('smoking_allowed')) features.push('עישון');
+  rows.push(['תכונות', features.join(', ') || 'אין']);
+
+  document.getElementById('review-table').innerHTML = rows.map(
+    r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`
+  ).join('');
+}
+</script>
+{% endblock %}

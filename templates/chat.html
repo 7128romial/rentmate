@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}הודעות{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+  <!-- Left: Conversations list -->
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <input type="text" placeholder="חפש שיחות..." id="conv-search" oninput="filterConvs(this.value)">
+    </div>
+    <ul class="conv-list" id="conv-list">
+      {% if conv_list %}
+        {% for c in conv_list %}
+        <a href="{{ url_for('chat', conv=c.id) }}" class="conv-item {{ 'active' if active_conv and active_conv.id == c.id else '' }}" data-name="{{ c.other.first_name }} {{ c.other.last_name }}">
+          <div class="conv-avatar">{{ c.other.initials }}</div>
+          <div class="conv-info">
+            <h4>{{ c.other.first_name }} {{ c.other.last_name }}</h4>
+            <p>{{ c.last_msg.body if c.last_msg else 'התחל שיחה...' }}</p>
+          </div>
+          <div class="conv-meta">
+            {% if c.last_msg %}
+            <span class="time">{{ c.last_msg.created_at.strftime('%H:%M') }}</span>
+            {% endif %}
+            {% if c.unread %}
+            <div class="unread-badge">{{ c.unread }}</div>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="chat-empty" style="padding:40px 20px;">
+          <div class="icon">💬</div>
+          <p>אין שיחות עדיין.<br>תעשה לייק לדירה כדי להתחיל!</p>
+        </div>
+      {% endif %}
+    </ul>
+  </div>
+
+  <!-- Right: Active chat -->
+  <div class="chat-main">
+    {% if active_conv %}
+    {% set other = active_conv.user2 if active_conv.user1_id == current_user.id else active_conv.user1 %}
+    <div class="chat-header">
+      <div class="conv-avatar" style="width:36px; height:36px; font-size:0.85rem;">{{ other.initials }}</div>
+      <h3>{{ other.first_name }} {{ other.last_name }}</h3>
+      <span class="badge badge-green">✓ מאומת</span>
+      {% if active_conv.prop %}
+      <a href="{{ url_for('property_detail', property_id=active_conv.prop.id) }}" class="btn btn-ghost btn-sm" style="margin-right:auto;">
+        🏠 {{ active_conv.prop.title[:30] }}{% if active_conv.prop.title|length > 30 %}...{% endif %}
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      {% set prev_date = namespace(val='') %}
+      {% for m in messages %}
+        {% set msg_date = m.created_at.strftime('%d/%m/%Y') %}
+        {% if msg_date != prev_date.val %}
+          <div class="date-separator">{{ msg_date }}</div>
+          {% set prev_date.val = msg_date %}
+        {% endif %}
+        <div class="message-bubble {{ 'sent' if m.sender_id == current_user.id else 'received' }}">
+          {{ m.body }}
+          <div class="message-time">{{ m.created_at.strftime('%H:%M') }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="chat-input-bar">
+      <input type="text" id="msg-input" placeholder="כתוב הודעה..." onkeypress="if(event.key==='Enter')sendMsg()">
+      <button onclick="sendMsg()">➤</button>
+    </div>
+
+    {% else %}
+    <div class="chat-empty">
+      <div class="icon">💬</div>
+      <p>בחר שיחה כדי להתחיל לשלוח הודעות</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if active_conv %}
+const convId = {{ active_conv.id }};
+const myId = {{ current_user.id }};
+const msgArea = document.getElementById('chat-messages');
+
+// Scroll to bottom
+msgArea.scrollTop = msgArea.scrollHeight;
+
+async function sendMsg() {
+  const input = document.getElementById('msg-input');
+  const body = input.value.trim();
+  if (!body) return;
+  input.value = '';
+
+  // Optimistic UI
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble sent';
+  const now = new Date();
+  bubble.innerHTML = `${escapeHtml(body)}<div class="message-time">${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}</div>`;
+  msgArea.appendChild(bubble);
+  msgArea.scrollTop = msgArea.scrollHeight;
+
+  try {
+    await fetch(`/api/chat/${convId}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    });
+  } catch (e) { console.error(e); }
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+// Polling for new messages (simple approach)
+let lastMsgCount = {{ messages|length }};
+setInterval(async () => {
+  try {
+    const res = await fetch(`/api/chat/${convId}/messages`);
+    const msgs = await res.json();
+    if (msgs.length > lastMsgCount) {
+      for (let i = lastMsgCount; i < msgs.length; i++) {
+        const m = msgs[i];
+        if (m.sender_id === myId) continue; // already shown
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble received';
+        const time = new Date(m.created_at);
+        bubble.innerHTML = `${escapeHtml(m.body)}<div class="message-time">${time.getHours().toString().padStart(2,'0')}:${time.getMinutes().toString().padStart(2,'0')}</div>`;
+        msgArea.appendChild(bubble);
+      }
+      msgArea.scrollTop = msgArea.scrollHeight;
+      lastMsgCount = msgs.length;
+    }
+  } catch (e) {}
+}, 3000);
+{% endif %}
+
+function filterConvs(query) {
+  document.querySelectorAll('.conv-item').forEach(item => {
+    const name = item.dataset.name || '';
+    item.style.display = name.includes(query) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

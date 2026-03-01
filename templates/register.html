@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}הרשמה{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-split">
+    <!-- Left panel -->
+    <div class="auth-side">
+      <h2>הצטרף ל-RentMate</h2>
+      <p>מצא דירה שבאמת מתאימה לחיים שלך</p>
+      <div class="auth-role-cards">
+        <div class="auth-role-card">
+          <span class="icon">🔍</span>
+          <div>
+            <h4>שוכר</h4>
+            <span>מחפש דירה שלמה</span>
+          </div>
+        </div>
+        <div class="auth-role-card">
+          <span class="icon">🤝</span>
+          <div>
+            <h4>שותף</h4>
+            <span>מחפש חדר בדירה משותפת</span>
+          </div>
+        </div>
+        <div class="auth-role-card">
+          <span class="icon">🏠</span>
+          <div>
+            <h4>משכיר</h4>
+            <span>יש לי דירה להשכרה</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel — form -->
+    <div class="auth-form">
+      <h2>יצירת חשבון חינם</h2>
+
+      {% if errors %}
+      <div class="auth-errors">
+        {% for e in errors %}
+        <p>{{ e }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('register') }}">
+        <!-- Step 1: Role -->
+        <div class="role-tiles">
+          <label class="role-tile active" onclick="selectRole(this,'tenant')">
+            <span class="icon">🔍</span>
+            <span>שוכר</span>
+            <input type="radio" name="role" value="tenant" checked>
+          </label>
+          <label class="role-tile" onclick="selectRole(this,'roommate')">
+            <span class="icon">🤝</span>
+            <span>שותף</span>
+            <input type="radio" name="role" value="roommate">
+          </label>
+          <label class="role-tile" onclick="selectRole(this,'landlord')">
+            <span class="icon">🏠</span>
+            <span>משכיר</span>
+            <input type="radio" name="role" value="landlord">
+          </label>
+        </div>
+
+        <!-- Step 2: Basic info -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>שם פרטי *</label>
+            <input type="text" name="first_name" class="form-control" required placeholder="שם פרטי">
+          </div>
+          <div class="form-group">
+            <label>שם משפחה *</label>
+            <input type="text" name="last_name" class="form-control" required placeholder="שם משפחה">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>אימייל *</label>
+          <input type="email" name="email" class="form-control" required placeholder="email@example.com" dir="ltr">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>טלפון</label>
+            <input type="tel" name="phone" class="form-control" placeholder="050-1234567" dir="ltr">
+          </div>
+          <div class="form-group">
+            <label>עיר</label>
+            <select name="city" class="form-control">
+              <option value="">בחר עיר</option>
+              {% for c in cities %}
+              <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Step 3: Age, gender, password -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>גיל</label>
+            <input type="number" name="age" class="form-control" min="16" max="120" placeholder="25">
+          </div>
+          <div class="form-group">
+            <label>מגדר</label>
+            <select name="gender" class="form-control">
+              <option value="">בחר</option>
+              <option value="male">זכר</option>
+              <option value="female">נקבה</option>
+              <option value="other">אחר</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>סיסמה *</label>
+            <input type="password" name="password" class="form-control" required minlength="8" placeholder="לפחות 8 תווים">
+          </div>
+          <div class="form-group">
+            <label>אישור סיסמה *</label>
+            <input type="password" name="confirm_password" class="form-control" required placeholder="הזן שוב">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg mt-2">צור חשבון חינם</button>
+      </form>
+
+      <p class="text-center mt-2 text-muted">
+        כבר יש לך חשבון? <a href="{{ url_for('login') }}">התחבר</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function selectRole(el, role) {
+  document.querySelectorAll('.role-tile').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  el.querySelector('input').checked = true;
+}
+</script>
+{% endblock %}

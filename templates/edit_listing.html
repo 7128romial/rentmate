@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}עריכת מודעה{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+  <div class="page-header">
+    <a href="{{ url_for('property_detail', property_id=prop.id) }}" style="color:var(--text-light);">← חזרה למודעה</a>
+    <h1 class="mt-1">עריכת מודעה</h1>
+  </div>
+
+  <div class="wizard-panel">
+    <form method="POST" action="{{ url_for('edit_listing', property_id=prop.id) }}">
+      <div class="form-group">
+        <label>כותרת</label>
+        <input type="text" name="title" class="form-control" value="{{ prop.title }}" required>
+      </div>
+      <div class="form-group">
+        <label>תיאור</label>
+        <textarea name="description" class="form-control">{{ prop.description or '' }}</textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>עיר</label>
+          <select name="city" class="form-control" required>
+            {% for c in cities %}
+            <option value="{{ c }}" {{ 'selected' if prop.city == c else '' }}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>שכונה</label>
+          <input type="text" name="neighborhood" class="form-control" value="{{ prop.neighborhood or '' }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>כתובת</label>
+        <input type="text" name="address" class="form-control" value="{{ prop.address or '' }}">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>סוג נכס</label>
+          <select name="property_type" class="form-control">
+            <option value="apartment" {{ 'selected' if prop.property_type == 'apartment' else '' }}>דירה</option>
+            <option value="room" {{ 'selected' if prop.property_type == 'room' else '' }}>חדר</option>
+            <option value="studio" {{ 'selected' if prop.property_type == 'studio' else '' }}>סטודיו</option>
+            <option value="house" {{ 'selected' if prop.property_type == 'house' else '' }}>בית</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>חדרים</label>
+          <input type="number" name="rooms" class="form-control" step="0.5" value="{{ prop.rooms }}">
+        </div>
+        <div class="form-group">
+          <label>קומה</label>
+          <input type="number" name="floor" class="form-control" value="{{ prop.floor }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>שטח (מ"ר)</label>
+          <input type="number" name="size_sqm" class="form-control" value="{{ prop.size_sqm }}">
+        </div>
+        <div class="form-group">
+          <label>שכירות (₪)</label>
+          <input type="number" name="rent_price" class="form-control" value="{{ prop.rent_price }}" required>
+        </div>
+        <div class="form-group">
+          <label>תקופה מינ׳</label>
+          <select name="min_rental_months" class="form-control">
+            <option value="1" {{ 'selected' if prop.min_rental_months == 1 else '' }}>חודש</option>
+            <option value="3" {{ 'selected' if prop.min_rental_months == 3 else '' }}>3 חודשים</option>
+            <option value="6" {{ 'selected' if prop.min_rental_months == 6 else '' }}>6 חודשים</option>
+            <option value="12" {{ 'selected' if prop.min_rental_months == 12 else '' }}>שנה</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>זמין מתאריך</label>
+        <input type="date" name="available_from" class="form-control" value="{{ prop.available_from.isoformat() if prop.available_from else '' }}">
+      </div>
+
+      <label style="font-weight:600; margin-bottom:12px; display:block;">תכונות</label>
+      <div style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="furnished" {{ 'checked' if prop.furnished else '' }}> מרוהטת</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="parking" {{ 'checked' if prop.parking else '' }}> חנייה</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="elevator" {{ 'checked' if prop.elevator else '' }}> מעלית</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="balcony" {{ 'checked' if prop.balcony else '' }}> מרפסת</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="ac" {{ 'checked' if prop.ac else '' }}> מיזוג</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="storage" {{ 'checked' if prop.storage else '' }}> מחסן</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="pets_allowed" {{ 'checked' if prop.pets_allowed else '' }}> חיות מחמד</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" name="smoking_allowed" {{ 'checked' if prop.smoking_allowed else '' }}> עישון</label>
+      </div>
+
+      <div style="display:flex; gap:12px;">
+        <button type="submit" class="btn btn-primary">שמור שינויים</button>
+        <a href="{{ url_for('property_detail', property_id=prop.id) }}" class="btn btn-ghost">ביטול</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
