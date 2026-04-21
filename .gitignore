@@ -1,17 +1,30 @@
 __pycache__/
 *.py[cod]
 *.db
+*.sqlite3
 .env
-static/uploads/
-instance/
-*.egg-info/
-dist/
-build/
 .venv/
 venv/
 .pytest_cache/
 .coverage
 htmlcov/
-*.egg
-migrations/versions/*.py
-!migrations/env.py
+*.egg-info/
+dist/
+build/
+node_modules/
+
+# Uploads and local artifacts
+app/static/uploads/
+
+# Firebase service account (never commit!)
+firebase-credentials.json
+*-firebase-adminsdk-*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# cPanel / Passenger
+tmp/

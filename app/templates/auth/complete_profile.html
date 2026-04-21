@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}השלמת פרופיל — RentMate{% endblock %}
+{% block content %}
+<div class="container" style="max-width:560px;margin:var(--sp-7) auto;">
+  <div class="card card-lg">
+    <h2 style="text-align:center;">עוד רגע ואתם מוכנים</h2>
+    <p class="small" style="text-align:center;">ספרו לנו עליכם קצת — זה עוזר להתאמות ולשותפים פוטנציאליים.</p>
+    <form method="POST" action="{{ url_for('auth.complete_profile') }}" style="margin-top:var(--sp-4);">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="first_name">שם פרטי *</label>
+          <input id="first_name" name="first_name" class="form-control" value="{{ user.first_name or '' }}" required>
+        </div>
+        <div class="form-group">
+          <label for="last_name">שם משפחה *</label>
+          <input id="last_name" name="last_name" class="form-control" value="{{ user.last_name or '' }}" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="birth_date">תאריך לידה</label>
+          <input id="birth_date" name="birth_date" type="date" class="form-control" value="{{ user.birth_date.isoformat() if user.birth_date }}">
+        </div>
+        <div class="form-group">
+          <label for="gender">מגדר</label>
+          <select id="gender" name="gender" class="form-control">
+            <option value="undisclosed">לא מעוניין/ת לציין</option>
+            <option value="male" {{ 'selected' if user.gender.value == 'male' }}>זכר</option>
+            <option value="female" {{ 'selected' if user.gender.value == 'female' }}>נקבה</option>
+            <option value="other" {{ 'selected' if user.gender.value == 'other' }}>אחר</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="bio">קצת עליכם (עד 500 תווים)</label>
+        <textarea id="bio" name="bio" class="form-control" rows="3" maxlength="500"
+                  placeholder="מה תרצו שותפים או משכירים ידעו עליכם?">{{ user.bio or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg">המשך לבניית פרופיל העדפות</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

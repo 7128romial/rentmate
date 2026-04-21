@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}הודעות — RentMate{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout" data-has-active="{{ '1' if active else '0' }}">
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <input class="chat-search" placeholder="חיפוש שיחות..." oninput="filterConversations(this.value)">
+    </div>
+    {% if conversations %}
+    <ul class="conv-list" id="conv-list">
+      {% for c in conversations %}
+        {% set other = c.other_participant(current_user.id) %}
+        <a href="{{ url_for('chat.inbox', conv=c.id) }}" class="conv-item {{ 'active' if active and active.id == c.id }}" data-name="{{ other.full_name }}">
+          <div class="conv-avatar">
+            {% if other.profile_image_url %}<img src="{{ other.profile_image_url }}" alt="">{% else %}{{ other.initials }}{% endif %}
+          </div>
+          <div class="conv-info">
+            <h4>{{ other.full_name }}</h4>
+            <p>{{ (c.messages[-1].content if c.messages else 'התחילו שיחה...') | truncate(40) }}</p>
+          </div>
+          <div class="conv-meta">
+            {% if c.messages %}<span>{{ c.messages[-1].created_at.strftime('%H:%M') }}</span>{% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="chat-empty-state">
+      <div class="emoji">💬</div>
+      <p>עדיין אין שיחות</p>
+      <p class="small">החליקו ימינה על דירות ותתחילו לדבר עם המפרסמים</p>
+    </div>
+    {% endif %}
+  </aside>
+
+  <section class="chat-thread">
+    {% if active %}
+      {% set other = active.other_participant(current_user.id) %}
+      <div class="chat-thread-header">
+        <button class="back-btn" onclick="window.location='/chat'">←</button>
+        <div class="conv-avatar" style="width:36px;height:36px;font-size:0.9rem;">
+          {% if other.profile_image_url %}<img src="{{ other.profile_image_url }}">{% else %}{{ other.initials }}{% endif %}
+        </div>
+        <div>
+          <h3>{{ other.full_name }}</h3>
+          {% if active.listing %}
+            <small><a href="{{ url_for('listings.listing_detail', listing_id=active.listing.id) }}">🏠 {{ active.listing.apartment.city }} — ₪{{ '{:,}'.format(active.listing.monthly_price) }}</a></small>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="typing-indicator" id="typing-indicator" hidden>
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+        <span>מקליד/ה...</span>
+      </div>
+      <div class="chat-input">
+        <input id="msg-input" placeholder="כתבו הודעה..." autocomplete="off">
+        <button id="msg-send" aria-label="שלח">➤</button>
+      </div>
+    {% else %}
+      <div class="chat-empty-state">
+        <div class="emoji">💬</div>
+        <p>בחרו שיחה מהרשימה כדי להתחיל</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if active %}
+<script>
+window.RM_CHAT = {
+  conversationId: {{ active.id }},
+  myId: {{ current_user.id }},
+  firestoreAvailable: {{ 'true' if firestore_available else 'false' }},
+};
+function filterConversations(q) {
+  document.querySelectorAll('.conv-item').forEach(el => {
+    el.style.display = (el.dataset.name || '').includes(q) ? '' : 'none';
+  });
+}
+</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% else %}
+<script>
+function filterConversations(q) {
+  document.querySelectorAll('.conv-item').forEach(el => {
+    el.style.display = (el.dataset.name || '').includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endif %}
+{% endblock %}

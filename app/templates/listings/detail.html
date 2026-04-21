@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.apartment.city }} — {{ listing.apartment.rooms }} חדרים{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1000px;margin:var(--sp-5) auto;">
+  <a href="{{ url_for('landing.home') }}" class="small">← חזרה</a>
+  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:var(--sp-5);margin-top:var(--sp-3);">
+    <div>
+      <div style="height:380px;border-radius:var(--r-lg);overflow:hidden;background:var(--bg-soft);">
+        {% if listing.primary_image_url %}
+          <img src="{{ listing.primary_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:4rem;">🏠</div>
+        {% endif %}
+      </div>
+      {% if listing.images|length > 1 %}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;">
+        {% for img in listing.images %}
+          <img src="{{ img.image_url }}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;"
+               onclick="document.querySelector('.container img').src=this.src">
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <aside>
+      <div class="card card-lg">
+        <h1 style="font-size:1.6rem;">₪{{ "{:,}".format(listing.monthly_price) }}<small style="font-size:1rem;font-weight:400;color:var(--text-muted);"> / חודש</small></h1>
+        <p class="small">📍 {{ listing.apartment.address }}, {{ listing.apartment.city }}{% if listing.apartment.neighborhood %} · {{ listing.apartment.neighborhood }}{% endif %}</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-2);margin:var(--sp-4) 0;">
+          <div><small>חדרים</small><br><strong>{{ listing.apartment.rooms }}</strong></div>
+          <div><small>מ״ר</small><br><strong>{{ listing.apartment.size_sqm or '-' }}</strong></div>
+          <div><small>קומה</small><br><strong>{{ listing.apartment.floor or 0 }}</strong></div>
+        </div>
+        <div class="chip-group" style="margin-bottom:var(--sp-4);">
+          {% if listing.apartment.has_elevator %}<span class="chip active">מעלית</span>{% endif %}
+          {% if listing.apartment.has_parking %}<span class="chip active">חנייה</span>{% endif %}
+          {% if listing.apartment.has_balcony %}<span class="chip active">מרפסת</span>{% endif %}
+          {% if listing.apartment.is_furnished %}<span class="chip active">מרוהטת</span>{% endif %}
+          {% if listing.apartment.allows_pets %}<span class="chip active">חיות מחמד</span>{% endif %}
+        </div>
+        {% if current_user.is_authenticated and current_user.id != listing.publisher_id %}
+          <button class="btn btn-primary btn-block btn-lg" onclick="contact()">📩 שלחו הודעה למפרסם</button>
+        {% elif not current_user.is_authenticated %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-block btn-lg">התחברו כדי לפנות</a>
+        {% endif %}
+        {% if current_user.is_authenticated and current_user.id == listing.publisher_id %}
+          <a href="{{ url_for('listings.listing_edit', listing_id=listing.id) }}" class="btn btn-outline btn-block">עריכת המודעה</a>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  <section style="margin-top:var(--sp-6);">
+    <h2>תיאור</h2>
+    <p>{{ listing.description or 'אין תיאור' }}</p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function contact() {
+  try {
+    const res = await RM.apiFetch('/chat/api/conversations/start', {
+      method: 'POST', body: { listing_id: {{ listing.id }} },
+    });
+    window.location.href = res.redirect;
+  } catch (e) { RM.toast(e.message, 'error'); }
+}
+</script>
+{% endblock %}

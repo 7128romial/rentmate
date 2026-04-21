@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}פרסום דירה חדשה — RentMate{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:720px;margin:var(--sp-5) auto;">
+  <h2>פרסום דירה חדשה</h2>
+  <p class="small">ארבעה צעדים קצרים. תוכלו להוסיף תמונות ולערוך את הפרטים אחרי הפרסום.</p>
+
+  <div class="card card-lg" style="margin-top:var(--sp-4);">
+    <nav aria-label="שלבי פרסום" style="display:flex;gap:8px;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+      <button class="chip active" id="step-chip-1">1. מיקום</button>
+      <button class="chip" id="step-chip-2">2. הדירה</button>
+      <button class="chip" id="step-chip-3">3. תנאים</button>
+      <button class="chip" id="step-chip-4">4. פרסום</button>
+    </nav>
+
+    <!-- Step 1: Location -->
+    <section class="wizard-step" data-step="1">
+      <h3>איפה הדירה?</h3>
+      <div class="form-group">
+        <label for="address">כתובת מלאה</label>
+        <input id="address" class="form-control" placeholder="רחוב, עיר" autocomplete="street-address">
+        <div class="form-hint">התחילו להקליד וה-Maps יציע לכם השלמות</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="city">עיר</label>
+          <input id="city" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="neighborhood">שכונה (לא חובה)</label>
+          <input id="neighborhood" class="form-control">
+        </div>
+      </div>
+      <div id="map-preview" style="height:220px;border-radius:12px;background:#F3F4F6;"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-4);">
+        <button class="btn btn-primary" onclick="wizard.next()">המשך</button>
+      </div>
+    </section>
+
+    <!-- Step 2: Apartment -->
+    <section class="wizard-step" data-step="2" hidden>
+      <h3>ספרו על הדירה</h3>
+      <div class="form-group">
+        <label>סוג המודעה</label>
+        <div class="chip-group">
+          <button class="chip active" data-lt="whole_apartment" onclick="wizard.setType(this)">דירה שלמה</button>
+          <button class="chip" data-lt="room_in_shared" onclick="wizard.setType(this)">חדר בשותפות</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="rooms">מספר חדרים</label>
+          <input id="rooms" type="number" min="0.5" max="20" step="0.5" class="form-control" value="3">
+        </div>
+        <div class="form-group">
+          <label for="size_sqm">גודל (מ״ר)</label>
+          <input id="size_sqm" type="number" min="5" max="5000" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="floor">קומה</label>
+        <input id="floor" type="number" min="-5" max="100" class="form-control" value="0">
+      </div>
+      <div class="form-group">
+        <label>מאפיינים</label>
+        <div class="chip-group" id="amenities">
+          <button class="chip" data-k="has_elevator">מעלית</button>
+          <button class="chip" data-k="has_parking">חנייה</button>
+          <button class="chip" data-k="has_balcony">מרפסת</button>
+          <button class="chip" data-k="is_furnished">מרוהטת</button>
+          <button class="chip" data-k="allows_pets">מותר חיות</button>
+          <button class="chip" data-k="allows_smoking">מותר עישון</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:var(--sp-4);">
+        <button class="btn btn-ghost" onclick="wizard.prev()">חזרה</button>
+        <button class="btn btn-primary" onclick="wizard.next()">המשך</button>
+      </div>
+    </section>
+
+    <!-- Step 3: Conditions -->
+    <section class="wizard-step" data-step="3" hidden>
+      <h3>תנאים ומחיר</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="monthly_price">שכירות חודשית (₪)</label>
+          <input id="monthly_price" type="number" min="500" max="1000000" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="min_lease_months">מינימום חודשי שכירות</label>
+          <input id="min_lease_months" type="number" min="1" max="60" class="form-control" value="12">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="available_from">זמין מתאריך</label>
+        <input id="available_from" type="date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="description">תיאור (עד 5000 תווים)</label>
+        <textarea id="description" class="form-control" rows="5" maxlength="5000"
+                  placeholder="מה ייחודי בדירה? מה השכונה מציעה?"></textarea>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:var(--sp-4);">
+        <button class="btn btn-ghost" onclick="wizard.prev()">חזרה</button>
+        <button class="btn btn-primary" onclick="wizard.next()">המשך</button>
+      </div>
+    </section>
+
+    <!-- Step 4: Review + publish -->
+    <section class="wizard-step" data-step="4" hidden>
+      <h3>סקירה ופרסום</h3>
+      <div id="review" class="card"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:var(--sp-4);">
+        <button class="btn btn-ghost" onclick="wizard.prev()">חזרה</button>
+        <button class="btn btn-primary btn-lg" id="publish-btn" onclick="wizard.publish()">פרסם דירה</button>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+const state = { step: 1, listing_type: 'whole_apartment', amenities: {} };
+const wizard = {
+  next() {
+    state.step = Math.min(4, state.step + 1);
+    this.render();
+    if (state.step === 4) this.buildReview();
+  },
+  prev() {
+    state.step = Math.max(1, state.step - 1);
+    this.render();
+  },
+  render() {
+    document.querySelectorAll('.wizard-step').forEach(s => {
+      s.hidden = parseInt(s.dataset.step) !== state.step;
+    });
+    document.querySelectorAll('[id^="step-chip-"]').forEach((c, i) => {
+      c.classList.toggle('active', i + 1 === state.step);
+    });
+  },
+  setType(el) {
+    document.querySelectorAll('[data-lt]').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    state.listing_type = el.dataset.lt;
+  },
+  buildReview() {
+    const v = (id) => (document.getElementById(id) || {}).value || '';
+    const parts = [
+      `<strong>כתובת:</strong> ${v('address')}, ${v('city')}${v('neighborhood') ? ' · ' + v('neighborhood') : ''}`,
+      `<strong>סוג:</strong> ${state.listing_type === 'whole_apartment' ? 'דירה שלמה' : 'חדר בשותפות'}`,
+      `<strong>חדרים:</strong> ${v('rooms')}  · <strong>גודל:</strong> ${v('size_sqm') || '-'} מ״ר · <strong>קומה:</strong> ${v('floor')}`,
+      `<strong>שכירות:</strong> ₪${parseInt(v('monthly_price')||0).toLocaleString()} לחודש · מ-${v('available_from') || 'מיידית'}`,
+    ];
+    document.getElementById('review').innerHTML = parts.join('<br>');
+  },
+  async publish() {
+    const btn = document.getElementById('publish-btn');
+    btn.disabled = true;
+    const payload = {
+      address: document.getElementById('address').value,
+      city: document.getElementById('city').value,
+      neighborhood: document.getElementById('neighborhood').value,
+      rooms: document.getElementById('rooms').value,
+      size_sqm: document.getElementById('size_sqm').value,
+      floor: document.getElementById('floor').value,
+      listing_type: state.listing_type,
+      monthly_price: document.getElementById('monthly_price').value,
+      min_lease_months: document.getElementById('min_lease_months').value,
+      available_from: document.getElementById('available_from').value,
+      description: document.getElementById('description').value,
+      ...state.amenities,
+    };
+    if (state.coords) {
+      payload.latitude = state.coords.lat;
+      payload.longitude = state.coords.lng;
+    }
+    try {
+      const res = await RM.apiFetch('/listings/api/listings', { method: 'POST', body: payload });
+      window.location.href = res.redirect + '/edit';  // send user to edit page to add photos
+    } catch (e) {
+      RM.toast(e.message, 'error');
+      btn.disabled = false;
+    }
+  },
+};
+
+// Amenities chips
+document.querySelectorAll('#amenities .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.classList.toggle('active');
+    state.amenities[chip.dataset.k] = chip.classList.contains('active');
+  });
+});
+
+// Step-chip nav
+[1, 2, 3, 4].forEach(n => {
+  document.getElementById('step-chip-' + n).addEventListener('click', () => {
+    state.step = n; wizard.render();
+    if (n === 4) wizard.buildReview();
+  });
+});
+
+// Google Maps autocomplete + preview
+RM.MAP.attachAutocomplete(document.getElementById('address'), {
+  onPick: (data) => {
+    if (data.formatted_address) document.getElementById('address').value = data.formatted_address;
+    if (data.city) document.getElementById('city').value = data.city;
+    if (data.neighborhood) document.getElementById('neighborhood').value = data.neighborhood;
+    if (data.lat && data.lng) {
+      state.coords = { lat: data.lat, lng: data.lng };
+      RM.MAP.previewMap(document.getElementById('map-preview'), state.coords);
+    }
+  },
+});
+
+wizard.render();
+</script>
+{% endblock %}

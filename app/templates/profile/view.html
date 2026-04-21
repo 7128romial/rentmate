@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}פרופיל — RentMate{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:640px;margin:var(--sp-5) auto;">
+  <div class="card card-lg" style="text-align:center;">
+    <div class="conv-avatar" style="width:96px;height:96px;margin:0 auto var(--sp-3);font-size:2rem;cursor:pointer;"
+         onclick="document.getElementById('avatar-input').click()" title="החלפת תמונה">
+      {% if user.profile_image_url %}<img src="{{ user.profile_image_url }}">{% else %}{{ user.initials }}{% endif %}
+    </div>
+    <input type="file" id="avatar-input" accept="image/*" style="display:none;" onchange="uploadAvatar(this)">
+    <h2 style="margin:0;">{{ user.full_name }}</h2>
+    <p class="small">{{ user.phone }}</p>
+    <p>{{ user.bio or 'עוד לא הוספתם ביו' }}</p>
+    <div class="chip-group" style="justify-content:center;">
+      {% for r in user.roles if r.is_active %}
+        <span class="chip active">
+          {% if r.role.value == 'tenant' %}שוכר/ת
+          {% elif r.role.value == 'roommate' %}שותף/ה
+          {% else %}משכיר/ה{% endif %}
+        </span>
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:var(--sp-4);">
+      <a href="{{ url_for('profile.edit') }}" class="btn btn-outline">ערוך פרופיל</a>
+      <a href="{{ url_for('ai_agent.chat') }}" class="btn btn-ghost">עדכן העדפות (AI)</a>
+    </div>
+  </div>
+
+  {% if user.preferences %}
+  <div class="card card-lg" style="margin-top:var(--sp-4);">
+    <h3>העדפות חיפוש</h3>
+    <ul class="small" style="list-style:none;padding:0;margin:0;">
+      {% if user.preferences.get('budget_max') %}<li>💰 תקציב: ₪{{ user.preferences.get('budget_min',0) }}–{{ user.preferences.get('budget_max') }}</li>{% endif %}
+      {% if user.preferences.get('preferred_cities') %}<li>📍 ערים: {{ user.preferences.get('preferred_cities')|join(', ') }}</li>{% endif %}
+      {% if user.preferences.get('move_in_date') %}<li>📅 כניסה: {{ user.preferences.get('move_in_date') }}</li>{% endif %}
+      {% if user.preferences.get('priority') %}<li>⭐ עדיפות: {{ user.preferences.get('priority') }}</li>{% endif %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function uploadAvatar(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  const fd = new FormData();
+  fd.append('avatar', f);
+  try {
+    const res = await RM.apiFetch('/profile/api/avatar', { method: 'POST', body: fd });
+    location.reload();
+  } catch (e) { RM.toast(e.message, 'error'); }
+}
+</script>
+{% endblock %}

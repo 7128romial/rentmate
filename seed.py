@@ -1,159 +1,170 @@
-"""Development seed data — only runs if the users table is empty."""
+"""Seed script — creates demo users, apartments, and listings.
 
-from datetime import date
+Run manually: `python seed.py`. Safe to run on a fresh DB; skips if users exist.
+"""
 
-from rentmate.extensions import db
-from models import User, UserPreferences, Property, PropertyImage
+from datetime import date, timedelta
+
+from app import create_app
+from app.extensions import db
+from app.models import (
+    User, UserRole, RoleType, Gender,
+    Apartment, Listing, ListingImage, ListingType, ListingStatus,
+)
 
 
-def seed_if_empty():
-    if User.query.first():
-        return
+DEMO_PREFS_TENANT = {
+    "budget_min": 3500, "budget_max": 6000,
+    "preferred_cities": ["תל אביב"],
+    "preferred_neighborhoods": ["פלורנטין", "הצפון הישן"],
+    "move_in_date": (date.today() + timedelta(days=21)).isoformat(),
+    "lifestyle": {
+        "social_level": "balanced", "cleanliness": 4,
+        "smoking": "no", "pets": False,
+        "guests_frequency": "sometimes", "wfh": True,
+    },
+    "priority": "location",
+}
 
-    landlord1 = User(email="david@example.com", first_name="דוד", last_name="כהן",
-                     phone="050-1234567", age=45, gender="male", city="תל אביב", role="landlord")
-    landlord1.set_password("password123")
+DEMO_PREFS_ROOMMATE = {
+    "budget_min": 2000, "budget_max": 3500,
+    "preferred_cities": ["תל אביב", "רמת גן"],
+    "preferred_neighborhoods": [],
+    "move_in_date": (date.today() + timedelta(days=14)).isoformat(),
+    "lifestyle": {
+        "social_level": "social", "cleanliness": 3,
+        "smoking": "outdoor", "pets": True,
+        "guests_frequency": "often", "wfh": False,
+    },
+    "priority": "price",
+}
 
-    landlord2 = User(email="sara@example.com", first_name="שרה", last_name="לוי",
-                     phone="050-7654321", age=38, gender="female", city="ירושלים", role="landlord")
-    landlord2.set_password("password123")
 
-    landlord3 = User(email="moshe@example.com", first_name="משה", last_name="אברהם",
-                     phone="052-9876543", age=50, gender="male", city="חיפה", role="landlord")
-    landlord3.set_password("password123")
+def run():
+    app = create_app()
+    with app.app_context():
+        if User.query.count() >= 5:
+            print("seed: users already present, skipping.")
+            return
 
-    tenant1 = User(email="yael@example.com", first_name="יעל", last_name="ישראלי",
-                   phone="054-1112222", age=26, gender="female", city="תל אביב", role="tenant")
-    tenant1.set_password("password123")
+        users = _create_users()
+        apartments = _create_apartments(users)
+        _create_listings(apartments, users)
 
-    tenant2 = User(email="omer@example.com", first_name="עומר", last_name="דהן",
-                   phone="053-3334444", age=29, gender="male", city="תל אביב", role="roommate")
-    tenant2.set_password("password123")
+        db.session.commit()
+        print(f"seed: created {len(users)} users, {len(apartments)} apartments, listings.")
 
-    db.session.add_all([landlord1, landlord2, landlord3, tenant1, tenant2])
-    db.session.flush()
 
-    db.session.add_all([
-        UserPreferences(
-            user_id=tenant1.id, preferred_city="תל אביב", max_rent=6000,
-            smoking="no", pets=False, move_in_date=date(2026, 4, 1),
-            cleanliness_level=4, noise_level="moderate", sleep_schedule="normal",
-            preferred_gender="any",
-        ),
-        UserPreferences(
-            user_id=tenant2.id, preferred_city="תל אביב", max_rent=4000,
-            smoking="outdoor", pets=True, move_in_date=date(2026, 3, 15),
-            cleanliness_level=3, noise_level="social", sleep_schedule="night",
-            preferred_gender="male",
-        ),
-    ])
-
-    properties_data = [
-        dict(landlord_id=landlord1.id, title="דירת 3 חדרים מרווחת בלב תל אביב",
-             description="דירה מרווחת ומוארת עם מרפסת שמש, קרובה לים ולתחבורה ציבורית.",
-             city="תל אביב", neighborhood="הצפון הישן", address="רחוב דיזנגוף 120",
-             property_type="apartment", rooms=3, floor=4, size_sqm=85,
-             rent_price=5500, furnished=True, parking=False, elevator=True,
-             balcony=True, ac=True, storage=False, pets_allowed=False,
-             smoking_allowed=False, available_from=date(2026, 4, 1), min_rental_months=12),
-        dict(landlord_id=landlord1.id, title="סטודיו מעוצב ליד רוטשילד",
-             description="סטודיו קטן ומעוצב, מושלם לסטודנט או עובד צעיר.",
-             city="תל אביב", neighborhood="לב העיר", address="רחוב רוטשילד 50",
-             property_type="studio", rooms=1, floor=2, size_sqm=35,
-             rent_price=4200, furnished=True, parking=False, elevator=False,
-             balcony=False, ac=True, storage=False, pets_allowed=True,
-             smoking_allowed=False, available_from=date(2026, 3, 15), min_rental_months=6),
-        dict(landlord_id=landlord2.id, title="דירת 4 חדרים בבקעה ירושלים",
-             description="דירה משפחתית רחבת ידיים עם נוף לחומות העיר העתיקה.",
-             city="ירושלים", neighborhood="בקעה", address="רחוב רחל אמנו 15",
-             property_type="apartment", rooms=4, floor=1, size_sqm=110,
-             rent_price=4800, furnished=False, parking=True, elevator=False,
-             balcony=True, ac=True, storage=True, pets_allowed=True,
-             smoking_allowed=False, available_from=date(2026, 3, 20), min_rental_months=12),
-        dict(landlord_id=landlord2.id, title="חדר בדירת שותפים ברחביה",
-             description="חדר גדול ומרוהט בדירת 4 חדרים. 2 שותפים נוספים.",
-             city="ירושלים", neighborhood="רחביה", address="רחוב עזה 30",
-             property_type="room", rooms=1, floor=3, size_sqm=18,
-             rent_price=2200, furnished=True, parking=False, elevator=True,
-             balcony=False, ac=True, storage=False, pets_allowed=False,
-             smoking_allowed=False, available_from=date(2026, 3, 10), min_rental_months=6,
-             roommate_gender="female", max_roommates=3),
-        dict(landlord_id=landlord3.id, title="דירת גן 3 חדרים בכרמל",
-             description="דירת גן עם גינה פרטית ענקית, מתאימה למשפחה.",
-             city="חיפה", neighborhood="כרמל מרכזי", address="רחוב הנשיא 45",
-             property_type="apartment", rooms=3, floor=0, size_sqm=90,
-             rent_price=3800, furnished=False, parking=True, elevator=False,
-             balcony=True, ac=True, storage=True, pets_allowed=True,
-             smoking_allowed=True, available_from=date(2026, 4, 15), min_rental_months=12),
-        dict(landlord_id=landlord3.id, title="פנטהאוז מפואר בחיפה עם נוף לים",
-             description="פנטהאוז 5 חדרים עם מרפסת ענקית ונוף פנורמי לים.",
-             city="חיפה", neighborhood="כרמל צרפתי", address="שדרות הנשיא 100",
-             property_type="apartment", rooms=5, floor=12, size_sqm=160,
-             rent_price=8500, furnished=True, parking=True, elevator=True,
-             balcony=True, ac=True, storage=True, pets_allowed=False,
-             smoking_allowed=False, available_from=date(2026, 5, 1), min_rental_months=12),
-        dict(landlord_id=landlord1.id, title="דירת 2 חדרים בפלורנטין",
-             description="דירה צעירה ואנרגטית בלב פלורנטין.",
-             city="תל אביב", neighborhood="פלורנטין", address="רחוב ויטל 8",
-             property_type="apartment", rooms=2, floor=3, size_sqm=55,
-             rent_price=4800, furnished=True, parking=False, elevator=False,
-             balcony=True, ac=True, storage=False, pets_allowed=True,
-             smoking_allowed=True, available_from=date(2026, 3, 25), min_rental_months=12),
-        dict(landlord_id=landlord2.id, title="בית פרטי בראשון לציון",
-             description="בית פרטי עם חצר, 4 חדרים, מתאים למשפחה.",
-             city="ראשון לציון", neighborhood="נווה הדרים", address="רחוב הדקלים 22",
-             property_type="house", rooms=4, floor=0, size_sqm=140,
-             rent_price=6500, furnished=False, parking=True, elevator=False,
-             balcony=False, ac=True, storage=True, pets_allowed=True,
-             smoking_allowed=False, available_from=date(2026, 4, 10), min_rental_months=12),
-        dict(landlord_id=landlord3.id, title="חדר בשותפות ברמת גן",
-             description="חדר מרוהט בדירת 3 חדרים ליד הבורסה.",
-             city="רמת גן", neighborhood="בורסה", address="רחוב ז'בוטינסקי 60",
-             property_type="room", rooms=1, floor=8, size_sqm=15,
-             rent_price=2800, furnished=True, parking=True, elevator=True,
-             balcony=False, ac=True, storage=False, pets_allowed=False,
-             smoking_allowed=False, available_from=date(2026, 3, 15), min_rental_months=6,
-             roommate_gender="male", max_roommates=2),
-        dict(landlord_id=landlord1.id, title="דירת 3.5 חדרים בנווה שאנן תל אביב",
-             description="דירה מרווחת ושקטה, מושלמת לזוג.",
-             city="תל אביב", neighborhood="נווה שאנן", address="רחוב שלמה המלך 35",
-             property_type="apartment", rooms=3.5, floor=5, size_sqm=95,
-             rent_price=5200, furnished=False, parking=True, elevator=True,
-             balcony=True, ac=True, storage=True, pets_allowed=False,
-             smoking_allowed=False, available_from=date(2026, 4, 1), min_rental_months=12),
+def _create_users():
+    people = [
+        # phone, first, last, role(s), prefs
+        ("+972501234001", "יעל", "כהן", [RoleType.TENANT], DEMO_PREFS_TENANT),
+        ("+972501234002", "עומר", "לוי", [RoleType.ROOMMATE], DEMO_PREFS_ROOMMATE),
+        ("+972501234003", "דוד", "אברהם", [RoleType.LANDLORD], None),
+        ("+972501234004", "שרה", "ישראלי", [RoleType.LANDLORD, RoleType.ROOMMATE], DEMO_PREFS_ROOMMATE),
+        ("+972501234005", "משה", "דהן", [RoleType.LANDLORD], None),
     ]
-    props = [Property(**pdata) for pdata in properties_data]
-    db.session.add_all(props)
-    db.session.flush()
+    users = []
+    for phone, first, last, roles, prefs in people:
+        u = User(
+            phone=phone, first_name=first, last_name=last,
+            bio=f"שלום, אני {first}. נעים להכיר!",
+            is_verified=True,
+            gender=Gender.UNDISCLOSED,
+        )
+        if prefs:
+            u.preferences = prefs
+        db.session.add(u)
+        db.session.flush()
+        for r in roles:
+            db.session.add(UserRole(user_id=u.id, role=r, is_active=True))
+        users.append(u)
+    return users
 
-    # Attach seed photos. Auto-generate on first boot if the gradient images
-    # aren't already on disk. See scripts/gen_seed_images.py for the full
-    # branding pipeline.
-    import os, subprocess, sys
-    images_dir = os.path.join(
-        os.path.dirname(__file__), "static", "uploads", "properties"
-    )
-    if not os.path.exists(os.path.join(images_dir, "seed_00.webp")):
-        try:
-            subprocess.run(
-                [sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "gen_seed_images.py")],
-                check=True, capture_output=True,
-            )
-        except Exception:
-            pass  # non-fatal — cards will just show the emoji fallback
 
-    for i, prop in enumerate(props):
-        for j in range(2 + (i % 2)):  # 2 or 3 images per property
-            idx = (i + j) % 10
-            name = f"seed_{idx:02d}.webp"
-            if not os.path.exists(os.path.join(images_dir, name)):
-                continue
-            db.session.add(PropertyImage(
-                property_id=prop.id,
-                image_url=f"/static/uploads/properties/{name}",
-                thumb_url=f"/static/uploads/properties/thumbs/{name}",
-                is_primary=(j == 0),
-                order=j,
-            ))
+def _create_apartments(users):
+    landlord_david = next(u for u in users if u.first_name == "דוד")
+    landlord_sara = next(u for u in users if u.first_name == "שרה")
+    landlord_moshe = next(u for u in users if u.first_name == "משה")
 
-    db.session.commit()
+    data = [
+        dict(owner=landlord_david, address="דיזנגוף 120", city="תל אביב",
+             neighborhood="הצפון הישן", latitude=32.0853, longitude=34.7818,
+             rooms=3, size_sqm=85, floor=4, has_elevator=True, has_balcony=True, is_furnished=True, has_parking=False,
+             allows_pets=False, allows_smoking=False),
+        dict(owner=landlord_david, address="רוטשילד 50", city="תל אביב",
+             neighborhood="לב העיר", latitude=32.0683, longitude=34.7744,
+             rooms=1, size_sqm=35, floor=2, has_elevator=False, is_furnished=True,
+             allows_pets=True, allows_smoking=False),
+        dict(owner=landlord_sara, address="רחל אמנו 15", city="ירושלים",
+             neighborhood="בקעה", latitude=31.7623, longitude=35.2227,
+             rooms=4, size_sqm=110, floor=1, has_parking=True, has_balcony=True,
+             allows_pets=True, allows_smoking=False),
+        dict(owner=landlord_sara, address="עזה 30", city="ירושלים",
+             neighborhood="רחביה", latitude=31.7780, longitude=35.2156,
+             rooms=1, size_sqm=18, floor=3, has_elevator=True, is_furnished=True),
+        dict(owner=landlord_moshe, address="הנשיא 45", city="חיפה",
+             neighborhood="כרמל מרכזי", latitude=32.7940, longitude=34.9896,
+             rooms=3, size_sqm=90, floor=0, has_parking=True, has_balcony=True, has_elevator=False,
+             allows_pets=True, allows_smoking=True),
+        dict(owner=landlord_moshe, address="שדרות הנשיא 100", city="חיפה",
+             neighborhood="כרמל צרפתי", latitude=32.8030, longitude=34.9829,
+             rooms=5, size_sqm=160, floor=12, has_elevator=True, has_parking=True, has_balcony=True, is_furnished=True),
+        dict(owner=landlord_david, address="ויטל 8", city="תל אביב",
+             neighborhood="פלורנטין", latitude=32.0571, longitude=34.7708,
+             rooms=2, size_sqm=55, floor=3, is_furnished=True, has_balcony=True,
+             allows_pets=True, allows_smoking=True),
+        dict(owner=landlord_sara, address="הדקלים 22", city="ראשון לציון",
+             neighborhood="נווה הדרים", latitude=31.9730, longitude=34.7925,
+             rooms=4, size_sqm=140, floor=0, has_parking=True, allows_pets=True),
+        dict(owner=landlord_moshe, address="ז'בוטינסקי 60", city="רמת גן",
+             neighborhood="בורסה", latitude=32.0808, longitude=34.8012,
+             rooms=1, size_sqm=15, floor=8, has_elevator=True, has_parking=True, is_furnished=True),
+        dict(owner=landlord_david, address="שלמה המלך 35", city="תל אביב",
+             neighborhood="נווה שאנן", latitude=32.0605, longitude=34.7746,
+             rooms=3.5, size_sqm=95, floor=5, has_elevator=True, has_parking=True, has_balcony=True),
+    ]
+    apartments = []
+    for d in data:
+        owner = d.pop("owner")
+        a = Apartment(owner_id=owner.id, **d)
+        db.session.add(a)
+        db.session.flush()
+        apartments.append(a)
+    return apartments
+
+
+def _create_listings(apartments, users):
+    today = date.today()
+    for i, apt in enumerate(apartments):
+        # First listing (whole apartment) per apartment
+        listing = Listing(
+            apartment_id=apt.id, publisher_id=apt.owner_id,
+            listing_type=(ListingType.ROOM_IN_SHARED if apt.size_sqm and apt.size_sqm < 25 else ListingType.WHOLE_APARTMENT),
+            monthly_price=int(_price_for(apt)),
+            available_from=today + timedelta(days=7 * (i % 5)),
+            min_lease_months=12,
+            description=f"דירה נעימה ב{apt.neighborhood or apt.city}, כניסה מיידית. פנו לבעלים לתיאום ביקור.",
+            status=ListingStatus.ACTIVE,
+            preferences={"lifestyle_tags": ["clean", "quiet"] if i % 2 == 0 else ["social"]},
+        )
+        db.session.add(listing)
+        db.session.flush()
+
+        # Give each listing a gradient placeholder image (external picsum.photos URL; no auth needed)
+        db.session.add(ListingImage(
+            listing_id=listing.id,
+            image_url=f"https://picsum.photos/seed/rentmate-{listing.id}/1200/800",
+            display_order=0, is_primary=True,
+        ))
+
+
+def _price_for(apt):
+    base = 2500
+    by_city = {"תל אביב": 1800, "ירושלים": 900, "חיפה": 400, "רמת גן": 1600, "ראשון לציון": 900}
+    per_room = 900
+    return base + by_city.get(apt.city or "", 500) + float(apt.rooms) * per_room
+
+
+if __name__ == "__main__":
+    run()

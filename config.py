@@ -1,4 +1,7 @@
+"""Configuration classes — selected via FLASK_ENV."""
+
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -6,69 +9,77 @@ load_dotenv()
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "rentmate-dev-secret-key-change-in-prod")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'rentmate.db')}"
-    )
+class BaseConfig:
+    SECRET_KEY = os.environ.get("SECRET_KEY", "rentmate-dev-secret")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    WTF_CSRF_ENABLED = True
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 30  # 30 days
+    MAX_CONTENT_LENGTH = 32 * 1024 * 1024  # 32 MB upload ceiling
 
-    MAX_CONTENT_LENGTH = 32 * 1024 * 1024  # 32 MB upload limit (multi-image forms)
-    UPLOAD_FOLDER = os.environ.get(
-        "UPLOAD_FOLDER", os.path.join(BASE_DIR, "static", "uploads")
-    )
-    ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5000")
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "static", "uploads")
 
-    # Socket.IO — Redis message queue is wired but not required for single-instance deploy
-    SOCKETIO_MESSAGE_QUEUE = os.environ.get("REDIS_URL") or None
-    SOCKETIO_ASYNC_MODE = os.environ.get("SOCKETIO_ASYNC_MODE", "eventlet")
+    # Third-party credentials (all optional in dev; clean errors if missing)
+    TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
+    TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
+    TWILIO_VERIFY_SERVICE_SID = os.environ.get("TWILIO_VERIFY_SERVICE_SID")
 
-    # Mail
-    MAIL_SERVER = os.environ.get("MAIL_SERVER", "localhost")
-    MAIL_PORT = int(os.environ.get("MAIL_PORT", 1025))
-    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "false").lower() == "true"
-    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
-    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "no-reply@rentmate.local")
-    MAIL_SUPPRESS_SEND = False
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
-    # Rate limiting
+    GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
+
+    FIREBASE_CREDENTIALS_PATH = os.environ.get("FIREBASE_CREDENTIALS_PATH")
+    FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID")
+    FIREBASE_API_KEY = os.environ.get("FIREBASE_API_KEY")
+    FIREBASE_AUTH_DOMAIN = os.environ.get("FIREBASE_AUTH_DOMAIN")
+    FIREBASE_MESSAGING_SENDER_ID = os.environ.get("FIREBASE_MESSAGING_SENDER_ID")
+    FIREBASE_APP_ID = os.environ.get("FIREBASE_APP_ID")
+    FIREBASE_VAPID_KEY = os.environ.get("FIREBASE_VAPID_KEY")
+
+    CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET")
+
     RATELIMIT_DEFAULT = "200 per hour;50 per minute"
     RATELIMIT_STORAGE_URI = os.environ.get("REDIS_URL") or "memory://"
 
-    # App URLs used inside email links
-    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5000")
 
-
-class DevConfig(Config):
+class DevelopmentConfig(BaseConfig):
     DEBUG = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or \
+        f"sqlite:///{os.path.join(BASE_DIR, 'rentmate.db')}"
 
 
-class ProdConfig(Config):
+class ProductionConfig(BaseConfig):
     DEBUG = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")  # required
 
     def __init__(self):
-        if os.environ.get("SECRET_KEY") in (None, "", "rentmate-dev-secret-key-change-in-prod"):
-            raise RuntimeError("SECRET_KEY must be set in production")
+        if not self.SQLALCHEMY_DATABASE_URI:
+            raise RuntimeError("DATABASE_URL must be set in production")
+        if os.environ.get("SECRET_KEY") in (None, "", "rentmate-dev-secret"):
+            raise RuntimeError("SECRET_KEY must be set to a strong value in production")
 
 
-class TestConfig(Config):
+class TestingConfig(BaseConfig):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    DEBUG = True
     WTF_CSRF_ENABLED = False
-    MAIL_SUPPRESS_SEND = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     RATELIMIT_ENABLED = False
-    SOCKETIO_MESSAGE_QUEUE = None
+    SECRET_KEY = "test-secret"
 
 
-CONFIG_MAP = {
-    "dev": DevConfig,
-    "prod": ProdConfig,
-    "test": TestConfig,
+CONFIG_BY_NAME = {
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "testing": TestingConfig,
 }
 
 
-def get_config(name=None):
-    name = name or os.environ.get("FLASK_ENV", "dev")
-    cls = CONFIG_MAP.get(name, DevConfig)
-    return cls() if isinstance(cls, type) and cls is ProdConfig else cls
+def get_config():
+    name = os.environ.get("FLASK_ENV", "development").lower()
+    cls = CONFIG_BY_NAME.get(name, DevelopmentConfig)
+    # Instantiate production to trigger required-var checks
+    return cls() if cls is ProductionConfig else cls

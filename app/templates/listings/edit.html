@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}עריכת מודעה — RentMate{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:720px;margin:var(--sp-5) auto;">
+  <h2>עריכת מודעה</h2>
+  <a href="{{ url_for('listings.listing_detail', listing_id=listing.id) }}" class="small">← חזרה למודעה</a>
+
+  <div class="card card-lg" style="margin-top:var(--sp-4);">
+    <h3>תמונות</h3>
+    <div id="images-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
+      {% for img in listing.images %}
+      <div class="listing-image" data-id="{{ img.id }}" style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;">
+        <img src="{{ img.image_url }}" style="width:100%;height:100%;object-fit:cover;">
+        <button class="btn btn-sm" style="position:absolute;top:6px;left:6px;background:rgba(255,255,255,0.9);"
+                onclick="deleteImage({{ img.id }}, this)">✕</button>
+        {% if img.is_primary %}<span class="badge badge-coral" style="position:absolute;bottom:6px;right:6px;">ראשי</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:var(--sp-3);">
+      <input type="file" id="img-upload" accept="image/*" multiple style="display:none;" onchange="uploadImages(this)">
+      <button class="btn btn-outline" onclick="document.getElementById('img-upload').click()">העלאת תמונות</button>
+    </div>
+  </div>
+
+  <div class="card card-lg" style="margin-top:var(--sp-4);">
+    <h3>פרטי המודעה</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>שכירות חודשית</label>
+        <input id="monthly_price" type="number" class="form-control" value="{{ listing.monthly_price }}">
+      </div>
+      <div class="form-group">
+        <label>מינ׳ חודשים</label>
+        <input id="min_lease_months" type="number" class="form-control" value="{{ listing.min_lease_months }}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>זמין מ</label>
+      <input id="available_from" type="date" class="form-control" value="{{ listing.available_from.isoformat() if listing.available_from }}">
+    </div>
+    <div class="form-group">
+      <label>תיאור</label>
+      <textarea id="description" class="form-control" rows="5">{{ listing.description }}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="save()">שמירה</button>
+      <button class="btn btn-outline" onclick="setStatus('paused')" {% if listing.status.value == 'paused' %}disabled{% endif %}>השהה</button>
+      <button class="btn btn-outline" onclick="setStatus('active')" {% if listing.status.value == 'active' %}disabled{% endif %}>הפעל</button>
+      <button class="btn btn-danger" onclick="setStatus('closed')">סגור מודעה</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LID = {{ listing.id }};
+
+async function save() {
+  const body = {
+    monthly_price: document.getElementById('monthly_price').value,
+    min_lease_months: document.getElementById('min_lease_months').value,
+    available_from: document.getElementById('available_from').value,
+    description: document.getElementById('description').value,
+  };
+  try {
+    await RM.apiFetch('/listings/api/listings/' + LID, { method: 'PATCH', body });
+    RM.toast('נשמר');
+  } catch (e) { RM.toast(e.message, 'error'); }
+}
+
+async function setStatus(status) {
+  await RM.apiFetch('/listings/api/listings/' + LID + '/status', {
+    method: 'POST', body: { status },
+  });
+  location.reload();
+}
+
+async function uploadImages(input) {
+  for (const f of input.files) {
+    const fd = new FormData();
+    fd.append('image', f);
+    try {
+      const img = await RM.apiFetch('/listings/api/listings/' + LID + '/images', {
+        method: 'POST', body: fd,
+      });
+      const div = document.createElement('div');
+      div.className = 'listing-image';
+      div.dataset.id = img.id;
+      div.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;';
+      div.innerHTML = `
+        <img src="${img.url}" style="width:100%;height:100%;object-fit:cover;">
+        <button class="btn btn-sm" style="position:absolute;top:6px;left:6px;background:rgba(255,255,255,0.9);"
+                onclick="deleteImage(${img.id}, this)">✕</button>`;
+      document.getElementById('images-grid').appendChild(div);
+    } catch (e) { RM.toast(e.message, 'error'); }
+  }
+  input.value = '';
+}
+
+async function deleteImage(id, btn) {
+  await RM.apiFetch('/listings/api/listings/images/' + id, { method: 'DELETE' });
+  btn.closest('.listing-image').remove();
+}
+</script>
+{% endblock %}
