@@ -92,4 +92,11 @@
   socket.on('match:new', show);
 
   window.RM.showMatch = show;
+  window.RM.demoMatch = function () {
+    show({
+      property_id: 1,
+      property_title: 'דירת 3 חדרים מרווחת בלב תל אביב',
+      other_user: { id: 0, first_name: 'דוד', last_name: 'כהן', avatar_url: null, initials: 'דכ' },
+    });
+  };
 })();

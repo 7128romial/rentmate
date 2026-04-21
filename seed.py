@@ -3,7 +3,7 @@
 from datetime import date
 
 from rentmate.extensions import db
-from models import User, UserPreferences, Property
+from models import User, UserPreferences, Property, PropertyImage
 
 
 def seed_if_empty():
@@ -122,5 +122,38 @@ def seed_if_empty():
              balcony=True, ac=True, storage=True, pets_allowed=False,
              smoking_allowed=False, available_from=date(2026, 4, 1), min_rental_months=12),
     ]
-    db.session.add_all([Property(**pdata) for pdata in properties_data])
+    props = [Property(**pdata) for pdata in properties_data]
+    db.session.add_all(props)
+    db.session.flush()
+
+    # Attach seed photos. Auto-generate on first boot if the gradient images
+    # aren't already on disk. See scripts/gen_seed_images.py for the full
+    # branding pipeline.
+    import os, subprocess, sys
+    images_dir = os.path.join(
+        os.path.dirname(__file__), "static", "uploads", "properties"
+    )
+    if not os.path.exists(os.path.join(images_dir, "seed_00.webp")):
+        try:
+            subprocess.run(
+                [sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "gen_seed_images.py")],
+                check=True, capture_output=True,
+            )
+        except Exception:
+            pass  # non-fatal — cards will just show the emoji fallback
+
+    for i, prop in enumerate(props):
+        for j in range(2 + (i % 2)):  # 2 or 3 images per property
+            idx = (i + j) % 10
+            name = f"seed_{idx:02d}.webp"
+            if not os.path.exists(os.path.join(images_dir, name)):
+                continue
+            db.session.add(PropertyImage(
+                property_id=prop.id,
+                image_url=f"/static/uploads/properties/{name}",
+                thumb_url=f"/static/uploads/properties/thumbs/{name}",
+                is_primary=(j == 0),
+                order=j,
+            ))
+
     db.session.commit()

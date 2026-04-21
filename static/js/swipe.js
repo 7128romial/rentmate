@@ -81,10 +81,15 @@ function createCardEl(data, stackPos) {
   card.innerHTML = `
     <div class="stamp stamp-like">LIKE ❤️</div>
     <div class="stamp stamp-nope">NOPE ✕</div>
-    <div class="swipe-card-img">
-      🏠
+    <div class="swipe-card-img" ${data.primary_image ? `style="background-image:url('${data.primary_image}');background-size:cover;background-position:center;"` : ''}>
+      ${!data.primary_image ? '🏠' : ''}
+      <div class="swipe-card-gradient"></div>
       <span class="score-badge ${scoreClass}">${data.match_score}% Match</span>
       <button class="save-btn" onclick="event.stopPropagation();toggleFav(${data.id},this)">🤍</button>
+      ${(data.images && data.images.length > 1) ? `
+        <div class="swipe-card-photo-dots">
+          ${data.images.map((_, i) => `<span class="${i === 0 ? 'active' : ''}"></span>`).join('')}
+        </div>` : ''}
     </div>
     <div class="swipe-card-body">
       <h3>${data.title}</h3>
