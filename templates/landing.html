@@ -9,8 +9,8 @@
       <h1><span>Swipe. Match.</span><br>Move In.</h1>
       <p>הפלטפורמה החכמה להשכרת דירות בישראל. קבל ציון %Match לכל דירה על בסיס אורח החיים, התקציב והמיקום שלך.</p>
       <div class="hero-btns">
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">התחל בחינם</a>
-        <a href="{{ url_for('property_search') }}" class="btn btn-outline btn-lg">עיין בדירות</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">התחל בחינם</a>
+        <a href="{{ url_for('properties.property_search') }}" class="btn btn-outline btn-lg">עיין בדירות</a>
       </div>
       <div class="hero-stats">
         <div class="hero-stat">
@@ -125,7 +125,7 @@
   <div class="cta-banner">
     <h2>מוכן למצוא את הדירה שלך?</h2>
     <p>הצטרף לאלפי שוכרים שמצאו את הבית שלהם דרך RentMate</p>
-    <a href="{{ url_for('register') }}" class="btn btn-lg">הצטרף בחינם</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-lg">הצטרף בחינם</a>
   </div>
 </section>
 

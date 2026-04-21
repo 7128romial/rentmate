@@ -9,7 +9,7 @@
       <span style="font-size: 2.5rem;">🏠</span>
       <h2 style="background: var(--coral-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">ברוכים הבאים</h2>
       <p class="text-muted">
-        אין לך חשבון? <a href="{{ url_for('register') }}">הצטרף בחינם</a>
+        אין לך חשבון? <a href="{{ url_for('auth.register') }}">הצטרף בחינם</a>
       </p>
     </div>
 
@@ -19,7 +19,7 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('login') }}">
+    <form method="POST" action="{{ url_for('auth.login') }}">
       <div class="form-group">
         <label>אימייל</label>
         <input type="email" name="email" class="form-control" required placeholder="email@example.com" dir="ltr">
@@ -42,7 +42,7 @@
     </form>
 
     <p class="text-center mt-2">
-      <a href="{{ url_for('property_search') }}" style="color: var(--text-muted); font-size: 0.9rem;">המשך כאורח</a>
+      <a href="{{ url_for('properties.property_search') }}" style="color: var(--text-muted); font-size: 0.9rem;">המשך כאורח</a>
     </p>
   </div>
 </div>

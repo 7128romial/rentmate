@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<body style="font-family: Arial, sans-serif; background:#f7f7f7; padding:24px;">
+  <div style="max-width:480px; margin:auto; background:#fff; padding:32px; border-radius:16px;">
+    <h1 style="color:#FF4458;">שלום {{ user.first_name }},</h1>
+    <p>תודה שנרשמת ל-RentMate! כדי להמשיך ולהשתמש בכל התכונות, אנא אמת את כתובת האימייל שלך.</p>
+    <p style="margin:32px 0;">
+      <a href="{{ verify_url }}"
+         style="background:#FF4458; color:#fff; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:600;">
+        אמת אימייל
+      </a>
+    </p>
+    <p style="color:#888; font-size:0.85rem;">אם הקישור לא עובד, העתק והדבק:<br>{{ verify_url }}</p>
+  </div>
+</body>
+</html>

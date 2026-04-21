@@ -1,0 +1,46 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      FLASK_ENV: prod
+      SECRET_KEY: ${SECRET_KEY:-dev-change-me}
+      DATABASE_URL: postgresql://rentmate:rentmate@db:5432/rentmate
+      REDIS_URL: redis://redis:6379/0
+      MAIL_SERVER: mailhog
+      MAIL_PORT: 1025
+      MAIL_USE_TLS: "false"
+      APP_BASE_URL: http://localhost:8000
+    depends_on:
+      - db
+      - redis
+      - mailhog
+    volumes:
+      - uploads:/app/static/uploads
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rentmate
+      POSTGRES_PASSWORD: rentmate
+      POSTGRES_DB: rentmate
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata:
+  uploads:

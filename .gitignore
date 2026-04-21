@@ -9,3 +9,9 @@ dist/
 build/
 .venv/
 venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg
+migrations/versions/*.py
+!migrations/env.py

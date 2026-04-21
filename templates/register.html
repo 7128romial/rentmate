@@ -45,7 +45,7 @@
       </div>
       {% endif %}
 
-      <form method="POST" action="{{ url_for('register') }}">
+      <form method="POST" action="{{ url_for('auth.register') }}">
         <!-- Step 1: Role -->
         <div class="role-tiles">
           <label class="role-tile active" onclick="selectRole(this,'tenant')">
@@ -130,7 +130,7 @@
       </form>
 
       <p class="text-center mt-2 text-muted">
-        כבר יש לך חשבון? <a href="{{ url_for('login') }}">התחבר</a>
+        כבר יש לך חשבון? <a href="{{ url_for('auth.login') }}">התחבר</a>
       </p>
     </div>
   </div>

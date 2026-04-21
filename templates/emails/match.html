@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<body style="font-family: Arial, sans-serif; background:#f7f7f7; padding:24px;">
+  <div style="max-width:480px; margin:auto; background:#fff; padding:32px; border-radius:16px; text-align:center;">
+    <div style="font-size:3rem;">🎉</div>
+    <h1 style="color:#FF4458;">יש לך התאמה חדשה!</h1>
+    <p>שלום {{ target_user.first_name }}, שניכם אהבתם את אותה הדירה.</p>
+    <div style="margin:24px 0; padding:16px; background:#fff0f2; border-radius:12px;">
+      <strong>{{ property_.title }}</strong><br>
+      <span style="color:#666;">{{ property_.city }}{% if property_.neighborhood %} · {{ property_.neighborhood }}{% endif %}</span>
+    </div>
+    <p>התחל לשוחח עם {{ other_user.first_name }} {{ other_user.last_name }} עכשיו:</p>
+    <p style="margin:24px 0;">
+      <a href="{{ config['APP_BASE_URL'] }}/chat"
+         style="background:#FF4458; color:#fff; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:600;">
+        פתח שיחה
+      </a>
+    </p>
+  </div>
+</body>
+</html>

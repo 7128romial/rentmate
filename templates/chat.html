@@ -11,7 +11,7 @@
     <ul class="conv-list" id="conv-list">
       {% if conv_list %}
         {% for c in conv_list %}
-        <a href="{{ url_for('chat', conv=c.id) }}" class="conv-item {{ 'active' if active_conv and active_conv.id == c.id else '' }}" data-name="{{ c.other.first_name }} {{ c.other.last_name }}">
+        <a href="{{ url_for('chat.chat', conv=c.id) }}" class="conv-item {{ 'active' if active_conv and active_conv.id == c.id else '' }}" data-name="{{ c.other.first_name }} {{ c.other.last_name }}">
           <div class="conv-avatar">{{ c.other.initials }}</div>
           <div class="conv-info">
             <h4>{{ c.other.first_name }} {{ c.other.last_name }}</h4>
@@ -45,10 +45,15 @@
       <h3>{{ other.first_name }} {{ other.last_name }}</h3>
       <span class="badge badge-green">✓ מאומת</span>
       {% if active_conv.prop %}
-      <a href="{{ url_for('property_detail', property_id=active_conv.prop.id) }}" class="btn btn-ghost btn-sm" style="margin-right:auto;">
+      <a href="{{ url_for('properties.property_detail', property_id=active_conv.prop.id) }}" class="btn btn-ghost btn-sm" style="margin-right:auto;">
         🏠 {{ active_conv.prop.title[:30] }}{% if active_conv.prop.title|length > 30 %}...{% endif %}
       </a>
       {% endif %}
+    </div>
+
+    <div class="chat-typing" id="chat-typing" hidden>
+      <span class="dots"><span></span><span></span><span></span></span>
+      <span id="typing-label">{{ other.first_name }} מקליד/ה...</span>
     </div>
 
     <div class="chat-messages" id="chat-messages">
@@ -59,7 +64,7 @@
           <div class="date-separator">{{ msg_date }}</div>
           {% set prev_date.val = msg_date %}
         {% endif %}
-        <div class="message-bubble {{ 'sent' if m.sender_id == current_user.id else 'received' }}">
+        <div class="message-bubble {{ 'sent' if m.sender_id == current_user.id else 'received' }}" data-mid="{{ m.id }}">
           {{ m.body }}
           <div class="message-time">{{ m.created_at.strftime('%H:%M') }}</div>
         </div>
@@ -67,8 +72,8 @@
     </div>
 
     <div class="chat-input-bar">
-      <input type="text" id="msg-input" placeholder="כתוב הודעה..." onkeypress="if(event.key==='Enter')sendMsg()">
-      <button onclick="sendMsg()">➤</button>
+      <input type="text" id="msg-input" placeholder="כתוב הודעה..." autocomplete="off">
+      <button id="msg-send-btn" aria-label="Send">➤</button>
     </div>
 
     {% else %}
@@ -84,63 +89,12 @@
 {% block scripts %}
 <script>
 {% if active_conv %}
-const convId = {{ active_conv.id }};
-const myId = {{ current_user.id }};
-const msgArea = document.getElementById('chat-messages');
-
-// Scroll to bottom
-msgArea.scrollTop = msgArea.scrollHeight;
-
-async function sendMsg() {
-  const input = document.getElementById('msg-input');
-  const body = input.value.trim();
-  if (!body) return;
-  input.value = '';
-
-  // Optimistic UI
-  const bubble = document.createElement('div');
-  bubble.className = 'message-bubble sent';
-  const now = new Date();
-  bubble.innerHTML = `${escapeHtml(body)}<div class="message-time">${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}</div>`;
-  msgArea.appendChild(bubble);
-  msgArea.scrollTop = msgArea.scrollHeight;
-
-  try {
-    await fetch(`/api/chat/${convId}/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body }),
-    });
-  } catch (e) { console.error(e); }
-}
-
-function escapeHtml(text) {
-  const d = document.createElement('div');
-  d.textContent = text;
-  return d.innerHTML;
-}
-
-// Polling for new messages (simple approach)
-let lastMsgCount = {{ messages|length }};
-setInterval(async () => {
-  try {
-    const res = await fetch(`/api/chat/${convId}/messages`);
-    const msgs = await res.json();
-    if (msgs.length > lastMsgCount) {
-      for (let i = lastMsgCount; i < msgs.length; i++) {
-        const m = msgs[i];
-        if (m.sender_id === myId) continue; // already shown
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble received';
-        const time = new Date(m.created_at);
-        bubble.innerHTML = `${escapeHtml(m.body)}<div class="message-time">${time.getHours().toString().padStart(2,'0')}:${time.getMinutes().toString().padStart(2,'0')}</div>`;
-        msgArea.appendChild(bubble);
-      }
-      msgArea.scrollTop = msgArea.scrollHeight;
-      lastMsgCount = msgs.length;
-    }
-  } catch (e) {}
-}, 3000);
+  window.RM_CHAT = {
+    conversationId: {{ active_conv.id }},
+    myId: {{ current_user.id }},
+    initialMessageCount: {{ messages|length }},
+  };
+  // chat-socket.js (loaded globally in base.html) picks up RM_CHAT and wires up the socket.
 {% endif %}
 
 function filterConvs(query) {

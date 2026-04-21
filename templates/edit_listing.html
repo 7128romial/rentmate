@@ -4,12 +4,12 @@
 {% block content %}
 <div class="wizard-container">
   <div class="page-header">
-    <a href="{{ url_for('property_detail', property_id=prop.id) }}" style="color:var(--text-light);">← חזרה למודעה</a>
+    <a href="{{ url_for('properties.property_detail', property_id=prop.id) }}" style="color:var(--text-light);">← חזרה למודעה</a>
     <h1 class="mt-1">עריכת מודעה</h1>
   </div>
 
   <div class="wizard-panel">
-    <form method="POST" action="{{ url_for('edit_listing', property_id=prop.id) }}">
+    <form method="POST" action="{{ url_for('properties.edit_listing', property_id=prop.id) }}">
       <div class="form-group">
         <label>כותרת</label>
         <input type="text" name="title" class="form-control" value="{{ prop.title }}" required>
@@ -93,9 +93,70 @@
 
       <div style="display:flex; gap:12px;">
         <button type="submit" class="btn btn-primary">שמור שינויים</button>
-        <a href="{{ url_for('property_detail', property_id=prop.id) }}" class="btn btn-ghost">ביטול</a>
+        <a href="{{ url_for('properties.property_detail', property_id=prop.id) }}" class="btn btn-ghost">ביטול</a>
       </div>
     </form>
+
+    <hr style="margin:32px 0;">
+    <h3>תמונות</h3>
+    <div id="listing-images" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;">
+      {% for img in prop.images %}
+      <div class="listing-image-thumb" data-id="{{ img.id }}" style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;">
+        <img src="{{ img.thumb_url or img.image_url }}" style="width:100%;height:100%;object-fit:cover;" alt="">
+        <button type="button" class="btn btn-ghost btn-sm"
+                style="position:absolute;top:4px;left:4px;background:rgba(255,255,255,0.9);"
+                onclick="rmDeleteImage({{ img.id }}, this)">🗑</button>
+        {% if img.is_primary %}<span style="position:absolute;bottom:4px;right:4px;background:#FF4458;color:#fff;padding:2px 8px;border-radius:6px;font-size:0.7rem;">ראשי</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:12px;">
+      <input type="file" id="image-upload" accept="image/*" multiple style="display:none;" onchange="rmUploadImages(this)">
+      <button class="btn btn-outline" onclick="document.getElementById('image-upload').click()">העלה תמונות (עד 10)</button>
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PROP_ID = {{ prop.id }};
+
+async function rmUploadImages(input) {
+  if (!input.files || !input.files.length) return;
+  const fd = new FormData();
+  for (const f of input.files) fd.append('images', f);
+  const res = await fetch(`/api/properties/${PROP_ID}/images`, { method: 'POST', body: fd });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    showToast(err.error || 'שגיאה בהעלאה', 'error');
+    return;
+  }
+  const data = await res.json();
+  const grid = document.getElementById('listing-images');
+  for (const img of data.images) {
+    const div = document.createElement('div');
+    div.className = 'listing-image-thumb';
+    div.dataset.id = img.id;
+    div.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;';
+    div.innerHTML = `
+      <img src="${img.thumb}" style="width:100%;height:100%;object-fit:cover;" alt="">
+      <button type="button" class="btn btn-ghost btn-sm"
+              style="position:absolute;top:4px;left:4px;background:rgba(255,255,255,0.9);"
+              onclick="rmDeleteImage(${img.id}, this)">🗑</button>
+      ${img.is_primary ? '<span style="position:absolute;bottom:4px;right:4px;background:#FF4458;color:#fff;padding:2px 8px;border-radius:6px;font-size:0.7rem;">ראשי</span>' : ''}
+    `;
+    grid.appendChild(div);
+  }
+  input.value = '';
+  showToast('התמונות הועלו');
+}
+
+async function rmDeleteImage(id, btn) {
+  const res = await fetch(`/api/images/${id}`, { method: 'DELETE' });
+  if (!res.ok) { showToast('שגיאה במחיקה', 'error'); return; }
+  btn.closest('.listing-image-thumb').remove();
+  showToast('נמחק');
+}
+</script>
 {% endblock %}

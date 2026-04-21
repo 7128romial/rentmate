@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="container" style="padding-top: 24px;">
-  <a href="{{ url_for('property_search') }}" style="color:var(--text-light);">← חזרה לחיפוש</a>
+  <a href="{{ url_for('properties.property_search') }}" style="color:var(--text-light);">← חזרה לחיפוש</a>
 </div>
 
 <div class="container">
@@ -155,7 +155,7 @@
         {{ '❤️ שמור במועדפים' if is_fav else '🤍 שמור במועדפים' }}
       </button>
       {% else %}
-      <a href="{{ url_for('login') }}" class="btn btn-primary btn-block btn-lg" style="margin-bottom:12px;">
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-block btn-lg" style="margin-bottom:12px;">
         התחבר כדי ליצור קשר
       </a>
       {% endif %}
