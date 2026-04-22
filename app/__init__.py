@@ -65,6 +65,18 @@ def create_app(config_object=None):
     app.register_blueprint(notifications_bp, url_prefix="/notifications")
     app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
 
+    # In dev, stop the browser from caching HTML pages so code changes appear
+    # immediately and a stale Service Worker / Cache API entry can't dominate.
+    if app.config.get("DEBUG"):
+        @app.after_request
+        def _no_cache_html(resp):
+            ct = resp.headers.get("Content-Type", "")
+            if "text/html" in ct:
+                resp.headers["Cache-Control"] = "no-store, must-revalidate"
+                resp.headers["Pragma"] = "no-cache"
+                resp.headers["Expires"] = "0"
+            return resp
+
     @app.errorhandler(404)
     def _not_found(e):
         return render_template("errors/404.html"), 404

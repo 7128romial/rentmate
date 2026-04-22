@@ -16,6 +16,31 @@
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <script>
+    // Defensive cleanup — the previous build registered a PWA service worker
+    // that keeps intercepting requests with stale cached responses. Unregister
+    // any SW + clear all caches on every page load until none remain. Once
+    // the old SW is gone this becomes a no-op (getRegistrations() returns []).
+    (function () {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          if (!regs.length) return;
+          Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+            if (sessionStorage.getItem('rm_sw_cleared') === '1') return;
+            sessionStorage.setItem('rm_sw_cleared', '1');
+            // One forced reload so the freshly-unregistered SW stops
+            // intercepting in-flight requests.
+            window.location.reload();
+          });
+        }).catch(function () {});
+      }
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        }).catch(function () {});
+      }
+    })();
+  </script>
+  <script>
     window.RM_CONFIG = {
       csrfToken: {{ csrf_token()|tojson }},
       firebase: {{ firebase_client_config|tojson }},
