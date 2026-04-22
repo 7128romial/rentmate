@@ -47,7 +47,7 @@ async function recordSwipe(property_id, direction) {
     const user_id = localStorage.getItem('rentmate_user_id');
     if (!user_id) return direction === 'right'; // fallback for UI without backend
     try {
-        const res = await fetch('http://localhost:5000/api/swipe', {
+        const res = await fetch('https://rentmate-kgh9.onrender.com/api/swipe', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ user_id, property_id, direction })
@@ -64,7 +64,7 @@ async function initCards() {
     const user_id = localStorage.getItem('rentmate_user_id');
     let properties = [];
     try {
-        const res = await fetch(`http://localhost:5000/api/properties?user_id=${user_id || ''}`);
+        const res = await fetch(`https://rentmate-kgh9.onrender.com/api/properties?user_id=${user_id || ''}`);
         properties = await res.json();
     } catch(err) {
         console.error("API Error", err);

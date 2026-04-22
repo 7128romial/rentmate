@@ -71,7 +71,7 @@ function simulateAIResponse() {
 
     const user_id = localStorage.getItem('rentmate_user_id');
     if (user_id) {
-        fetch('http://localhost:5000/api/profile', {
+        fetch('https://rentmate-kgh9.onrender.com/api/profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: user_id, ...prefs })
