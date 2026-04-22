@@ -23,7 +23,7 @@
       </div>
 
       <form class="chat-input-area" onsubmit="event.preventDefault(); const input=this.querySelector('input'); if(input.value) { const div=document.createElement('div'); div.className='message user'; div.innerHTML=`<div class='message-content'>${input.value}</div>`; document.getElementById('realtime-messages').appendChild(div); input.value=''; document.querySelector('.messages-area').scrollTop=10000; }">
-        <input type="text" placeholder="הקלד/י הודעה..." autocomplete="off">
+        <input type="text" id="chat-input" placeholder="הקלד/י הודעה..." autocomplete="off">
         <button type="submit" id="send-button">
           <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="send-icon" style="transform: scaleX(-1);"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>

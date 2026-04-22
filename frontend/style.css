@@ -308,6 +308,7 @@ h1, h2, h3 {
   width: calc(100% - 32px);
   height: calc(100% - 32px);
   border-radius: 24px;
+  background-color: #2A1B38;
   background-size: cover;
   background-position: center;
   box-shadow: var(--shadow-lg);
@@ -587,4 +588,7 @@ h1, h2, h3 {
 [dir="rtl"] .message.user .message-content {
   border-bottom-right-radius: 20px;
   border-bottom-left-radius: 4px;
+}
+[dir="rtl"] .action-buttons {
+  flex-direction: row-reverse;
 }

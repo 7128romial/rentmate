@@ -3,3 +3,5 @@ Flask-SQLAlchemy
 Flask-SocketIO
 python-dotenv
 flask-cors
+PyMySQL
+gunicorn

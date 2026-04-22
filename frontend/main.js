@@ -47,14 +47,36 @@ function removeTypingIndicator() {
 function simulateAIResponse() {
   if (scriptIndex >= AI_SCRIPT.length) {
     // Extract preferences
+    const cityAns = userAnswers[1] || "תל אביב";
+    const knownCities = ["תל אביב", "תל-אביב", "ירושלים", "חיפה", "רמת גן", "הרצליה", "ראשון לציון", "חולון", "פתח תקווה", "נתניה", "באר שבע", "גבעתיים", "כפר סבא", "רעננה"];
+    let foundCity = "תל אביב";
+    for (const c of knownCities) {
+      if (cityAns.includes(c)) {
+        foundCity = c;
+        break;
+      }
+    }
+    if(foundCity === "תל אביב" && !cityAns.includes("תל") && cityAns.length > 2 && cityAns.length < 15) {
+        foundCity = cityAns.trim();
+    }
+
     const prefs = {
       name: userAnswers[0] || "משתמש",
-      city: userAnswers[1] || "תל אביב",
+      city: foundCity,
       budget: userAnswers[2] || "4000",
       type: userAnswers[3] || "לבד",
       extras: userAnswers[4] || ""
     };
     localStorage.setItem('rentmate_prefs', JSON.stringify(prefs));
+
+    const user_id = localStorage.getItem('rentmate_user_id');
+    if (user_id) {
+        fetch('http://localhost:5000/api/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: user_id, ...prefs })
+        }).catch(err => console.error("API error", err));
+    }
 
     // End of onboarding, redirect to swipe
     setTimeout(() => {

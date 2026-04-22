@@ -1,52 +1,10 @@
 const swipeContainer = document.getElementById('swipe-container');
-
-const prefs = JSON.parse(localStorage.getItem('rentmate_prefs')) || {
-  city: "תל אביב",
-  budget: "4500",
-  type: "לבד",
-  extras: ""
-};
-
-let basePrice = 4500;
-// Extract number from budget string like "3000-4000" or "4k"
-const numMatch = prefs.budget.match(/\d+/);
-if (numMatch) {
-  basePrice = parseInt(numMatch[0]);
-  if (basePrice < 100) basePrice *= 1000; // handle "4" -> 4000
-}
-
-const cleanCity = prefs.city.length > 20 ? "העיר המבוקשת" : prefs.city;
-
-const PROPERTIES = [
-  {
-    id: 1,
-    title: `סטודיו מואר ב${cleanCity}`,
-    price: `₪${basePrice.toLocaleString()}/חודש`,
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
-    matchScore: 98,
-    tags: ["שקט", prefs.extras ? "ידידותי לבקשות" : "משופצת"]
-  },
-  {
-    id: 2,
-    title: `דירה מהממת ב${cleanCity}`,
-    price: `₪${(basePrice + 350).toLocaleString()}/חודש`,
-    image: "https://images.unsplash.com/photo-1502672260266-1c1de2d93688?auto=format&fit=crop&w=600&q=80",
-    matchScore: 88,
-    tags: [prefs.type, "מרווחת"]
-  },
-  {
-    id: 3,
-    title: `פנטהאוז באזור ${cleanCity}`,
-    price: `₪${(basePrice + 1200).toLocaleString()}/חודש`,
-    image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80",
-    matchScore: 82,
-    tags: ["פרימיום", "מרפסת"]
-  }
-];
+let currentCards = [];
 
 function createCard(property) {
   const card = document.createElement('div');
   card.classList.add('swipe-card');
+  card.dataset.id = property.id;
   card.style.backgroundImage = `url('${property.image}')`;
   
   const gradient = document.createElement('div');
@@ -85,45 +43,89 @@ function createCard(property) {
   return card;
 }
 
-function initCards() {
-  PROPERTIES.reverse().forEach(prop => {
-    const card = createCard(prop);
-    swipeContainer.appendChild(card);
-    
-    const hammer = new Hammer(card);
-    
-    hammer.on('pan', (ev) => {
-      if (ev.deltaX === 0) return;
-      if (ev.center.x === 0 && ev.center.y === 0) return;
-      
-      const rotate = ev.deltaX * 0.05;
-      card.style.transform = `translate(${ev.deltaX}px, ${ev.deltaY}px) rotate(${rotate}deg)`;
+async function recordSwipe(property_id, direction) {
+    const user_id = localStorage.getItem('rentmate_user_id');
+    if (!user_id) return direction === 'right'; // fallback for UI without backend
+    try {
+        const res = await fetch('http://localhost:5000/api/swipe', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id, property_id, direction })
+        });
+        const data = await res.json();
+        return data.isMatch;
+    } catch(err) {
+        console.error("API Error", err);
+        return direction === 'right';
+    }
+}
+
+async function initCards() {
+    const user_id = localStorage.getItem('rentmate_user_id');
+    let properties = [];
+    try {
+        const res = await fetch(`http://localhost:5000/api/properties?user_id=${user_id || ''}`);
+        properties = await res.json();
+    } catch(err) {
+        console.error("API Error", err);
+        // Fallback properties if backend is down
+        properties = [
+          {
+            id: 1, title: "סטודיו מואר בתל אביב", price: "₪4,500/חודש", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80", matchScore: 95, tags: ["שקט", "משופצת"]
+          }
+        ];
+    }
+
+    properties.reverse().forEach(prop => {
+        const card = createCard(prop);
+        swipeContainer.appendChild(card);
+        currentCards.push(card);
+        
+        const hammer = new Hammer(card);
+        
+        hammer.on('pan', (ev) => {
+            if (ev.deltaX === 0) return;
+            if (ev.center.x === 0 && ev.center.y === 0) return;
+            
+            const rotate = ev.deltaX * 0.05;
+            card.style.transform = `translate(${ev.deltaX}px, ${ev.deltaY}px) rotate(${rotate}deg)`;
+        });
+        
+        hammer.on('panend', (ev) => {
+            const keep = Math.abs(ev.deltaX) < 80;
+            card.classList.toggle('removed', !keep);
+            
+            if (keep) {
+                card.style.transform = '';
+            } else {
+                const endX = Math.max(Math.abs(ev.velocity * 800), 300);
+                const toX = ev.deltaX > 0 ? endX : -endX;
+                const endY = Math.abs(ev.velocity * 800) || 300;
+                const toY = ev.deltaY > 0 ? endY : -endY;
+                const rotate = ev.deltaX * 0.03;
+                
+                card.style.transform = `translate(${toX}px, ${toY + ev.deltaY}px) rotate(${rotate}deg)`;
+                setTimeout(() => card.remove(), 300);
+                
+                const direction = ev.deltaX > 0 ? 'right' : 'left';
+                handleSwipeCompletion(prop.id, direction);
+            }
+        });
     });
-    
-    hammer.on('panend', (ev) => {
-      const keep = Math.abs(ev.deltaX) < 80;
-      card.classList.toggle('removed', !keep);
-      
-      if (keep) {
-        card.style.transform = '';
-      } else {
-        const endX = Math.max(Math.abs(ev.velocity * 800), 300);
-        const toX = ev.deltaX > 0 ? endX : -endX;
-        const endY = Math.abs(ev.velocity * 800) || 300;
-        const toY = ev.deltaY > 0 ? endY : -endY;
-        const rotate = ev.deltaX * 0.03;
-        
-        card.style.transform = `translate(${toX}px, ${toY + ev.deltaY}px) rotate(${rotate}deg)`;
-        setTimeout(() => card.remove(), 300);
-        
-        if (ev.deltaX > 0 && swipeContainer.children.length === 1) {
+}
+
+function handleSwipeCompletion(property_id, direction) {
+    const isLastCard = swipeContainer.children.length === 1; // 1 because it's evaluated before removal completes
+    recordSwipe(property_id, direction).then(isMatch => {
+        if (isMatch) {
+            setTimeout(() => window.location.href = '/match.html', 500);
+        } else if (isLastCard) {
             setTimeout(() => {
-                window.location.href = '/match.html';
+                alert('נגמרו הדירות שמתאימות לחיפוש שלך! נחפש מחדש...');
+                window.location.reload();
             }, 500);
         }
-      }
     });
-  });
 }
 
 document.getElementById('btn-nope').addEventListener('click', () => swipeAction('left'));
@@ -144,11 +146,8 @@ function swipeAction(direction) {
     topCard.style.transform = `translate(${toX}px, ${toY}px) rotate(${toX * 0.03}deg)`;
     setTimeout(() => topCard.remove(), 300);
     
-    if ((direction === 'right' || direction === 'up') && cards.length === 1) {
-        setTimeout(() => {
-            window.location.href = '/match.html';
-        }, 500);
-    }
+    const propId = topCard.dataset.id;
+    handleSwipeCompletion(propId, direction === 'left' ? 'left' : 'right');
 }
 
 initCards();
