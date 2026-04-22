@@ -10,7 +10,7 @@ from app.services.matching_engine import score_listing
 bp = Blueprint("matches", __name__)
 
 
-@bp.route("/swipe")
+@bp.route("/matches/swipe")
 @login_required
 def swipe():
     return render_template("swipe/deck.html")
