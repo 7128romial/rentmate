@@ -179,3 +179,40 @@
 .confetti-canvas {
   position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 400;
 }
+
+/* ============================================================== *
+ * RMCardStack library styles                                      *
+ * (Port of yuyakaido/CardStackView visual structure)              *
+ * ============================================================== */
+.rmcs-deck { position: relative; touch-action: none; user-select: none; }
+
+.rmcs-card {
+  background: #fff; border-radius: var(--r-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden; cursor: grab;
+}
+.rmcs-card.rmcs-front { cursor: grab; }
+.rmcs-card:active { cursor: grabbing; }
+.rmcs-card .swipe-card-inner {
+  display: flex; flex-direction: column; height: 100%;
+}
+
+/* Four-direction labels — opacity is driven by drag ratio in JS */
+.rmcs-overlay {
+  position: absolute; pointer-events: none; opacity: 0;
+  font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 1.8rem; padding: 8px 18px;
+  border: 4px solid currentColor; border-radius: 12px;
+  transition: opacity 0.05s linear;
+  z-index: 5;
+}
+.rmcs-overlay-right { color: var(--success); top: 28px; right: 28px; transform: rotate(-12deg); }
+.rmcs-overlay-left  { color: var(--error);   top: 28px; left:  28px; transform: rotate(12deg); }
+.rmcs-overlay-top   { color: var(--teal);    bottom: 80px; left: 50%; transform: translateX(-50%); }
+.rmcs-overlay-bottom{ color: var(--text-muted); top: 28px; left: 50%; transform: translateX(-50%); }
+
+.rmcs-overlay-right::before  { content: "LIKE"; }
+.rmcs-overlay-left::before   { content: "NOPE"; }
+.rmcs-overlay-top::before    { content: "SUPER"; }
+.rmcs-overlay-bottom::before { content: "PASS"; }
+
