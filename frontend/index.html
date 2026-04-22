@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - התחברות</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body class="login-body">
+    <div id="app" class="login-app">
+      <div class="login-content">
+        <h1 class="brand-title">RentMate</h1>
+        <p class="brand-subtitle">מצא את הבית הבא שלך ב-7 ימים,<br>לא ב-7 חודשים.</p>
+        
+        <form class="auth-form" id="login-form">
+          <input type="tel" id="phone-input" class="auth-input" placeholder="הזן מספר טלפון" required autocomplete="tel">
+          <button type="submit" class="btn-primary">שלח קוד ב-SMS</button>
+        </form>
+
+        <form class="auth-form hidden" id="otp-form">
+          <input type="text" id="otp-input" class="auth-input" placeholder="הזן קוד בן 4 ספרות" required autocomplete="one-time-code">
+          <button type="submit" class="btn-primary">אמת והתחבר</button>
+        </form>
+      </div>
+    </div>
+    
+    <script>
+      const loginForm = document.getElementById('login-form');
+      const otpForm = document.getElementById('otp-form');
+      const phoneInput = document.getElementById('phone-input');
+
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if(phoneInput.value) {
+          loginForm.classList.add('hidden');
+          otpForm.classList.remove('hidden');
+        }
+      });
+
+      otpForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        window.location.href = '/onboarding.html';
+      });
+    </script>
+  </body>
+</html>
