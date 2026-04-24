@@ -14,8 +14,11 @@ function createRecaptcha() {
     try { recaptchaVerifier.clear(); } catch (_) {}
     recaptchaVerifier = null;
   }
-  const container = document.getElementById('recaptcha-container');
-  if (container) container.innerHTML = '';
+  const old = document.getElementById('recaptcha-container');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+  const fresh = document.createElement('div');
+  fresh.id = 'recaptcha-container';
+  document.body.appendChild(fresh);
   recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
     size: 'invisible',
   });
