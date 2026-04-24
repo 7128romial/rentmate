@@ -1,4 +1,4 @@
-const fallback = 'https://rentmate-kgh9.onrender.com';
+const fallback = 'https://rentmate-backend-0l8z.onrender.com';
 export const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || fallback;
 
 const TOKEN_KEY = 'rentmate_token';
