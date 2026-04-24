@@ -6,3 +6,4 @@ flask-cors
 PyMySQL
 gunicorn
 openai
+python-dotenv
