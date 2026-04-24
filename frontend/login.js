@@ -42,6 +42,7 @@ function setButton(form, label, disabled) {
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const phone = normalizePhone(phoneInput.value.trim());
+  console.log('[auth] normalized phone being sent to Firebase:', JSON.stringify(phone));
   if (!phone) return;
   setButton(loginForm, 'שולח...', true);
   try {
