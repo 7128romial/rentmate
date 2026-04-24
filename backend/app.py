@@ -1,7 +1,9 @@
 import os
+import json
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+import openai
 
 app = Flask(__name__)
 CORS(app)
@@ -148,6 +150,74 @@ def swipe():
         
     db.session.commit()
     return jsonify({'success': True, 'isMatch': is_match})
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.json
+    user_id = data.get('user_id')
+    text = data.get('text')
+    if not user_id or not text:
+        return jsonify({'error': 'Missing fields'}), 400
+        
+    # Save user message
+    user_msg = models.ChatMessage(user_id=user_id, role='user', content=text)
+    db.session.add(user_msg)
+    db.session.commit()
+    
+    # Fetch history
+    history = models.ChatMessage.query.filter_by(user_id=user_id).order_by(models.ChatMessage.created_at).all()
+    messages = [
+        {"role": "system", "content": "You are RentMate AI. Ask the user questions to discover their apartment preferences (budget, city, roommates, etc). Be friendly, short, and conversational. Speak in Hebrew. When you have enough info to create a profile, output a JSON object starting with 'PROFILE_JSON=' followed by the JSON string containing: {'name', 'city', 'budget', 'type', 'extras'}. Do NOT output the JSON until you are sure you have at least a city and budget."}
+    ]
+    for msg in history:
+        messages.append({"role": msg.role, "content": msg.content})
+        
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if api_key:
+        openai.api_key = api_key
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=messages
+            )
+            ai_text = response.choices[0].message.content
+        except Exception as e:
+            print(f"OpenAI Error: {e}")
+            ai_text = "סליחה, יש לי קצת עומס במערכת. תוכל לחזור על זה?"
+    else:
+        # Mock AI response if no key
+        if 'תל אביב' in text or '5000' in text:
+            ai_text = 'PROFILE_JSON={"name":"משתמש","city":"תל אביב","budget":5000,"type":"לבד","extras":"מרפסת"}'
+        else:
+            ai_text = "מעולה! איפה היית רוצה לגור ומה התקציב שלך? (גרסת דמו)"
+            
+    # Check for profile extraction
+    profile_complete = False
+    if 'PROFILE_JSON=' in ai_text:
+        json_str = ai_text.split('PROFILE_JSON=')[1].strip()
+        try:
+            profile_data = json.loads(json_str)
+            profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
+            if not profile:
+                profile = models.PreferenceProfile(user_id=user_id)
+                db.session.add(profile)
+            profile.name = profile_data.get('name', 'משתמש')
+            profile.city = profile_data.get('city', 'תל אביב')
+            profile.max_budget = int(profile_data.get('budget', 4500))
+            profile.type = profile_data.get('type', '')
+            profile.extras = profile_data.get('extras', '')
+            db.session.commit()
+            profile_complete = True
+            ai_text = "מעולה! בניתי לך פרופיל אישי. מעביר אותך לדירות..."
+        except:
+            ai_text = "הייתה בעיה בשמירת הפרופיל, בוא ננסה שוב."
+            
+    # Save AI message
+    ai_msg = models.ChatMessage(user_id=user_id, role='assistant', content=ai_text)
+    db.session.add(ai_msg)
+    db.session.commit()
+    
+    return jsonify({'response': ai_text, 'profile_complete': profile_complete})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

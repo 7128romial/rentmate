@@ -1,18 +1,7 @@
 const messagesContainer = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
-
-const AI_SCRIPT = [
-  "היי! אני הסוכן החכם של RentMate. במקום שתמלא טופס ארוך, פשוט נדבר קצת. איך קוראים לך?",
-  "נעים מאוד! באיזה עיר את/ה מחפש/ת דירה?",
-  "מעולה. מה התקציב החודשי שלך פחות או יותר?",
-  "הבנתי. את/ה מחפש/ת דירה לבד, עם שותפים, או עם בן/בת זוג?",
-  "מעולה! יש לך חיות מחמד או בקשות מיוחדות? (מרפסת, חניה וכו')",
-  "מושלם! למדתי מה את/ה אוהב/ת. אני מכין עבורך את הדירות הכי שוות. מוכן/ה?"
-];
-
-let scriptIndex = 0;
-const userAnswers = [];
+const user_id = localStorage.getItem('rentmate_user_id');
 
 function addMessage(text, sender) {
   const msgDiv = document.createElement('div');
@@ -44,54 +33,42 @@ function removeTypingIndicator() {
   }
 }
 
-function simulateAIResponse() {
-  if (scriptIndex >= AI_SCRIPT.length) {
-    // Extract preferences
-    const cityAns = userAnswers[1] || "תל אביב";
-    const knownCities = ["תל אביב", "תל-אביב", "ירושלים", "חיפה", "רמת גן", "הרצליה", "ראשון לציון", "חולון", "פתח תקווה", "נתניה", "באר שבע", "גבעתיים", "כפר סבא", "רעננה"];
-    let foundCity = "תל אביב";
-    for (const c of knownCities) {
-      if (cityAns.includes(c)) {
-        foundCity = c;
-        break;
-      }
-    }
-    if(foundCity === "תל אביב" && !cityAns.includes("תל") && cityAns.length > 2 && cityAns.length < 15) {
-        foundCity = cityAns.trim();
-    }
-
-    const prefs = {
-      name: userAnswers[0] || "משתמש",
-      city: foundCity,
-      budget: userAnswers[2] || "4000",
-      type: userAnswers[3] || "לבד",
-      extras: userAnswers[4] || ""
-    };
-    localStorage.setItem('rentmate_prefs', JSON.stringify(prefs));
-
-    const user_id = localStorage.getItem('rentmate_user_id');
-    if (user_id) {
-        fetch('https://rentmate-kgh9.onrender.com/api/profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: user_id, ...prefs })
-        }).catch(err => console.error("API error", err));
-    }
-
-    // End of onboarding, redirect to swipe
+async function sendToAI(text) {
+  if (!user_id) {
+    // Fallback if not logged in
     setTimeout(() => {
-      window.location.href = '/swipe.html';
-    }, 1500);
+        removeTypingIndicator();
+        addMessage("שגיאה: לא מחובר למערכת.", 'ai');
+    }, 1000);
     return;
   }
   
-  showTypingIndicator();
-  
-  setTimeout(() => {
+  try {
+    const res = await fetch('https://rentmate-kgh9.onrender.com/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user_id, text: text })
+    });
+    
+    if (res.ok) {
+        const data = await res.json();
+        removeTypingIndicator();
+        addMessage(data.response, 'ai');
+        
+        if (data.profile_complete) {
+            setTimeout(() => {
+              window.location.href = '/swipe.html';
+            }, 2500);
+        }
+    } else {
+        removeTypingIndicator();
+        addMessage("סליחה, יש לי קצת עומס כרגע.", 'ai');
+    }
+  } catch (err) {
+    console.error("API Error", err);
     removeTypingIndicator();
-    addMessage(AI_SCRIPT[scriptIndex], 'ai');
-    scriptIndex++;
-  }, 1000 + Math.random() * 1000);
+    addMessage("שגיאת תקשורת עם השרת.", 'ai');
+  }
 }
 
 chatForm.addEventListener('submit', (e) => {
@@ -100,11 +77,14 @@ chatForm.addEventListener('submit', (e) => {
   if (!text) return;
   
   addMessage(text, 'user');
-  userAnswers.push(text);
   chatInput.value = '';
   
-  simulateAIResponse();
+  showTypingIndicator();
+  sendToAI(text);
 });
 
-// Start conversation
-setTimeout(() => simulateAIResponse(), 500);
+// Start conversation with a dummy trigger to let AI introduce itself
+setTimeout(() => {
+    showTypingIndicator();
+    sendToAI("שלום, אני מחפש דירה"); // trigger initial message
+}, 500);
