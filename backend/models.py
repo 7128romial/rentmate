@@ -6,7 +6,7 @@ class User(db.Model):
     phone = db.Column(db.String(20), unique=True, nullable=False)
     role = db.Column(db.String(20), nullable=False, default='renter') # 'renter', 'roommate', 'landlord'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     preferences = db.relationship('PreferenceProfile', backref='user', uselist=False)
 
 class PreferenceProfile(db.Model):
@@ -44,4 +44,14 @@ class ChatMessage(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     role = db.Column(db.String(20), nullable=False) # 'user' or 'assistant'
     content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class OtpCode(db.Model):
+    # Stores hashed OTPs so the raw code never touches the DB.
+    id = db.Column(db.Integer, primary_key=True)
+    phone = db.Column(db.String(20), nullable=False, index=True)
+    code_hash = db.Column(db.String(128), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    consumed = db.Column(db.Boolean, nullable=False, default=False)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -1,1 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Env files
+.env
 backend/.env
+frontend/.env
+frontend/.env.local
+
+# Databases (local SQLite)
+*.db
+instance/
+backend/rentmate_v3.db
+
+# Node / Vite
+node_modules/
+dist/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store

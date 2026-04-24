@@ -25,54 +25,6 @@
       </div>
     </div>
     
-    <script>
-      const loginForm = document.getElementById('login-form');
-      const otpForm = document.getElementById('otp-form');
-      const phoneInput = document.getElementById('phone-input');
-      const otpInput = document.getElementById('otp-input');
-
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const phone = phoneInput.value;
-        if(phone) {
-          try {
-            const res = await fetch('https://rentmate-kgh9.onrender.com/api/auth/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ phone })
-            });
-            if(res.ok) {
-                loginForm.classList.add('hidden');
-                otpForm.classList.remove('hidden');
-            }
-          } catch(err) {
-            console.error('API Error', err);
-            loginForm.classList.add('hidden');
-            otpForm.classList.remove('hidden');
-          }
-        }
-      });
-
-      otpForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const phone = phoneInput.value;
-        const otp = otpInput.value;
-        try {
-            const res = await fetch('https://rentmate-kgh9.onrender.com/api/auth/verify', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ phone, otp })
-            });
-            if(res.ok) {
-                const data = await res.json();
-                localStorage.setItem('rentmate_user_id', data.user_id);
-                window.location.href = '/onboarding.html';
-            }
-        } catch(err) {
-            console.error('API Error', err);
-            window.location.href = '/onboarding.html';
-        }
-      });
-    </script>
+    <script type="module" src="/login.js"></script>
   </body>
 </html>

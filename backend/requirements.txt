@@ -1,9 +1,8 @@
-Flask
-Flask-SQLAlchemy
-Flask-SocketIO
-python-dotenv
-flask-cors
-PyMySQL
-gunicorn
-openai
-python-dotenv
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+flask-cors==4.0.1
+python-dotenv==1.0.1
+itsdangerous==2.2.0
+PyMySQL==1.1.1
+gunicorn==22.0.0
+openai==0.28.1

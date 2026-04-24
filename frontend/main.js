@@ -1,7 +1,8 @@
+import { API_BASE, authHeaders, getUserId } from './src/config.js';
+
 const messagesContainer = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
-const user_id = localStorage.getItem('rentmate_user_id');
 
 function addMessage(text, sender) {
   const msgDiv = document.createElement('div');
@@ -20,7 +21,11 @@ function showTypingIndicator() {
   typingDiv.id = 'typing-indicator';
   const contentDiv = document.createElement('div');
   contentDiv.className = 'message-content typing-indicator';
-  contentDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'typing-dot';
+    contentDiv.appendChild(dot);
+  }
   typingDiv.appendChild(contentDiv);
   messagesContainer.appendChild(typingDiv);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -28,46 +33,49 @@ function showTypingIndicator() {
 
 function removeTypingIndicator() {
   const typingDiv = document.getElementById('typing-indicator');
-  if (typingDiv) {
-    typingDiv.remove();
-  }
+  if (typingDiv) typingDiv.remove();
 }
 
 async function sendToAI(text) {
-  if (!user_id) {
-    // Fallback if not logged in
+  if (!getUserId()) {
     setTimeout(() => {
-        removeTypingIndicator();
-        addMessage("שגיאה: לא מחובר למערכת.", 'ai');
+      removeTypingIndicator();
+      addMessage('שגיאה: לא מחובר למערכת.', 'ai');
     }, 1000);
     return;
   }
-  
+
   try {
-    const res = await fetch('https://rentmate-kgh9.onrender.com/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user_id, text: text })
+    const res = await fetch(`${API_BASE}/api/chat`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ text }),
     });
-    
-    if (res.ok) {
-        const data = await res.json();
-        removeTypingIndicator();
-        addMessage(data.response, 'ai');
-        
-        if (data.profile_complete) {
-            setTimeout(() => {
-              window.location.href = '/swipe.html';
-            }, 2500);
-        }
-    } else {
-        removeTypingIndicator();
-        addMessage("סליחה, יש לי קצת עומס כרגע.", 'ai');
+
+    if (res.status === 401) {
+      removeTypingIndicator();
+      addMessage('ההפעלה פגה, התחבר שוב.', 'ai');
+      setTimeout(() => (window.location.href = '/'), 1500);
+      return;
+    }
+
+    if (!res.ok) {
+      removeTypingIndicator();
+      addMessage('סליחה, יש לי קצת עומס כרגע.', 'ai');
+      return;
+    }
+
+    const data = await res.json();
+    removeTypingIndicator();
+    addMessage(data.response, 'ai');
+
+    if (data.profile_complete) {
+      setTimeout(() => (window.location.href = '/swipe.html'), 2500);
     }
   } catch (err) {
-    console.error("API Error", err);
+    console.error('API Error', err);
     removeTypingIndicator();
-    addMessage("שגיאת תקשורת עם השרת.", 'ai');
+    addMessage('שגיאת תקשורת עם השרת.', 'ai');
   }
 }
 
@@ -75,16 +83,13 @@ chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
   if (!text) return;
-  
   addMessage(text, 'user');
   chatInput.value = '';
-  
   showTypingIndicator();
   sendToAI(text);
 });
 
-// Start conversation with a dummy trigger to let AI introduce itself
 setTimeout(() => {
-    showTypingIndicator();
-    sendToAI("שלום, אני מחפש דירה"); // trigger initial message
+  showTypingIndicator();
+  sendToAI('שלום, אני מחפש דירה');
 }, 500);
