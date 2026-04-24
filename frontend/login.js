@@ -9,8 +9,13 @@ const otpInput = document.getElementById('otp-input');
 let recaptchaVerifier = null;
 let confirmationResult = null;
 
-function ensureRecaptcha() {
-  if (recaptchaVerifier) return recaptchaVerifier;
+function createRecaptcha() {
+  if (recaptchaVerifier) {
+    try { recaptchaVerifier.clear(); } catch (_) {}
+    recaptchaVerifier = null;
+  }
+  const container = document.getElementById('recaptcha-container');
+  if (container) container.innerHTML = '';
   recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
     size: 'invisible',
   });
@@ -37,7 +42,7 @@ loginForm.addEventListener('submit', async (e) => {
   if (!phone) return;
   setButton(loginForm, 'שולח...', true);
   try {
-    const verifier = ensureRecaptcha();
+    const verifier = createRecaptcha();
     confirmationResult = await signInWithPhoneNumber(auth, phone, verifier);
     loginForm.classList.add('hidden');
     otpForm.classList.remove('hidden');
