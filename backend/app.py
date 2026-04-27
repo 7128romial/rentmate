@@ -159,7 +159,8 @@ def login():
     # Invalidate any outstanding codes for this phone before issuing a new one.
     models.OtpCode.query.filter_by(phone=phone, consumed=False).update({'consumed': True})
 
-    code = f'{secrets.randbelow(10000):04d}'
+    demo_otp = os.environ.get('DEMO_OTP')
+    code = demo_otp if demo_otp else f'{secrets.randbelow(10000):04d}'
     entry = models.OtpCode(
         phone=phone,
         code_hash=_hash_otp(code, phone),
