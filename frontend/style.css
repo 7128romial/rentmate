@@ -308,23 +308,33 @@ h1, h2, h3 {
   width: calc(100% - 32px);
   height: calc(100% - 32px);
   border-radius: 24px;
-  background-color: #2A1B38;
-  background-size: cover;
-  background-position: center;
+  background-color: var(--surface-color);
   box-shadow: var(--shadow-lg);
   will-change: transform;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   cursor: grab;
 }
+.swipe-card::-webkit-scrollbar { width: 0; }
 .swipe-card:active {
   cursor: grabbing;
 }
 .swipe-card.removed {
   pointer-events: none;
+}
+.card-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-color: #2A1B38;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 .card-gradient {
   position: absolute;
@@ -333,12 +343,114 @@ h1, h2, h3 {
   height: 60%;
   background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
   z-index: 1;
+  pointer-events: none;
 }
 .card-info {
   position: relative;
   z-index: 2;
-  padding: 32px 24px;
+  padding: 32px 24px 80px;
   color: white;
+}
+.scroll-hint {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(0,0,0,0.35);
+  padding: 6px 14px;
+  border-radius: 100px;
+  backdrop-filter: blur(6px);
+  animation: hintBounce 2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hintBounce {
+  0%, 100% { transform: translate(-50%, 0); opacity: 0.85; }
+  50% { transform: translate(-50%, 6px); opacity: 1; }
+}
+.card-details {
+  background: var(--surface-color);
+  color: var(--text-main);
+  padding: 24px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.card-details section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card-details h2 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.card-details p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.fact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+.fact {
+  background: var(--bg-color);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fact-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+.fact-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.amenity-list,
+.nearby-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.amenity-list li,
+.nearby-list li {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-main);
+  padding-right: 18px;
+  position: relative;
+}
+.amenity-list li::before {
+  content: '✓';
+  position: absolute;
+  right: 0;
+  color: var(--success);
+  font-weight: 800;
+}
+.nearby-list li::before {
+  content: '•';
+  position: absolute;
+  right: 0;
+  color: var(--primary);
+  font-weight: 800;
+}
+.card-details .map-embed iframe {
+  height: 220px;
 }
 .match-badge {
   background: var(--success);

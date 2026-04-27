@@ -2,6 +2,7 @@ import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
 import { DEMO_PROPERTIES } from './src/demo.js';
 import { renderBottomNav } from './src/nav.js';
 import { addMatch } from './src/storage.js';
+import { renderMap } from './src/maps.js';
 
 renderBottomNav('swipe');
 
@@ -10,11 +11,18 @@ const propertyById = new Map();
 const swipeContainer = document.getElementById('swipe-container');
 const currentCards = [];
 
-function createCard(property) {
-  const card = document.createElement('div');
-  card.classList.add('swipe-card');
-  card.dataset.id = property.id;
-  card.style.backgroundImage = `url(${JSON.stringify(String(property.image || ''))})`;
+function appendList(parent, items) {
+  items.forEach((text) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    parent.appendChild(li);
+  });
+}
+
+function buildHero(property) {
+  const hero = document.createElement('div');
+  hero.classList.add('card-hero');
+  hero.style.backgroundImage = `url(${JSON.stringify(String(property.image || ''))})`;
 
   const gradient = document.createElement('div');
   gradient.classList.add('card-gradient');
@@ -51,9 +59,112 @@ function createCard(property) {
   if (property.address) info.appendChild(addr);
   info.appendChild(tagsContainer);
 
-  card.appendChild(gradient);
-  card.appendChild(info);
+  const hint = document.createElement('div');
+  hint.className = 'scroll-hint';
+  hint.textContent = 'גלילה למטה לפרטים נוספים ↓';
 
+  hero.appendChild(gradient);
+  hero.appendChild(info);
+  hero.appendChild(hint);
+  return hero;
+}
+
+function buildFactRow(label, value) {
+  if (value == null || value === '') return null;
+  const row = document.createElement('div');
+  row.className = 'fact';
+  const k = document.createElement('span');
+  k.className = 'fact-label';
+  k.textContent = label;
+  const v = document.createElement('span');
+  v.className = 'fact-value';
+  v.textContent = String(value);
+  row.appendChild(k);
+  row.appendChild(v);
+  return row;
+}
+
+function buildDetails(property) {
+  const details = document.createElement('div');
+  details.classList.add('card-details');
+
+  if (property.description) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'על הדירה';
+    const p = document.createElement('p');
+    p.textContent = property.description;
+    sec.appendChild(h);
+    sec.appendChild(p);
+    details.appendChild(sec);
+  }
+
+  const facts = [
+    ['חדרים', property.rooms],
+    ['גודל', property.area ? `${property.area} מ״ר` : null],
+    ['קומה', property.floor != null ? `${property.floor}${property.totalFloors ? ` מתוך ${property.totalFloors}` : ''}` : null],
+    ['פינוי', property.available],
+    ['פיקדון', property.deposit],
+  ].filter(([, v]) => v != null && v !== '');
+  if (facts.length) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'פרטים';
+    const grid = document.createElement('div');
+    grid.className = 'fact-grid';
+    facts.forEach(([k, v]) => {
+      const row = buildFactRow(k, v);
+      if (row) grid.appendChild(row);
+    });
+    sec.appendChild(h);
+    sec.appendChild(grid);
+    details.appendChild(sec);
+  }
+
+  if (Array.isArray(property.amenities) && property.amenities.length) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'מאפיינים';
+    const ul = document.createElement('ul');
+    ul.className = 'amenity-list';
+    appendList(ul, property.amenities);
+    sec.appendChild(h);
+    sec.appendChild(ul);
+    details.appendChild(sec);
+  }
+
+  if (Array.isArray(property.nearby) && property.nearby.length) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'בסביבה';
+    const ul = document.createElement('ul');
+    ul.className = 'nearby-list';
+    appendList(ul, property.nearby);
+    sec.appendChild(h);
+    sec.appendChild(ul);
+    details.appendChild(sec);
+  }
+
+  if (property.address || (Number.isFinite(property.lat) && Number.isFinite(property.lng))) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'מיקום';
+    const mapHost = document.createElement('div');
+    sec.appendChild(h);
+    sec.appendChild(mapHost);
+    details.appendChild(sec);
+    renderMap(mapHost, property, { zoom: 15 });
+  }
+
+  return details;
+}
+
+function createCard(property) {
+  const card = document.createElement('div');
+  card.classList.add('swipe-card');
+  card.dataset.id = property.id;
+  card.appendChild(buildHero(property));
+  card.appendChild(buildDetails(property));
   return card;
 }
 
@@ -121,13 +232,15 @@ async function initCards() {
     swipeContainer.appendChild(card);
     currentCards.push(card);
 
-    const hammer = new Hammer(card);
+    const hammer = new Hammer(card, { touchAction: 'pan-y' });
+    // Horizontal-only pan; vertical drags fall through to the card's native scroll.
+    hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 12 });
 
     hammer.on('pan', (ev) => {
       if (ev.deltaX === 0) return;
       if (ev.center.x === 0 && ev.center.y === 0) return;
       const rotate = ev.deltaX * 0.05;
-      card.style.transform = `translate(${ev.deltaX}px, ${ev.deltaY}px) rotate(${rotate}deg)`;
+      card.style.transform = `translate(${ev.deltaX}px, 0) rotate(${rotate}deg)`;
     });
 
     hammer.on('panend', (ev) => {
@@ -139,10 +252,8 @@ async function initCards() {
       } else {
         const endX = Math.max(Math.abs(ev.velocity * 800), 300);
         const toX = ev.deltaX > 0 ? endX : -endX;
-        const endY = Math.abs(ev.velocity * 800) || 300;
-        const toY = ev.deltaY > 0 ? endY : -endY;
         const rotate = ev.deltaX * 0.03;
-        card.style.transform = `translate(${toX}px, ${toY + ev.deltaY}px) rotate(${rotate}deg)`;
+        card.style.transform = `translate(${toX}px, 0) rotate(${rotate}deg)`;
         setTimeout(() => card.remove(), 300);
 
         const direction = ev.deltaX > 0 ? 'right' : 'left';
