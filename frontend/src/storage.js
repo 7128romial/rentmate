@@ -94,7 +94,7 @@ export function getRole() {
 
 export function setRole(role) {
   try {
-    if (role === 'landlord' || role === 'renter') {
+    if (role === 'landlord' || role === 'renter' || role === 'roommate') {
       localStorage.setItem(ROLE_KEY, role);
     }
   } catch (e) {
