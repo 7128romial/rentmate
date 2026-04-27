@@ -1,4 +1,5 @@
-import { API_BASE, authHeaders, getUserId } from './src/config.js';
+import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
+import { DEMO_PROPERTIES } from './src/demo.js';
 
 const swipeContainer = document.getElementById('swipe-container');
 const currentCards = [];
@@ -7,8 +8,6 @@ function createCard(property) {
   const card = document.createElement('div');
   card.classList.add('swipe-card');
   card.dataset.id = property.id;
-  // Use setProperty with a URL literal that we have sanitized server-side (URL only).
-  // textContent-safe for everything else; background-image string is the one place we must accept a URL.
   card.style.backgroundImage = `url(${JSON.stringify(String(property.image || ''))})`;
 
   const gradient = document.createElement('div');
@@ -59,6 +58,11 @@ function showInterestToast() {
 }
 
 async function recordSwipe(property_id, direction) {
+  if (DEMO_MODE) {
+    // For the demo, every 3rd right-swipe "matches"; the rest just send interest.
+    const isMatch = direction !== 'left' && Math.random() < 0.33;
+    return { isMatch, interestSent: direction !== 'left' };
+  }
   if (!getUserId()) return { isMatch: false, interestSent: direction === 'right' || direction === 'up' };
   try {
     const res = await fetch(`${API_BASE}/api/swipe`, {
@@ -78,33 +82,27 @@ async function recordSwipe(property_id, direction) {
   }
 }
 
-async function initCards() {
-  const uid = getUserId();
-  if (!uid) {
-    window.location.href = '/';
-    return;
-  }
-  let properties = [];
+async function loadProperties() {
+  if (DEMO_MODE) return DEMO_PROPERTIES;
   try {
     const res = await fetch(`${API_BASE}/api/properties`, { headers: authHeaders() });
     if (res.status === 401) {
       window.location.href = '/';
-      return;
+      return [];
     }
-    properties = await res.json();
+    return await res.json();
   } catch (err) {
     console.error('API Error', err);
-    properties = [
-      {
-        id: 1,
-        title: 'סטודיו מואר בתל אביב',
-        price: '₪4,500/חודש',
-        image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80',
-        matchScore: 95,
-        tags: ['שקט', 'משופצת'],
-      },
-    ];
+    return DEMO_PROPERTIES;
   }
+}
+
+async function initCards() {
+  if (!DEMO_MODE && !getUserId()) {
+    window.location.href = '/';
+    return;
+  }
+  const properties = await loadProperties();
 
   properties.reverse().forEach((prop) => {
     const card = createCard(prop);

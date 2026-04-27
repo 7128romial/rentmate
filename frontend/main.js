@@ -1,4 +1,5 @@
-import { API_BASE, authHeaders, getUserId } from './src/config.js';
+import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
+import { nextDemoReply, resetDemoChat } from './src/demo.js';
 
 const messagesContainer = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
@@ -36,7 +37,20 @@ function removeTypingIndicator() {
   if (typingDiv) typingDiv.remove();
 }
 
+function deliverReply(payload) {
+  removeTypingIndicator();
+  addMessage(payload.response, 'ai');
+  if (payload.profile_complete) {
+    setTimeout(() => (window.location.href = '/swipe.html'), 2500);
+  }
+}
+
 async function sendToAI(text) {
+  if (DEMO_MODE) {
+    setTimeout(() => deliverReply(nextDemoReply()), 700);
+    return;
+  }
+
   if (!getUserId()) {
     setTimeout(() => {
       removeTypingIndicator();
@@ -65,13 +79,7 @@ async function sendToAI(text) {
       return;
     }
 
-    const data = await res.json();
-    removeTypingIndicator();
-    addMessage(data.response, 'ai');
-
-    if (data.profile_complete) {
-      setTimeout(() => (window.location.href = '/swipe.html'), 2500);
-    }
+    deliverReply(await res.json());
   } catch (err) {
     console.error('API Error', err);
     removeTypingIndicator();
@@ -88,6 +96,8 @@ chatForm.addEventListener('submit', (e) => {
   showTypingIndicator();
   sendToAI(text);
 });
+
+if (DEMO_MODE) resetDemoChat();
 
 setTimeout(() => {
   showTypingIndicator();
