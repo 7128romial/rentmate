@@ -10,6 +10,8 @@ export default defineConfig({
         swipe: resolve(__dirname, 'swipe.html'),
         match: resolve(__dirname, 'match.html'),
         realtime_chat: resolve(__dirname, 'realtime_chat.html'),
+        profile: resolve(__dirname, 'profile.html'),
+        matches: resolve(__dirname, 'matches.html'),
       },
     },
   },

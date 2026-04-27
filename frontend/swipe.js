@@ -1,5 +1,11 @@
 import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
 import { DEMO_PROPERTIES } from './src/demo.js';
+import { renderBottomNav } from './src/nav.js';
+import { addMatch } from './src/storage.js';
+
+renderBottomNav('swipe');
+
+const propertyById = new Map();
 
 const swipeContainer = document.getElementById('swipe-container');
 const currentCards = [];
@@ -105,6 +111,7 @@ async function initCards() {
   const properties = await loadProperties();
 
   properties.reverse().forEach((prop) => {
+    propertyById.set(String(prop.id), prop);
     const card = createCard(prop);
     swipeContainer.appendChild(card);
     currentCards.push(card);
@@ -144,7 +151,14 @@ function handleSwipeCompletion(property_id, direction) {
   const isLastCard = swipeContainer.children.length === 1;
   recordSwipe(property_id, direction).then((result) => {
     if (result.isMatch) {
-      setTimeout(() => (window.location.href = '/match.html'), 500);
+      const prop = propertyById.get(String(property_id));
+      if (prop) addMatch(prop);
+      setTimeout(() => {
+        const url = prop
+          ? `/match.html?id=${encodeURIComponent(prop.id)}`
+          : '/match.html';
+        window.location.href = url;
+      }, 500);
       return;
     }
     if (result.interestSent) showInterestToast();

@@ -1,5 +1,6 @@
 import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
 import { nextDemoReply, resetDemoChat } from './src/demo.js';
+import { setProfile } from './src/storage.js';
 
 const messagesContainer = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
@@ -41,6 +42,14 @@ function deliverReply(payload) {
   removeTypingIndicator();
   addMessage(payload.response, 'ai');
   if (payload.profile_complete) {
+    if (DEMO_MODE) {
+      setProfile({
+        city: 'תל אביב',
+        budget: 5000,
+        type: 'לבד',
+        extras: 'מרפסת, שקט',
+      });
+    }
     setTimeout(() => (window.location.href = '/swipe.html'), 2500);
   }
 }
