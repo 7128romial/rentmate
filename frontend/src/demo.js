@@ -8,6 +8,9 @@ export const DEMO_PROPERTIES = [
     image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80',
     matchScore: 98,
     tags: ['שקט', 'משופצת', 'קרוב לרכבת'],
+    address: 'פלורנטין, תל אביב',
+    lat: 32.0556,
+    lng: 34.7708,
   },
   {
     id: 'demo-2',
@@ -16,6 +19,9 @@ export const DEMO_PROPERTIES = [
     image: 'https://images.unsplash.com/photo-1502672260266-1c1de2d93688?auto=format&fit=crop&w=600&q=80',
     matchScore: 92,
     tags: ['מרווחת', 'זוגות', 'מרפסת'],
+    address: 'דיזנגוף, תל אביב',
+    lat: 32.0775,
+    lng: 34.7748,
   },
   {
     id: 'demo-3',
@@ -24,6 +30,9 @@ export const DEMO_PROPERTIES = [
     image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80',
     matchScore: 88,
     tags: ['פרימיום', 'מרפסת', 'נוף לים'],
+    address: 'הירקון, תל אביב',
+    lat: 32.0892,
+    lng: 34.7669,
   },
   {
     id: 'demo-4',
@@ -32,8 +41,15 @@ export const DEMO_PROPERTIES = [
     image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80',
     matchScore: 90,
     tags: ['גינה', 'שקט', 'מתאים לכלב'],
+    address: 'נווה צדק, תל אביב',
+    lat: 32.0617,
+    lng: 34.7619,
   },
 ];
+
+export function findDemoProperty(id) {
+  return DEMO_PROPERTIES.find((p) => String(p.id) === String(id)) || null;
+}
 
 // Scripted onboarding chat. Each user message advances the script by one step.
 const CHAT_SCRIPT = [

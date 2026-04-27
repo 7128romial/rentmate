@@ -368,6 +368,12 @@ h1, h2, h3 {
   margin-bottom: 16px;
   color: rgba(255,255,255,0.9);
 }
+.card-address {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 12px;
+}
 .card-tags {
   display: flex;
   gap: 8px;
@@ -833,3 +839,63 @@ h1, h2, h3 {
   font-weight: 700;
   box-shadow: var(--shadow-primary);
 }
+
+/* --- Map embed (shared by match + chat screens) --- */
+.map-embed {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.06);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.map-embed iframe {
+  width: 100%;
+  height: 180px;
+  border: 0;
+  display: block;
+}
+.map-address {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: var(--text-main);
+  background: var(--surface-color);
+  border-top: 1px solid rgba(0,0,0,0.05);
+  transition: background 0.2s;
+}
+.map-address:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+.match-content .map-embed {
+  width: 100%;
+  margin-bottom: 28px;
+}
+.match-content .map-address {
+  background: rgba(255,255,255,0.08);
+  color: white;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.match-content .map-address:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.chat-map-host {
+  padding: 10px 16px 0;
+  background: var(--surface-color);
+}
+.chat-map-host:empty {
+  display: none;
+}
+.chat-map-host .map-embed iframe {
+  height: 140px;
+}
+.chat-map-host .map-address {
+  background: var(--bg-color);
+}
+

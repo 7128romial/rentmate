@@ -10,14 +10,16 @@
   <body>
     <div id="app">
       <header class="chat-header">
-        <button class="back-btn" onclick="window.location.href='/match.html'" style="transform: scaleX(-1);">←</button>
-        <div class="header-avatar" style="background-image: url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80'); background-size: cover; margin-right: 0; margin-left: 16px;"></div>
+        <a class="back-btn" href="/matches.html" style="transform: scaleX(-1);">←</a>
+        <div class="header-avatar" id="chat-avatar"></div>
         <div class="header-info">
-          <h2>סטודיו מואר בפלורנטין</h2>
-          <p>הותאם היום</p>
+          <h2 id="chat-title">דירה</h2>
+          <p id="chat-subtitle">הותאם היום</p>
         </div>
       </header>
-      
+
+      <div id="chat-map-host" class="chat-map-host"></div>
+
       <div class="messages-area" id="realtime-messages">
         <div class="message ai"><div class="message-content">היי! ראיתי שעשינו מאץ'. עדיין רלוונטי?</div></div>
       </div>

@@ -62,7 +62,10 @@ function renderMatches(matches) {
     price.textContent = property.price || '';
     const meta = document.createElement('div');
     meta.className = 'meta';
-    meta.textContent = formatRelative(property.matchedAt);
+    const when = formatRelative(property.matchedAt);
+    meta.textContent = property.address
+      ? `📍 ${property.address}${when ? ` · ${when}` : ''}`
+      : when;
 
     body.appendChild(h3);
     body.appendChild(price);

@@ -33,6 +33,10 @@ function createCard(property) {
   price.classList.add('card-price');
   price.textContent = property.price;
 
+  const addr = document.createElement('p');
+  addr.classList.add('card-address');
+  if (property.address) addr.textContent = `📍 ${property.address}`;
+
   const tagsContainer = document.createElement('div');
   tagsContainer.classList.add('card-tags');
   (property.tags || []).forEach((tag) => {
@@ -44,6 +48,7 @@ function createCard(property) {
   info.appendChild(matchBadge);
   info.appendChild(title);
   info.appendChild(price);
+  if (property.address) info.appendChild(addr);
   info.appendChild(tagsContainer);
 
   card.appendChild(gradient);
