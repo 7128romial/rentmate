@@ -1269,6 +1269,102 @@ h1, h2, h3 {
   text-align: center;
 }
 
+/* --- Roommate sub-role choice cards --- */
+.choice-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.choice-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  text-align: right;
+  padding: 22px 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-md);
+}
+.choice-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.choice-card .choice-emoji {
+  font-size: 32px;
+}
+.choice-card .choice-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.choice-card .choice-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* --- "My listing" summary card on roommate host home --- */
+.my-listing-card {
+  display: flex;
+  background: var(--surface-color);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+}
+.my-listing-card .thumb {
+  width: 110px;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+.my-listing-card .body {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  justify-content: center;
+}
+.my-listing-card h3 {
+  font-size: 16px;
+  font-weight: 800;
+}
+.my-listing-card .price {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 700;
+}
+.my-listing-card .meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.renter-lifestyle {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  background: var(--bg-color);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+/* The roommate-host page also uses the .tabs component; ensure spacing
+   between the listing card and tabs feels right. */
+.screen-body > .tabs {
+  margin: 0 -24px 12px;
+}
+
 /* --- Matches screen --- */
 .match-list {
   display: flex;

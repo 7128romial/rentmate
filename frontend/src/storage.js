@@ -5,8 +5,12 @@
 const PROFILE_KEY = 'rentmate_profile';
 const MATCHES_KEY = 'rentmate_matches';
 const ROLE_KEY = 'rentmate_role';
+const SUBROLE_KEY = 'rentmate_subrole';
 const LANDLORD_REJECTED_KEY = 'rentmate_landlord_rejected';
 const LANDLORD_APPROVED_KEY = 'rentmate_landlord_approved';
+const ROOMMATE_MATCHES_KEY = 'rentmate_roommate_matches';
+const ROOMMATE_HOST_APPROVED_KEY = 'rentmate_host_approved';
+const ROOMMATE_HOST_REJECTED_KEY = 'rentmate_host_rejected';
 
 const DEFAULT_PROFILE = {
   name: '',
@@ -155,5 +159,90 @@ export function getRenterDecision(propertyId, renterId) {
   const key = decisionKey(propertyId, renterId);
   if (readSet(LANDLORD_APPROVED_KEY).has(key)) return 'approved';
   if (readSet(LANDLORD_REJECTED_KEY).has(key)) return 'rejected';
+  return 'pending';
+}
+
+// --- Roommate sub-role (host vs seeker) ---
+
+export function getSubrole() {
+  try {
+    return localStorage.getItem(SUBROLE_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+export function setSubrole(value) {
+  try {
+    if (value === 'host' || value === 'seeker') {
+      localStorage.setItem(SUBROLE_KEY, value);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+export function clearSubrole() {
+  try {
+    localStorage.removeItem(SUBROLE_KEY);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+// --- Roommate seeker: matches with other people ---
+
+export function getRoommateMatches() {
+  const list = readJSON(ROOMMATE_MATCHES_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+export function addRoommateMatch(person) {
+  if (!person || !person.id) return getRoommateMatches();
+  const list = getRoommateMatches();
+  if (list.some((p) => String(p.id) === String(person.id))) return list;
+  list.unshift({ ...person, matchedAt: new Date().toISOString() });
+  writeJSON(ROOMMATE_MATCHES_KEY, list);
+  return list;
+}
+
+export function removeRoommateMatch(id) {
+  const list = getRoommateMatches().filter((p) => String(p.id) !== String(id));
+  writeJSON(ROOMMATE_MATCHES_KEY, list);
+  return list;
+}
+
+// --- Roommate host: decisions about interested seekers ---
+
+export function approveHostInterest(personId) {
+  const approved = readSet(ROOMMATE_HOST_APPROVED_KEY);
+  const rejected = readSet(ROOMMATE_HOST_REJECTED_KEY);
+  approved.add(String(personId));
+  rejected.delete(String(personId));
+  writeSet(ROOMMATE_HOST_APPROVED_KEY, approved);
+  writeSet(ROOMMATE_HOST_REJECTED_KEY, rejected);
+}
+
+export function rejectHostInterest(personId) {
+  const approved = readSet(ROOMMATE_HOST_APPROVED_KEY);
+  const rejected = readSet(ROOMMATE_HOST_REJECTED_KEY);
+  rejected.add(String(personId));
+  approved.delete(String(personId));
+  writeSet(ROOMMATE_HOST_APPROVED_KEY, approved);
+  writeSet(ROOMMATE_HOST_REJECTED_KEY, rejected);
+}
+
+export function undoHostInterest(personId) {
+  const approved = readSet(ROOMMATE_HOST_APPROVED_KEY);
+  const rejected = readSet(ROOMMATE_HOST_REJECTED_KEY);
+  approved.delete(String(personId));
+  rejected.delete(String(personId));
+  writeSet(ROOMMATE_HOST_APPROVED_KEY, approved);
+  writeSet(ROOMMATE_HOST_REJECTED_KEY, rejected);
+}
+
+export function getHostInterestDecision(personId) {
+  if (readSet(ROOMMATE_HOST_APPROVED_KEY).has(String(personId))) return 'approved';
+  if (readSet(ROOMMATE_HOST_REJECTED_KEY).has(String(personId))) return 'rejected';
   return 'pending';
 }

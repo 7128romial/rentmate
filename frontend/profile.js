@@ -1,6 +1,6 @@
 import { clearSession } from './src/config.js';
 import { renderBottomNav } from './src/nav.js';
-import { clearProfile, clearRole, getProfile, setProfile } from './src/storage.js';
+import { clearProfile, clearRole, clearSubrole, getProfile, setProfile } from './src/storage.js';
 
 renderBottomNav('profile');
 
@@ -49,6 +49,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   clearSession();
   clearProfile();
   clearRole();
+  clearSubrole();
   window.location.href = '/';
 });
 

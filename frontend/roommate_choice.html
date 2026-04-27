@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - שותף</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body class="login-body">
+    <div id="app" class="login-app">
+      <div class="login-content">
+        <h1 class="brand-title">בחר/י מה הסיפור שלך</h1>
+        <p class="brand-subtitle">נוכל להתאים אותך טוב יותר ברגע שנדע<br>איפה את/ה עומד/ת היום.</p>
+
+        <div class="choice-stack">
+          <button class="choice-card" data-subrole="host">
+            <span class="choice-emoji">🏠</span>
+            <span class="choice-title">יש לי דירה — מחפש שותף</span>
+            <span class="choice-desc">פרסמו את החדר הפנוי שלכם, וראו מי מתעניין.</span>
+          </button>
+          <button class="choice-card" data-subrole="seeker">
+            <span class="choice-emoji">🤝</span>
+            <span class="choice-title">מחפש/ת שותף לחפש דירה ביחד</span>
+            <span class="choice-desc">החליקו על אנשים אחרים שמחפשים — מאץ' = שיחה.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/roommate_choice.js"></script>
+  </body>
+</html>

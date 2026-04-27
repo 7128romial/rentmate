@@ -3,13 +3,14 @@ import { DEMO_PROPERTIES } from './src/demo.js';
 import { renderBottomNav } from './src/nav.js';
 import { addMatch } from './src/storage.js';
 import { renderMap } from './src/maps.js';
+import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
 
 renderBottomNav('swipe');
 
 const propertyById = new Map();
+let activeProperties = [];
 
 const swipeContainer = document.getElementById('swipe-container');
-const currentCards = [];
 
 function appendList(parent, items) {
   items.forEach((text) => {
@@ -225,46 +226,22 @@ async function initCards() {
     return;
   }
   const properties = await loadProperties();
+  activeProperties = properties;
+  properties.forEach((p) => propertyById.set(String(p.id), p));
 
-  properties.reverse().forEach((prop) => {
-    propertyById.set(String(prop.id), prop);
-    const card = createCard(prop);
-    swipeContainer.appendChild(card);
-    currentCards.push(card);
-
-    const hammer = new Hammer(card, { touchAction: 'pan-y' });
-    // Horizontal-only pan; vertical drags fall through to the card's native scroll.
-    hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 12 });
-
-    hammer.on('pan', (ev) => {
-      if (ev.deltaX === 0) return;
-      if (ev.center.x === 0 && ev.center.y === 0) return;
-      const rotate = ev.deltaX * 0.05;
-      card.style.transform = `translate(${ev.deltaX}px, 0) rotate(${rotate}deg)`;
-    });
-
-    hammer.on('panend', (ev) => {
-      const keep = Math.abs(ev.deltaX) < 80;
-      card.classList.toggle('removed', !keep);
-
-      if (keep) {
-        card.style.transform = '';
-      } else {
-        const endX = Math.max(Math.abs(ev.velocity * 800), 300);
-        const toX = ev.deltaX > 0 ? endX : -endX;
-        const rotate = ev.deltaX * 0.03;
-        card.style.transform = `translate(${toX}px, 0) rotate(${rotate}deg)`;
-        setTimeout(() => card.remove(), 300);
-
-        const direction = ev.deltaX > 0 ? 'right' : 'left';
-        handleSwipeCompletion(prop.id, direction);
-      }
-    });
+  mountSwipeDeck({
+    container: swipeContainer,
+    items: properties,
+    renderCard: createCard,
+    onSwipe: (prop, direction) => handleSwipeCompletion(prop.id, direction),
+    onEmpty: () => {
+      alert('נגמרו הדירות שמתאימות לחיפוש שלך! נחפש מחדש...');
+      window.location.reload();
+    },
   });
 }
 
 function handleSwipeCompletion(property_id, direction) {
-  const isLastCard = swipeContainer.children.length === 1;
   recordSwipe(property_id, direction).then((result) => {
     if (result.isMatch) {
       const prop = propertyById.get(String(property_id));
@@ -278,36 +255,19 @@ function handleSwipeCompletion(property_id, direction) {
       return;
     }
     if (result.interestSent) showInterestToast();
-    if (isLastCard) {
-      setTimeout(() => {
-        alert('נגמרו הדירות שמתאימות לחיפוש שלך! נחפש מחדש...');
-        window.location.reload();
-      }, 500);
-    }
   });
 }
 
-document.getElementById('btn-nope').addEventListener('click', () => swipeAction('left'));
-document.getElementById('btn-like').addEventListener('click', () => swipeAction('right'));
-document.getElementById('btn-super').addEventListener('click', () => swipeAction('up'));
-
-function swipeAction(direction) {
-  const cards = document.querySelectorAll('.swipe-card:not(.removed)');
-  if (!cards.length) return;
-  const topCard = cards[cards.length - 1];
-  topCard.classList.add('removed');
-
-  let toX = 0;
-  let toY = 0;
-  if (direction === 'left') toX = -1000;
-  if (direction === 'right') toX = 1000;
-  if (direction === 'up') toY = -1000;
-
-  topCard.style.transform = `translate(${toX}px, ${toY}px) rotate(${toX * 0.03}deg)`;
-  setTimeout(() => topCard.remove(), 300);
-
-  const propId = topCard.dataset.id;
-  handleSwipeCompletion(propId, direction);
-}
+const onClickSwipe = (direction) =>
+  programmaticSwipe(
+    swipeContainer,
+    direction,
+    (item, dir) => handleSwipeCompletion(item.id, dir),
+    null,
+    activeProperties,
+  );
+document.getElementById('btn-nope').addEventListener('click', () => onClickSwipe('left'));
+document.getElementById('btn-like').addEventListener('click', () => onClickSwipe('right'));
+document.getElementById('btn-super').addEventListener('click', () => onClickSwipe('up'));
 
 initCards();

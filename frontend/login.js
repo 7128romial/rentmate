@@ -27,7 +27,9 @@ function showError(input, message) {
 }
 
 function landingFor(roleValue) {
-  return roleValue === 'landlord' ? '/landlord.html' : '/onboarding.html';
+  if (roleValue === 'landlord') return '/landlord.html';
+  if (roleValue === 'roommate') return '/roommate_choice.html';
+  return '/onboarding.html';
 }
 
 loginForm.addEventListener('submit', async (e) => {
