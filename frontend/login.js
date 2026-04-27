@@ -1,14 +1,33 @@
 import { API_BASE, DEMO_MODE, DEMO_OTP, setSession } from './src/config.js';
 import { fakeSession } from './src/demo.js';
+import { setRole } from './src/storage.js';
 
 const loginForm = document.getElementById('login-form');
 const otpForm = document.getElementById('otp-form');
 const phoneInput = document.getElementById('phone-input');
 const otpInput = document.getElementById('otp-input');
+const roleButtons = document.querySelectorAll('.role-option');
+
+let role = 'renter';
+
+roleButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    role = btn.dataset.role || 'renter';
+    roleButtons.forEach((b) => {
+      const isActive = b === btn;
+      b.classList.toggle('active', isActive);
+      b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+  });
+});
 
 function showError(input, message) {
   input.value = '';
   input.placeholder = message;
+}
+
+function landingFor(roleValue) {
+  return roleValue === 'landlord' ? '/landlord.html' : '/onboarding.html';
 }
 
 loginForm.addEventListener('submit', async (e) => {
@@ -52,7 +71,8 @@ otpForm.addEventListener('submit', async (e) => {
       return;
     }
     setSession(fakeSession(phone));
-    window.location.href = '/onboarding.html';
+    setRole(role);
+    window.location.href = landingFor(role);
     return;
   }
 
@@ -69,7 +89,8 @@ otpForm.addEventListener('submit', async (e) => {
     }
     const data = await res.json();
     setSession({ user_id: data.user_id, token: data.token });
-    window.location.href = '/onboarding.html';
+    setRole(role);
+    window.location.href = landingFor(role);
   } catch (err) {
     console.error('API Error', err);
     showError(otpInput, 'אין חיבור לשרת');

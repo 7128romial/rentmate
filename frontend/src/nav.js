@@ -1,7 +1,6 @@
-// Renders a shared bottom tab bar inside any element with id="bottom-nav".
-// Pass the active key: "swipe" | "matches" | "profile".
+import { getRole } from './storage.js';
 
-const ITEMS = [
+const RENTER_ITEMS = [
   {
     key: 'swipe',
     href: '/swipe.html',
@@ -25,12 +24,37 @@ const ITEMS = [
   },
 ];
 
+const LANDLORD_ITEMS = [
+  {
+    key: 'landlord',
+    href: '/landlord.html',
+    label: 'הדירות שלי',
+    icon:
+      '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+  },
+  {
+    key: 'inquiries',
+    href: '/landlord_inquiries.html',
+    label: 'פניות',
+    icon:
+      '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+  },
+  {
+    key: 'profile',
+    href: '/profile.html',
+    label: 'פרופיל',
+    icon:
+      '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+  },
+];
+
 export function renderBottomNav(activeKey) {
   const host = document.getElementById('bottom-nav');
   if (!host) return;
   host.classList.add('bottom-nav');
   host.innerHTML = '';
-  ITEMS.forEach((item) => {
+  const items = getRole() === 'landlord' ? LANDLORD_ITEMS : RENTER_ITEMS;
+  items.forEach((item) => {
     const a = document.createElement('a');
     a.className = 'nav-item' + (item.key === activeKey ? ' active' : '');
     a.href = item.href;

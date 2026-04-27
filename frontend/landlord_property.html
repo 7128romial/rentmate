@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - דירה</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="screen-header with-back">
+        <a class="back-btn" href="/landlord.html" style="transform: scaleX(-1);">←</a>
+        <div>
+          <h1 id="property-title">דירה</h1>
+          <p id="property-subtitle"></p>
+        </div>
+      </header>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="pending" role="tab" aria-selected="true">מתעניינים <span class="tab-count" id="count-pending">0</span></button>
+        <button class="tab" data-tab="approved" role="tab" aria-selected="false">התאמות <span class="tab-count" id="count-approved">0</span></button>
+      </div>
+
+      <div class="screen-body">
+        <div id="renter-list" class="renter-list"></div>
+      </div>
+
+      <nav id="bottom-nav"></nav>
+    </div>
+    <script type="module" src="/landlord_property.js"></script>
+  </body>
+</html>

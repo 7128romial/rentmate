@@ -91,6 +91,94 @@ export function findDemoProperty(id) {
   return DEMO_PROPERTIES.find((p) => String(p.id) === String(id)) || null;
 }
 
+// Mock renter profiles used by the landlord side. In demo mode each property
+// is shown to have a subset of these renters interested in it.
+export const DEMO_RENTERS = [
+  {
+    id: 'renter-1',
+    name: 'דנה לוי',
+    age: 28,
+    occupation: 'מעצבת UI',
+    budget: 4500,
+    movingFrom: 'באר שבע',
+    bio: 'מחפשת מקום שקט, אוהבת לבשל ולעבוד מהבית.',
+    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    matchScore: 96,
+  },
+  {
+    id: 'renter-2',
+    name: 'יונתן כהן',
+    age: 31,
+    occupation: 'מהנדס תוכנה',
+    budget: 5200,
+    movingFrom: 'חיפה',
+    bio: 'מתעבר עקב עבודה חדשה. מסודר, ללא חיות.',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    matchScore: 92,
+  },
+  {
+    id: 'renter-3',
+    name: 'מאיה ושירן',
+    age: 26,
+    occupation: 'סטודנטיות',
+    budget: 4800,
+    movingFrom: 'תל אביב',
+    bio: 'זוג שותפות שמחפשות דירה בקרבת התחבורה הציבורית.',
+    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
+    matchScore: 90,
+  },
+  {
+    id: 'renter-4',
+    name: 'אסף ברק',
+    age: 34,
+    occupation: 'שף',
+    budget: 5500,
+    movingFrom: 'ירושלים',
+    bio: 'אוהב לבשל לאורחים, מחפש מטבח גדול ושכנים סלחניים.',
+    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
+    matchScore: 88,
+  },
+  {
+    id: 'renter-5',
+    name: 'נועה אברהם',
+    age: 29,
+    occupation: 'יועצת ארגונית',
+    budget: 4700,
+    movingFrom: 'רעננה',
+    bio: 'בעלת כלב קטן ושקט (2 ק״ג). עובדת רוב הזמן מחוץ לבית.',
+    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    matchScore: 85,
+  },
+  {
+    id: 'renter-6',
+    name: 'עומר ניר',
+    age: 27,
+    occupation: 'מורה לאנגלית',
+    budget: 4200,
+    movingFrom: 'הרצליה',
+    bio: 'נכנס לעבודה חדשה בתל אביב, חיפוש שקט וקרוב לתחבורה.',
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
+    matchScore: 83,
+  },
+];
+
+// Deterministic mapping of which renters showed interest in which property.
+// Keeps the demo stable across reloads instead of randomising each visit.
+const PROPERTY_INTERESTS = {
+  'demo-1': ['renter-1', 'renter-2', 'renter-6'],
+  'demo-2': ['renter-3', 'renter-2'],
+  'demo-3': ['renter-4', 'renter-2', 'renter-5'],
+  'demo-4': ['renter-5', 'renter-1', 'renter-3', 'renter-6'],
+};
+
+export function getInterestedRenterIds(propertyId) {
+  return PROPERTY_INTERESTS[String(propertyId)] || [];
+}
+
+export function findDemoRenter(id) {
+  return DEMO_RENTERS.find((r) => String(r.id) === String(id)) || null;
+}
+
 // Scripted onboarding chat. Each user message advances the script by one step.
 const CHAT_SCRIPT = [
   { ai: 'היי! אני RentMate. בוא נמצא לך את הדירה הבאה. איפה היית רוצה לגור?' },

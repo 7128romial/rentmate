@@ -4,6 +4,9 @@
 
 const PROFILE_KEY = 'rentmate_profile';
 const MATCHES_KEY = 'rentmate_matches';
+const ROLE_KEY = 'rentmate_role';
+const LANDLORD_REJECTED_KEY = 'rentmate_landlord_rejected';
+const LANDLORD_APPROVED_KEY = 'rentmate_landlord_approved';
 
 const DEFAULT_PROFILE = {
   name: '',
@@ -73,4 +76,84 @@ export function removeMatch(id) {
 
 export function getMatch(id) {
   return getMatches().find((m) => String(m.id) === String(id)) || null;
+}
+
+// --- Role ---
+
+export function getRole() {
+  try {
+    return localStorage.getItem(ROLE_KEY) || 'renter';
+  } catch (e) {
+    return 'renter';
+  }
+}
+
+export function setRole(role) {
+  try {
+    if (role === 'landlord' || role === 'renter') {
+      localStorage.setItem(ROLE_KEY, role);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+export function clearRole() {
+  try {
+    localStorage.removeItem(ROLE_KEY);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+// --- Landlord-side decisions on interested renters ---
+
+function readSet(key) {
+  const arr = readJSON(key, []);
+  return new Set(Array.isArray(arr) ? arr.map(String) : []);
+}
+
+function writeSet(key, set) {
+  writeJSON(key, Array.from(set));
+}
+
+function decisionKey(propertyId, renterId) {
+  return `${propertyId}::${renterId}`;
+}
+
+export function approveRenter(propertyId, renterId) {
+  const approved = readSet(LANDLORD_APPROVED_KEY);
+  const rejected = readSet(LANDLORD_REJECTED_KEY);
+  const key = decisionKey(propertyId, renterId);
+  approved.add(key);
+  rejected.delete(key);
+  writeSet(LANDLORD_APPROVED_KEY, approved);
+  writeSet(LANDLORD_REJECTED_KEY, rejected);
+}
+
+export function rejectRenter(propertyId, renterId) {
+  const approved = readSet(LANDLORD_APPROVED_KEY);
+  const rejected = readSet(LANDLORD_REJECTED_KEY);
+  const key = decisionKey(propertyId, renterId);
+  rejected.add(key);
+  approved.delete(key);
+  writeSet(LANDLORD_APPROVED_KEY, approved);
+  writeSet(LANDLORD_REJECTED_KEY, rejected);
+}
+
+export function undoRenterDecision(propertyId, renterId) {
+  const approved = readSet(LANDLORD_APPROVED_KEY);
+  const rejected = readSet(LANDLORD_REJECTED_KEY);
+  const key = decisionKey(propertyId, renterId);
+  approved.delete(key);
+  rejected.delete(key);
+  writeSet(LANDLORD_APPROVED_KEY, approved);
+  writeSet(LANDLORD_REJECTED_KEY, rejected);
+}
+
+export function getRenterDecision(propertyId, renterId) {
+  const key = decisionKey(propertyId, renterId);
+  if (readSet(LANDLORD_APPROVED_KEY).has(key)) return 'approved';
+  if (readSet(LANDLORD_REJECTED_KEY).has(key)) return 'rejected';
+  return 'pending';
 }

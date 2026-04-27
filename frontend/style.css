@@ -984,6 +984,291 @@ h1, h2, h3 {
   background: rgba(0,0,0,0.06);
 }
 
+/* --- Role toggle on login --- */
+.role-toggle {
+  display: flex;
+  width: 100%;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.role-option {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  color: rgba(255,255,255,0.75);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.role-option.active {
+  background: var(--surface-color);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Screen header with back button --- */
+.screen-header.with-back {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.screen-header.with-back .back-btn {
+  font-size: 28px;
+  margin-top: -2px;
+  text-decoration: none;
+}
+
+/* --- Landlord home: property cards --- */
+.landlord-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.landlord-card {
+  display: flex;
+  background: var(--surface-color);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: var(--text-main);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.landlord-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.landlord-card .thumb {
+  width: 120px;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+.landlord-card .body {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.landlord-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.landlord-card .price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.landlord-card .meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.landlord-stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.landlord-stats .stat {
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.landlord-stats .stat.pending {
+  background: rgba(255,56,92,0.1);
+  color: var(--primary);
+}
+.landlord-stats .stat.approved {
+  background: rgba(0,198,137,0.12);
+  color: var(--success);
+}
+
+/* --- Tabs (used on landlord property detail) --- */
+.tabs {
+  display: flex;
+  background: var(--surface-color);
+  padding: 0 24px;
+  gap: 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 14px 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.tab-count {
+  background: var(--bg-color);
+  color: var(--text-muted);
+  padding: 1px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.tab.active .tab-count {
+  background: rgba(255,56,92,0.12);
+  color: var(--primary);
+}
+
+/* --- Renter cards --- */
+.renter-list,
+.inquiries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.renter-card,
+.inquiry-card {
+  background: var(--surface-color);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.renter-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.renter-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--secondary-gradient);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+.renter-head {
+  flex: 1;
+  min-width: 0;
+}
+.renter-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.renter-name-row h3 {
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.renter-score {
+  background: rgba(0,198,137,0.12);
+  color: var(--success);
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.renter-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.renter-bio {
+  font-size: 14px;
+  color: var(--text-main);
+  line-height: 1.5;
+  font-weight: 500;
+}
+.inquiry-property {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  background: var(--bg-color);
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+}
+.inquiry-property:hover {
+  color: var(--primary);
+}
+.renter-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.icon-btn:active {
+  transform: scale(0.92);
+}
+.icon-btn.reject {
+  background: var(--surface-color);
+  color: #FD5068;
+  border: 1px solid rgba(253,80,104,0.2);
+}
+.icon-btn.reject:hover {
+  background: rgba(253,80,104,0.08);
+}
+.icon-btn.approve {
+  background: var(--success);
+  color: white;
+}
+.icon-btn.approve:hover {
+  filter: brightness(1.05);
+}
+.chat-btn {
+  flex: 1;
+  width: auto;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-decoration: none;
+  text-align: center;
+}
+
 /* --- Matches screen --- */
 .match-list {
   display: flex;
