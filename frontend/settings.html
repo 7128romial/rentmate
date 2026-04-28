@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - הגדרות</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="screen-header with-back">
+        <a class="back-btn" href="/profile.html" style="transform: scaleX(-1);">←</a>
+        <div>
+          <h1>הגדרות</h1>
+          <p>שליטה בהתראות, שפה ופרטיות.</p>
+        </div>
+      </header>
+
+      <div class="screen-body">
+        <section class="settings-section">
+          <h2>התראות</h2>
+          <label class="settings-row">
+            <div class="settings-text">
+              <strong>התראות אפליקציה</strong>
+              <span>קבלי התראה כשיש מאץ' או הודעה חדשה.</span>
+            </div>
+            <span class="toggle">
+              <input id="setting-notifications" type="checkbox">
+              <span class="toggle-track"></span>
+            </span>
+          </label>
+        </section>
+
+        <section class="settings-section">
+          <h2>שפה</h2>
+          <label class="settings-row">
+            <div class="settings-text">
+              <strong>שפת הממשק</strong>
+              <span>שפה בה מוצגות הודעות ה-AI ופרטי המסכים.</span>
+            </div>
+            <select id="setting-language" class="profile-input compact">
+              <option value="he">עברית</option>
+              <option value="en" disabled>English (בקרוב)</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="settings-section">
+          <h2>פרטיות</h2>
+          <div class="settings-row">
+            <div class="settings-text">
+              <strong>מי יכול/ה לראות את הפרופיל שלי</strong>
+              <span>שלוט/י מי רואה את הפרטים האישיים שלך.</span>
+            </div>
+          </div>
+          <div class="radio-stack">
+            <label><input type="radio" name="privacy" value="public"> כל מי שגולש/ת באפליקציה</label>
+            <label><input type="radio" name="privacy" value="matches-only"> רק מי שעשינו מאץ'</label>
+            <label><input type="radio" name="privacy" value="hidden"> מוסתר/ת לחלוטין</label>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h2>נתונים מקומיים</h2>
+          <div class="settings-row">
+            <div class="settings-text">
+              <strong>איפוס דמו</strong>
+              <span>מחיקת התאמות, הודעות ופרופיל וחזרה למסך כניסה.</span>
+            </div>
+            <button id="reset-demo" class="btn-ghost danger" type="button">איפוס</button>
+          </div>
+        </section>
+      </div>
+
+      <nav id="bottom-nav"></nav>
+    </div>
+    <script type="module" src="/settings.js"></script>
+  </body>
+</html>

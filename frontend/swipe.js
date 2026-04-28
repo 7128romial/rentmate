@@ -1,7 +1,7 @@
 import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
-import { DEMO_PROPERTIES } from './src/demo.js';
+import { DEMO_PROPERTIES, DEMO_SHARED_LISTINGS } from './src/demo.js';
 import { renderBottomNav } from './src/nav.js';
-import { addMatch } from './src/storage.js';
+import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './src/storage.js';
 import { renderMap } from './src/maps.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
 
@@ -34,6 +34,13 @@ function buildHero(property) {
   const matchBadge = document.createElement('div');
   matchBadge.classList.add('match-badge');
   matchBadge.textContent = `התאמה של ${property.matchScore}%`;
+
+  if (property.kind === 'shared') {
+    const sharedBadge = document.createElement('div');
+    sharedBadge.classList.add('shared-badge');
+    sharedBadge.textContent = '🛏 חדר בדירת שותפים';
+    info.appendChild(sharedBadge);
+  }
 
   const title = document.createElement('h3');
   title.textContent = property.title;
@@ -205,8 +212,32 @@ async function recordSwipe(property_id, direction) {
   }
 }
 
+function priceToNumber(value) {
+  if (typeof value === 'number') return value;
+  const digits = String(value || '').replace(/[^\d]/g, '');
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function applyFilters(items, prefs) {
+  return items.filter((item) => {
+    if (item.kind === 'shared' && prefs.includeShared === false) return false;
+    if (prefs.area) {
+      const hay = `${item.title || ''} ${item.address || ''} ${item.location || ''}`.toLowerCase();
+      if (!hay.includes(prefs.area.toLowerCase())) return false;
+    }
+    const price = priceToNumber(item.price);
+    if (price && prefs.minPrice && price < prefs.minPrice) return false;
+    if (price && prefs.maxPrice && price > prefs.maxPrice) return false;
+    if (prefs.minRooms && item.rooms != null && Number(item.rooms) < prefs.minRooms) return false;
+    return true;
+  });
+}
+
 async function loadProperties() {
-  if (DEMO_MODE) return DEMO_PROPERTIES;
+  if (DEMO_MODE) {
+    return [...getUserProperties(), ...DEMO_PROPERTIES, ...DEMO_SHARED_LISTINGS];
+  }
   try {
     const res = await fetch(`${API_BASE}/api/properties`, { headers: authHeaders() });
     if (res.status === 401) {
@@ -220,23 +251,54 @@ async function loadProperties() {
   }
 }
 
+function showEmptyState() {
+  swipeContainer.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.className = 'swipe-empty-state';
+  const h3 = document.createElement('h3');
+  h3.textContent = 'אין דירות שתואמות לסינון';
+  const p = document.createElement('p');
+  p.textContent = 'נסי להרחיב את הטווח או לבטל סינונים.';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-primary';
+  btn.textContent = 'איפוס סינון';
+  btn.addEventListener('click', () => {
+    setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true });
+    refreshSubtitle();
+    initCards();
+  });
+  empty.appendChild(h3);
+  empty.appendChild(p);
+  empty.appendChild(btn);
+  swipeContainer.appendChild(empty);
+}
+
 async function initCards() {
   if (!DEMO_MODE && !getUserId()) {
     window.location.href = '/';
     return;
   }
-  const properties = await loadProperties();
-  activeProperties = properties;
-  properties.forEach((p) => propertyById.set(String(p.id), p));
+  swipeContainer.innerHTML = '';
+  const all = await loadProperties();
+  const prefs = getFilterPrefs();
+  const filtered = applyFilters(all, prefs);
+  activeProperties = filtered;
+  filtered.forEach((p) => propertyById.set(String(p.id), p));
+
+  if (filtered.length === 0) {
+    showEmptyState();
+    return;
+  }
 
   mountSwipeDeck({
     container: swipeContainer,
-    items: properties,
+    items: filtered,
     renderCard: createCard,
     onSwipe: (prop, direction) => handleSwipeCompletion(prop.id, direction),
     onEmpty: () => {
-      alert('נגמרו הדירות שמתאימות לחיפוש שלך! נחפש מחדש...');
-      window.location.reload();
+      alert('עברנו על כל הדירות שמתאימות לחיפוש. נטעין שוב...');
+      initCards();
     },
   });
 }
@@ -270,4 +332,91 @@ document.getElementById('btn-nope').addEventListener('click', () => onClickSwipe
 document.getElementById('btn-like').addEventListener('click', () => onClickSwipe('right'));
 document.getElementById('btn-super').addEventListener('click', () => onClickSwipe('up'));
 
+// --- Filter sheet wiring ---
+
+const filterBtn = document.getElementById('filter-btn');
+const filterSheet = document.getElementById('filter-sheet');
+const filterDot = document.getElementById('filter-active-dot');
+const subtitle = document.getElementById('swipe-subtitle');
+const filterArea = document.getElementById('filter-area');
+const filterMin = document.getElementById('filter-min-price');
+const filterMax = document.getElementById('filter-max-price');
+const filterRooms = document.getElementById('filter-rooms');
+const filterShared = document.getElementById('filter-include-shared');
+
+function isFilterActive(prefs) {
+  const def = { area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true };
+  return (
+    prefs.area !== def.area ||
+    prefs.minPrice !== def.minPrice ||
+    prefs.maxPrice !== def.maxPrice ||
+    prefs.minRooms !== def.minRooms ||
+    prefs.includeShared !== def.includeShared
+  );
+}
+
+function refreshSubtitle() {
+  const prefs = getFilterPrefs();
+  filterDot.hidden = !isFilterActive(prefs);
+  if (!isFilterActive(prefs)) {
+    subtitle.textContent = 'גלה התאמות חדשות';
+    return;
+  }
+  const parts = [];
+  if (prefs.area) parts.push(prefs.area);
+  if (prefs.minPrice || prefs.maxPrice) parts.push(`₪${prefs.minPrice || 0}-${prefs.maxPrice || '∞'}`);
+  if (prefs.minRooms) parts.push(`${prefs.minRooms}+ חד׳`);
+  if (!prefs.includeShared) parts.push('בלי שותפים');
+  subtitle.textContent = parts.join(' · ');
+}
+
+function loadFilterIntoForm() {
+  const prefs = getFilterPrefs();
+  filterArea.value = prefs.area || '';
+  filterMin.value = prefs.minPrice || '';
+  filterMax.value = prefs.maxPrice && prefs.maxPrice !== 10000 ? prefs.maxPrice : '';
+  filterRooms.value = String(prefs.minRooms || 0);
+  filterShared.checked = prefs.includeShared !== false;
+}
+
+function openSheet() {
+  loadFilterIntoForm();
+  filterSheet.hidden = false;
+  requestAnimationFrame(() => filterSheet.classList.add('open'));
+}
+
+function closeSheet() {
+  filterSheet.classList.remove('open');
+  setTimeout(() => (filterSheet.hidden = true), 220);
+}
+
+filterBtn.addEventListener('click', openSheet);
+filterSheet.querySelector('.filter-close').addEventListener('click', closeSheet);
+filterSheet.addEventListener('click', (e) => {
+  if (e.target === filterSheet) closeSheet();
+});
+
+document.getElementById('filter-reset').addEventListener('click', () => {
+  setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true });
+  refreshSubtitle();
+  closeSheet();
+  initCards();
+});
+
+document.getElementById('filter-apply').addEventListener('click', () => {
+  const minPrice = parseInt(filterMin.value, 10);
+  const maxPrice = parseInt(filterMax.value, 10);
+  setFilterPrefs({
+    area: filterArea.value.trim(),
+    minPrice: Number.isFinite(minPrice) ? minPrice : 0,
+    maxPrice: Number.isFinite(maxPrice) && maxPrice > 0 ? maxPrice : 10000,
+    minRooms: parseInt(filterRooms.value, 10) || 0,
+    includeShared: !!filterShared.checked,
+  });
+  refreshSubtitle();
+  closeSheet();
+  initCards();
+});
+
+refreshSubtitle();
 initCards();

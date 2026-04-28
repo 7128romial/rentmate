@@ -1367,6 +1367,295 @@ h1, h2, h3 {
   margin: 0 -24px 12px;
 }
 
+/* --- Header CTA + filter button --- */
+.screen-header.with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.header-cta {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-primary);
+}
+.header-icon-btn {
+  background: var(--bg-color);
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+  cursor: pointer;
+  margin-inline-start: auto;
+  position: relative;
+  transition: background 0.2s, transform 0.1s;
+}
+.header-icon-btn:hover { background: rgba(0,0,0,0.06); }
+.header-icon-btn:active { transform: scale(0.94); }
+.header-icon-btn .dot {
+  position: absolute;
+  top: 9px;
+  inset-inline-end: 9px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--surface-color);
+}
+
+/* --- Filter sheet (overlay modal) --- */
+.filter-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+.filter-sheet.open {
+  background: rgba(0,0,0,0.4);
+}
+.filter-sheet-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface-color);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 22px calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(100%);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+.filter-sheet.open .filter-sheet-card { transform: translateY(0); }
+.filter-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.filter-sheet-head h3 {
+  font-size: 20px;
+  font-weight: 800;
+}
+.filter-close {
+  background: var(--bg-color);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.filter-field > label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.filter-row-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-row-inline .profile-input { flex: 1; }
+.filter-dash { color: var(--text-muted); font-weight: 700; }
+.filter-toggle-row {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-color);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.filter-actions .btn-primary { flex: 2; }
+.filter-actions .btn-ghost { flex: 1; }
+
+/* --- iOS-style toggle --- */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  border-radius: 100px;
+  transition: background 0.2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s;
+}
+.toggle input:checked + .toggle-track {
+  background: var(--success);
+}
+.toggle input:checked + .toggle-track::after {
+  transform: translateX(-18px);
+}
+[dir="ltr"] .toggle input:checked + .toggle-track::after {
+  transform: translateX(18px);
+}
+
+/* --- Shared-listing badge on cards --- */
+.shared-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  align-self: flex-start;
+}
+
+/* --- Forms: side-by-side fields + section title --- */
+.profile-field-row {
+  display: flex;
+  gap: 12px;
+}
+.profile-field-row .profile-field { flex: 1; }
+.form-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+
+/* --- Settings page --- */
+.settings-section {
+  background: var(--surface-color);
+  border-radius: 18px;
+  padding: 18px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.settings-section h2 {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 0;
+}
+.settings-text { display: flex; flex-direction: column; gap: 2px; }
+.settings-text strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.settings-text span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.profile-input.compact {
+  padding: 10px 14px;
+  font-size: 16px;
+  width: auto;
+  min-width: 140px;
+  box-shadow: none;
+  background: var(--bg-color);
+}
+.radio-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.radio-stack label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-color);
+  cursor: pointer;
+}
+.btn-ghost.danger {
+  color: #FD5068;
+}
+.btn-ghost.danger:hover {
+  background: rgba(253,80,104,0.08);
+}
+
+/* --- Empty state inside swipe (no cards match filter) --- */
+.swipe-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 40px 24px;
+  width: calc(100% - 32px);
+  max-width: 400px;
+  background: var(--surface-color);
+  border-radius: 24px;
+  box-shadow: var(--shadow-md);
+}
+.swipe-empty-state h3 {
+  font-size: 18px;
+  font-weight: 800;
+}
+.swipe-empty-state p {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
 /* --- Matches screen --- */
 .match-list {
   display: flex;

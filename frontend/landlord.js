@@ -1,6 +1,6 @@
 import { renderBottomNav } from './src/nav.js';
 import { DEMO_PROPERTIES, getInterestedRenterIds } from './src/demo.js';
-import { getRenterDecision, getRole } from './src/storage.js';
+import { getRenterDecision, getRole, getUserProperties, removeUserProperty } from './src/storage.js';
 
 if (getRole() !== 'landlord') {
   window.location.replace('/swipe.html');
@@ -28,7 +28,26 @@ function render() {
   let totalPending = 0;
   let totalApproved = 0;
 
-  DEMO_PROPERTIES.forEach((property) => {
+  const all = [...getUserProperties(), ...DEMO_PROPERTIES];
+  if (all.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    const h = document.createElement('h3');
+    h.textContent = 'עדיין אין דירות';
+    const p = document.createElement('p');
+    p.textContent = 'הוסיפי את הדירה הראשונה שלך כדי להתחיל לקבל פניות.';
+    const cta = document.createElement('a');
+    cta.href = '/landlord_add.html';
+    cta.textContent = '+ הוסף דירה';
+    empty.appendChild(h);
+    empty.appendChild(p);
+    empty.appendChild(cta);
+    list.appendChild(empty);
+    subtitle.textContent = 'אין עדיין דירות.';
+    return;
+  }
+
+  all.forEach((property) => {
     const { pending, approved } = countsFor(property.id);
     totalPending += pending;
     totalApproved += approved;

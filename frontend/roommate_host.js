@@ -5,6 +5,7 @@ import {
   getHostInterestDecision,
   getRole,
   getSubrole,
+  getUserListing,
   rejectHostInterest,
   undoHostInterest,
 } from './src/storage.js';
@@ -15,7 +16,7 @@ if (getRole() !== 'roommate' || getSubrole() !== 'host') {
 
 renderBottomNav('roommate-host');
 
-const listing = DEMO_MY_LISTING;
+const listing = getUserListing() || DEMO_MY_LISTING;
 const listingHost = document.getElementById('my-listing-card');
 const list = document.getElementById('people-list');
 const subtitle = document.getElementById('host-subtitle');

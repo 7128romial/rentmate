@@ -11,6 +11,11 @@ const LANDLORD_APPROVED_KEY = 'rentmate_landlord_approved';
 const ROOMMATE_MATCHES_KEY = 'rentmate_roommate_matches';
 const ROOMMATE_HOST_APPROVED_KEY = 'rentmate_host_approved';
 const ROOMMATE_HOST_REJECTED_KEY = 'rentmate_host_rejected';
+const USER_PROPERTIES_KEY = 'rentmate_user_properties';
+const USER_LISTING_KEY = 'rentmate_user_listing';
+const FILTER_PREFS_KEY = 'rentmate_filter_prefs';
+const CHAT_MESSAGES_PREFIX = 'rentmate_chat_';
+const SETTINGS_KEY = 'rentmate_settings';
 
 const DEFAULT_PROFILE = {
   name: '',
@@ -245,4 +250,140 @@ export function getHostInterestDecision(personId) {
   if (readSet(ROOMMATE_HOST_APPROVED_KEY).has(String(personId))) return 'approved';
   if (readSet(ROOMMATE_HOST_REJECTED_KEY).has(String(personId))) return 'rejected';
   return 'pending';
+}
+
+// --- User-created properties (landlord adds one or more) ---
+
+export function getUserProperties() {
+  const list = readJSON(USER_PROPERTIES_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+export function addUserProperty(property) {
+  if (!property) return getUserProperties();
+  const list = getUserProperties();
+  const id = property.id || `user-${Date.now()}`;
+  list.unshift({ ...property, id, createdAt: new Date().toISOString() });
+  writeJSON(USER_PROPERTIES_KEY, list);
+  return list;
+}
+
+export function updateUserProperty(id, patch) {
+  const list = getUserProperties().map((p) =>
+    String(p.id) === String(id) ? { ...p, ...patch } : p,
+  );
+  writeJSON(USER_PROPERTIES_KEY, list);
+  return list;
+}
+
+export function removeUserProperty(id) {
+  const list = getUserProperties().filter((p) => String(p.id) !== String(id));
+  writeJSON(USER_PROPERTIES_KEY, list);
+  return list;
+}
+
+// --- User listing (roommate host owns at most one) ---
+
+export function getUserListing() {
+  return readJSON(USER_LISTING_KEY, null);
+}
+
+export function setUserListing(listing) {
+  if (!listing) return null;
+  const merged = {
+    ...(getUserListing() || {}),
+    ...listing,
+    id: listing.id || 'my-listing',
+    kind: 'shared',
+    updatedAt: new Date().toISOString(),
+  };
+  writeJSON(USER_LISTING_KEY, merged);
+  return merged;
+}
+
+export function clearUserListing() {
+  try {
+    localStorage.removeItem(USER_LISTING_KEY);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+// --- Filter prefs (renter pre-swipe filter) ---
+
+const DEFAULT_FILTERS = {
+  area: '',
+  minPrice: 0,
+  maxPrice: 10000,
+  minRooms: 0,
+  includeShared: true,
+};
+
+export function getFilterPrefs() {
+  return { ...DEFAULT_FILTERS, ...(readJSON(FILTER_PREFS_KEY, {}) || {}) };
+}
+
+export function setFilterPrefs(prefs) {
+  const merged = { ...getFilterPrefs(), ...prefs };
+  writeJSON(FILTER_PREFS_KEY, merged);
+  return merged;
+}
+
+export function clearFilterPrefs() {
+  try {
+    localStorage.removeItem(FILTER_PREFS_KEY);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+// --- Chat messages (per chat-id, e.g. property:demo-1 or person:renter-2) ---
+
+function chatKey(chatId) {
+  return `${CHAT_MESSAGES_PREFIX}${chatId}`;
+}
+
+export function getChatMessages(chatId) {
+  if (!chatId) return [];
+  const list = readJSON(chatKey(chatId), []);
+  return Array.isArray(list) ? list : [];
+}
+
+export function addChatMessage(chatId, message) {
+  if (!chatId || !message) return getChatMessages(chatId);
+  const list = getChatMessages(chatId);
+  list.push({
+    role: message.role || 'user',
+    content: String(message.content || ''),
+    ts: new Date().toISOString(),
+  });
+  writeJSON(chatKey(chatId), list);
+  return list;
+}
+
+export function clearChatMessages(chatId) {
+  if (!chatId) return;
+  try {
+    localStorage.removeItem(chatKey(chatId));
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+// --- App settings ---
+
+const DEFAULT_SETTINGS = {
+  notifications: true,
+  language: 'he',
+  privacy: 'matches-only', // 'public' | 'matches-only' | 'hidden'
+};
+
+export function getSettings() {
+  return { ...DEFAULT_SETTINGS, ...(readJSON(SETTINGS_KEY, {}) || {}) };
+}
+
+export function setSettings(patch) {
+  const merged = { ...getSettings(), ...patch };
+  writeJSON(SETTINGS_KEY, merged);
+  return merged;
 }
