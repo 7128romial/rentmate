@@ -1713,69 +1713,72 @@ h1, h2, h3 {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 40px 28px calc(28px + env(safe-area-inset-bottom, 0px));
+  padding: 32px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
+.welcome-content::-webkit-scrollbar { width: 0; }
 .welcome-hero {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   animation: welcomeFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .welcome-logo {
-  width: 84px;
-  height: 84px;
-  border-radius: 24px;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
   background: white;
   color: var(--primary);
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.04em;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 18px;
+  margin: 0 auto 14px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.25);
   animation: welcomePop 0.6s cubic-bezier(0.16, 1.6, 0.3, 1) both;
 }
 .welcome-title {
-  font-size: 44px;
-  margin-bottom: 8px;
+  font-size: 38px;
+  margin-bottom: 6px;
   letter-spacing: -0.04em;
   color: white;
   background: none;
   -webkit-text-fill-color: white;
 }
 .welcome-subtitle {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
-  opacity: 0.92;
-  line-height: 1.45;
+  opacity: 0.95;
+  line-height: 1.4;
+  max-width: 320px;
+  margin: 0 auto;
 }
 .welcome-cards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 28px;
-  flex: 1;
-  justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 .welcome-card {
-  background: rgba(255,255,255,0.14);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.22);
+  background: var(--surface-color);
+  border: none;
   border-radius: 18px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 14px;
   opacity: 0;
   transform: translateY(20px);
   animation: welcomeFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.22);
 }
 .welcome-emoji {
-  font-size: 30px;
-  width: 52px;
-  height: 52px;
-  background: rgba(255,255,255,0.22);
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, rgba(255,56,92,0.12) 0%, rgba(120,80,220,0.12) 100%);
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -1786,23 +1789,26 @@ h1, h2, h3 {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 .welcome-card-text strong {
   font-size: 15px;
   font-weight: 800;
-  color: white;
+  color: var(--text-main);
 }
 .welcome-card-text span {
   font-size: 13px;
   font-weight: 500;
-  opacity: 0.82;
+  color: var(--text-muted);
   line-height: 1.4;
 }
 .welcome-cta {
   background: white;
   color: var(--primary);
   font-weight: 800;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
   animation: welcomeFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
 }
 .welcome-cta:hover {
@@ -1815,7 +1821,11 @@ h1, h2, h3 {
   text-align: center;
   font-size: 12px;
   font-weight: 500;
-  opacity: 0.75;
+  color: white;
+  opacity: 0.85;
+  flex-shrink: 0;
+  padding: 0 8px;
+  line-height: 1.4;
   animation: welcomeFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
 }
 @keyframes welcomeFadeIn {
