@@ -1660,6 +1660,208 @@ h1, h2, h3 {
   color: var(--text-muted);
 }
 
+/* --- Welcome screen --- */
+.welcome-body {
+  background: linear-gradient(160deg, #FF385C 0%, #E61E4D 50%, #2A1B38 100%);
+  color: white;
+}
+.welcome-app {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  position: relative;
+  overflow: hidden;
+}
+.welcome-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.welcome-bg .bubble {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.55;
+  animation: bubbleFloat 9s ease-in-out infinite;
+}
+.welcome-bg .b1 {
+  width: 220px; height: 220px;
+  background: rgba(255,180,200,0.6);
+  top: -40px; left: -60px;
+  animation-delay: 0s;
+}
+.welcome-bg .b2 {
+  width: 280px; height: 280px;
+  background: rgba(255,255,255,0.18);
+  bottom: 20%; right: -100px;
+  animation-delay: -2s;
+}
+.welcome-bg .b3 {
+  width: 180px; height: 180px;
+  background: rgba(120,80,220,0.45);
+  bottom: -40px; left: 30%;
+  animation-delay: -4s;
+}
+@keyframes bubbleFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -30px) scale(1.08); }
+}
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 40px 28px calc(28px + env(safe-area-inset-bottom, 0px));
+}
+.welcome-hero {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: welcomeFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.welcome-logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: white;
+  color: var(--primary);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  animation: welcomePop 0.6s cubic-bezier(0.16, 1.6, 0.3, 1) both;
+}
+.welcome-title {
+  font-size: 44px;
+  margin-bottom: 8px;
+  letter-spacing: -0.04em;
+  color: white;
+  background: none;
+  -webkit-text-fill-color: white;
+}
+.welcome-subtitle {
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.92;
+  line-height: 1.45;
+}
+.welcome-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+  flex: 1;
+  justify-content: center;
+}
+.welcome-card {
+  background: rgba(255,255,255,0.14);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: welcomeFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.welcome-emoji {
+  font-size: 30px;
+  width: 52px;
+  height: 52px;
+  background: rgba(255,255,255,0.22);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.welcome-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.welcome-card-text strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+}
+.welcome-card-text span {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.82;
+  line-height: 1.4;
+}
+.welcome-cta {
+  background: white;
+  color: var(--primary);
+  font-weight: 800;
+  margin-bottom: 12px;
+  animation: welcomeFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+}
+.welcome-cta:hover {
+  background: white;
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(255, 56, 92, 0.3);
+}
+.welcome-mini {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.75;
+  animation: welcomeFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+@keyframes welcomeFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes welcomeFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes welcomePop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* --- Quick-reply chips inside the AI agent chat --- */
+.quick-reply-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-self: flex-start;
+  max-width: 90%;
+  padding-top: 4px;
+  animation: slideUpFade 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.quick-reply {
+  background: var(--surface-color);
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  padding: 10px 16px;
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.quick-reply:hover {
+  background: rgba(255, 56, 92, 0.08);
+}
+.quick-reply:active {
+  transform: scale(0.96);
+}
+
 /* --- Matches screen --- */
 .match-list {
   display: flex;

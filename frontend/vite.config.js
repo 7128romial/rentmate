@@ -6,6 +6,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        welcome: resolve(__dirname, 'welcome.html'),
         onboarding: resolve(__dirname, 'onboarding.html'),
         swipe: resolve(__dirname, 'swipe.html'),
         match: resolve(__dirname, 'match.html'),

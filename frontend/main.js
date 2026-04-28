@@ -1,114 +1,177 @@
-import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
-import { nextDemoReply, resetDemoChat } from './src/demo.js';
-import { setProfile } from './src/storage.js';
+import { FLOW } from './src/onboarding-flow.js';
+import {
+  setProfile,
+  setRole,
+  setSubrole,
+  setUserListing,
+} from './src/storage.js';
 
 const messagesContainer = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 
-function addMessage(text, sender) {
+const ctx = {
+  role: null,
+  subrole: null,
+  profile: {},
+  listing: {},
+};
+
+let currentStepId = '_start';
+
+function appendMessage(text, sender) {
   const msgDiv = document.createElement('div');
   msgDiv.className = `message ${sender}`;
   const contentDiv = document.createElement('div');
   contentDiv.className = 'message-content';
-  contentDiv.textContent = text;
+  // Preserve newlines in scripted AI text without using innerHTML.
+  text.split('\n').forEach((line, i) => {
+    if (i > 0) contentDiv.appendChild(document.createElement('br'));
+    contentDiv.appendChild(document.createTextNode(line));
+  });
   msgDiv.appendChild(contentDiv);
   messagesContainer.appendChild(msgDiv);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-function showTypingIndicator() {
-  const typingDiv = document.createElement('div');
-  typingDiv.className = 'message ai typing-message';
-  typingDiv.id = 'typing-indicator';
-  const contentDiv = document.createElement('div');
-  contentDiv.className = 'message-content typing-indicator';
+function showTyping() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message ai typing-message';
+  wrapper.id = 'typing-indicator';
+  const content = document.createElement('div');
+  content.className = 'message-content typing-indicator';
   for (let i = 0; i < 3; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'typing-dot';
-    contentDiv.appendChild(dot);
+    const d = document.createElement('div');
+    d.className = 'typing-dot';
+    content.appendChild(d);
   }
-  typingDiv.appendChild(contentDiv);
-  messagesContainer.appendChild(typingDiv);
+  wrapper.appendChild(content);
+  messagesContainer.appendChild(wrapper);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-function removeTypingIndicator() {
-  const typingDiv = document.getElementById('typing-indicator');
-  if (typingDiv) typingDiv.remove();
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
 }
 
-function deliverReply(payload) {
-  removeTypingIndicator();
-  addMessage(payload.response, 'ai');
-  if (payload.profile_complete) {
-    if (DEMO_MODE) {
-      setProfile({
-        city: 'תל אביב',
-        budget: 5000,
-        type: 'לבד',
-        extras: 'מרפסת, שקט',
-      });
-    }
-    setTimeout(() => (window.location.href = '/swipe.html'), 2500);
-  }
+function clearQuickReplies() {
+  document.querySelectorAll('.quick-reply-row').forEach((el) => el.remove());
 }
 
-async function sendToAI(text) {
-  if (DEMO_MODE) {
-    setTimeout(() => deliverReply(nextDemoReply()), 700);
-    return;
-  }
+function renderQuickReplies(options, onPick) {
+  if (!options || !options.length) return;
+  const row = document.createElement('div');
+  row.className = 'quick-reply-row';
+  options.forEach((opt) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quick-reply';
+    btn.textContent = opt.label;
+    btn.addEventListener('click', () => onPick(opt));
+    row.appendChild(btn);
+  });
+  messagesContainer.appendChild(row);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
 
-  if (!getUserId()) {
-    setTimeout(() => {
-      removeTypingIndicator();
-      addMessage('שגיאה: לא מחובר למערכת.', 'ai');
-    }, 1000);
-    return;
-  }
+function applySave(savePath, value) {
+  if (!savePath || !Array.isArray(savePath)) return;
+  const [bucket, key] = savePath;
+  if (!ctx[bucket] || typeof ctx[bucket] !== 'object') ctx[bucket] = {};
+  ctx[bucket][key] = value;
+}
 
-  try {
-    const res = await fetch(`${API_BASE}/api/chat`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ text }),
+function applySet(set) {
+  if (!set || typeof set !== 'object') return;
+  Object.keys(set).forEach((k) => {
+    ctx[k] = set[k];
+  });
+}
+
+function finalize(redirect) {
+  // Persist what we collected
+  if (ctx.role) setRole(ctx.role);
+  if (ctx.subrole) setSubrole(ctx.subrole);
+  if (ctx.profile && Object.keys(ctx.profile).length) setProfile(ctx.profile);
+
+  // Roommate host: build a starter listing
+  if (ctx.role === 'roommate' && ctx.subrole === 'host' && ctx.listing) {
+    const price = Number(ctx.listing.roomPrice) || 2400;
+    setUserListing({
+      id: 'my-listing',
+      title: `חדר בדירה ב${ctx.listing.address || 'תל אביב'}`,
+      price: `₪${price.toLocaleString('he-IL')}/חודש`,
+      address: ctx.listing.address || 'תל אביב',
+      location: ctx.listing.address || 'תל אביב',
+      image:
+        'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80',
+      matchScore: 95,
+      tags: ['דירה משותפת'],
+      kind: 'shared',
+      description: ctx.listing.aboutMe || '',
+      host: {
+        name: 'אני',
+        lifestyle: ctx.listing.aboutMe || '',
+      },
     });
-
-    if (res.status === 401) {
-      removeTypingIndicator();
-      addMessage('ההפעלה פגה, התחבר שוב.', 'ai');
-      setTimeout(() => (window.location.href = '/'), 1500);
-      return;
-    }
-
-    if (!res.ok) {
-      removeTypingIndicator();
-      addMessage('סליחה, יש לי קצת עומס כרגע.', 'ai');
-      return;
-    }
-
-    deliverReply(await res.json());
-  } catch (err) {
-    console.error('API Error', err);
-    removeTypingIndicator();
-    addMessage('שגיאת תקשורת עם השרת.', 'ai');
   }
+
+  setTimeout(() => {
+    window.location.href = redirect || '/swipe.html';
+  }, 1600);
+}
+
+function advance(stepId) {
+  currentStepId = stepId;
+  const step = FLOW[stepId];
+  if (!step) return;
+
+  showTyping();
+  setTimeout(() => {
+    removeTyping();
+    appendMessage(step.ai, 'ai');
+
+    if (step.final) {
+      finalize(step.final.redirect);
+      return;
+    }
+
+    if (step.options && step.options.length) {
+      renderQuickReplies(step.options, (opt) => handlePick(step, opt));
+    }
+  }, 700);
+}
+
+function handleAnswer(step, label, payload, set) {
+  // 1. echo as user message
+  clearQuickReplies();
+  appendMessage(label, 'user');
+  // 2. apply set + save
+  applySet(set);
+  applySave(step.save, payload);
+  // 3. advance
+  const nextId = (set && set.next) || step.next;
+  if (nextId) advance(nextId);
+}
+
+function handlePick(step, opt) {
+  const value = opt.value !== undefined ? opt.value : opt.label;
+  handleAnswer(step, opt.label, value, { ...(opt.set || {}), next: opt.next });
 }
 
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
   if (!text) return;
-  addMessage(text, 'user');
+  const step = FLOW[currentStepId];
+  if (!step) return;
+  if (step.freeText === false) {
+    // Free-text not allowed at this step (e.g., role selection).
+    return;
+  }
   chatInput.value = '';
-  showTypingIndicator();
-  sendToAI(text);
+  handleAnswer(step, text, text, {});
 });
 
-if (DEMO_MODE) resetDemoChat();
-
-setTimeout(() => {
-  showTypingIndicator();
-  sendToAI('שלום, אני מחפש דירה');
-}, 500);
+advance('_start');
