@@ -233,8 +233,10 @@ function advance(stepId) {
       return;
     }
 
-    const allowCustom = step.freeText !== false;
-    if ((step.options && step.options.length) || allowCustom) {
+    // Show chips (and "+ אחר") only when there are preset options to choose from.
+    // For purely-open questions, the bottom text input is the input — don't add UI noise.
+    if (step.options && step.options.length) {
+      const allowCustom = step.freeText !== false;
       renderQuickReplies(step.options, (opt) => handlePick(step, opt), allowCustom);
     }
   }, 700);
