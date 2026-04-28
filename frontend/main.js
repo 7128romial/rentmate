@@ -57,7 +57,59 @@ function removeTyping() {
 }
 
 function clearQuickReplies() {
-  document.querySelectorAll('.quick-reply-row').forEach((el) => el.remove());
+  document.querySelectorAll('.quick-reply-row, .slider-widget').forEach((el) => el.remove());
+}
+
+function renderSlider(step, onConfirm) {
+  const wrap = document.createElement('div');
+  wrap.className = 'slider-widget';
+
+  const value = document.createElement('div');
+  value.className = 'slider-value';
+
+  const range = document.createElement('input');
+  range.type = 'range';
+  range.min = String(step.min);
+  range.max = String(step.max);
+  range.step = String(step.step || 1);
+  range.value = String(step.default != null ? step.default : step.min);
+  range.className = 'slider-range';
+
+  const labels = document.createElement('div');
+  labels.className = 'slider-track-labels';
+  const minLbl = document.createElement('span');
+  const maxLbl = document.createElement('span');
+  const fmt = step.format || ((v) => String(v));
+  minLbl.textContent = fmt(step.min);
+  maxLbl.textContent = fmt(step.max);
+  labels.appendChild(minLbl);
+  labels.appendChild(maxLbl);
+
+  const confirm = document.createElement('button');
+  confirm.type = 'button';
+  confirm.className = 'btn-primary slider-confirm';
+  confirm.textContent = 'אישור';
+
+  function updateUI() {
+    const v = Number(range.value);
+    value.textContent = fmt(v);
+    const pct = ((v - Number(range.min)) / (Number(range.max) - Number(range.min))) * 100;
+    range.style.setProperty('--pct', `${pct}%`);
+  }
+  updateUI();
+  range.addEventListener('input', updateUI);
+
+  confirm.addEventListener('click', () => {
+    const v = Number(range.value);
+    onConfirm({ value: v, label: fmt(v) });
+  });
+
+  wrap.appendChild(value);
+  wrap.appendChild(range);
+  wrap.appendChild(labels);
+  wrap.appendChild(confirm);
+  messagesContainer.appendChild(wrap);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
 function renderQuickReplies(options, onPick, allowCustom) {
@@ -173,6 +225,11 @@ function advance(stepId) {
 
     if (step.final) {
       finalize(step.final.redirect);
+      return;
+    }
+
+    if (step.inputType === 'slider') {
+      renderSlider(step, ({ value, label }) => handleAnswer(step, label, value, {}));
       return;
     }
 
