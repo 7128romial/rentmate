@@ -60,11 +60,13 @@ function clearQuickReplies() {
   document.querySelectorAll('.quick-reply-row').forEach((el) => el.remove());
 }
 
-function renderQuickReplies(options, onPick) {
-  if (!options || !options.length) return;
+function renderQuickReplies(options, onPick, allowCustom) {
+  if (!options || !options.length) {
+    if (!allowCustom) return;
+  }
   const row = document.createElement('div');
   row.className = 'quick-reply-row';
-  options.forEach((opt) => {
+  (options || []).forEach((opt) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'quick-reply';
@@ -72,6 +74,18 @@ function renderQuickReplies(options, onPick) {
     btn.addEventListener('click', () => onPick(opt));
     row.appendChild(btn);
   });
+  if (allowCustom) {
+    const other = document.createElement('button');
+    other.type = 'button';
+    other.className = 'quick-reply quick-reply-other';
+    other.textContent = '+ אחר';
+    other.addEventListener('click', () => {
+      clearQuickReplies();
+      chatInput.placeholder = 'הקלידי את התשובה שלך…';
+      chatInput.focus();
+    });
+    row.appendChild(other);
+  }
   messagesContainer.appendChild(row);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
@@ -162,8 +176,9 @@ function advance(stepId) {
       return;
     }
 
-    if (step.options && step.options.length) {
-      renderQuickReplies(step.options, (opt) => handlePick(step, opt));
+    const allowCustom = step.freeText !== false;
+    if ((step.options && step.options.length) || allowCustom) {
+      renderQuickReplies(step.options, (opt) => handlePick(step, opt), allowCustom);
     }
   }, 700);
 }

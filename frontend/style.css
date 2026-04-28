@@ -1907,6 +1907,17 @@ h1, h2, h3 {
 .quick-reply:active {
   transform: scale(0.96);
 }
+.quick-reply.quick-reply-other {
+  color: var(--text-muted);
+  border: 1.5px dashed var(--text-muted);
+  background: transparent;
+  box-shadow: none;
+}
+.quick-reply.quick-reply-other:hover {
+  background: rgba(0,0,0,0.04);
+  color: var(--text-main);
+  border-color: var(--text-main);
+}
 
 /* --- Matches screen --- */
 .match-list {
