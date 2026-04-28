@@ -1,6 +1,11 @@
 import { renderBottomNav } from './src/nav.js';
-import { DEMO_PROPERTIES, getInterestedRenterIds } from './src/demo.js';
-import { getRenterDecision, getRole, getUserProperties, removeUserProperty } from './src/storage.js';
+import { getInterestedRenterIds } from './src/demo.js';
+import {
+  getRenterDecision,
+  getRole,
+  getUserProperties,
+  getUserPropertyInterests,
+} from './src/storage.js';
 
 if (getRole() !== 'landlord') {
   window.location.replace('/swipe.html');
@@ -12,7 +17,10 @@ const list = document.getElementById('landlord-list');
 const subtitle = document.getElementById('landlord-subtitle');
 
 function countsFor(propertyId) {
-  const ids = getInterestedRenterIds(propertyId);
+  const ids = [
+    ...getInterestedRenterIds(propertyId),
+    ...getUserPropertyInterests(propertyId),
+  ];
   let pending = 0;
   let approved = 0;
   ids.forEach((rid) => {
@@ -28,7 +36,7 @@ function render() {
   let totalPending = 0;
   let totalApproved = 0;
 
-  const all = [...getUserProperties(), ...DEMO_PROPERTIES];
+  const all = getUserProperties();
   if (all.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';

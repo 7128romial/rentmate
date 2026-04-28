@@ -10,48 +10,12 @@
   <body>
     <div id="app">
       <header class="screen-header">
-        <h1>הפרופיל שלי</h1>
-        <p>הפרטים האלה משמשים להתאמת דירות מדויקת יותר.</p>
+        <h1 id="profile-title">הפרופיל שלי</h1>
+        <p id="profile-subtitle">הפרטים שמילאת בעת ההצטרפות. אפשר לעדכן בכל רגע.</p>
       </header>
 
       <div class="screen-body">
-        <form class="profile-form" id="profile-form">
-          <div class="profile-field">
-            <label for="field-name">שם</label>
-            <input class="profile-input" id="field-name" type="text" autocomplete="name" placeholder="איך לקרוא לך?">
-          </div>
-
-          <div class="profile-field">
-            <label for="field-city">עיר</label>
-            <input class="profile-input" id="field-city" type="text" placeholder="תל אביב">
-          </div>
-
-          <div class="profile-field">
-            <label for="field-budget">תקציב חודשי (₪)</label>
-            <input class="profile-input" id="field-budget" type="number" min="0" step="100" inputmode="numeric" placeholder="5000">
-          </div>
-
-          <div class="profile-field">
-            <label for="field-type">סוג מגורים</label>
-            <select class="profile-input" id="field-type">
-              <option value="לבד">לבד</option>
-              <option value="זוג">זוג</option>
-              <option value="שותפים">שותפים</option>
-              <option value="משפחה">משפחה</option>
-            </select>
-          </div>
-
-          <div class="profile-field">
-            <label for="field-extras">דרישות נוספות</label>
-            <textarea class="profile-textarea" id="field-extras" placeholder="מרפסת, חניה, חיות, שקט..."></textarea>
-          </div>
-
-          <div class="profile-actions">
-            <button class="btn-primary" type="submit">שמור שינויים</button>
-            <a class="btn-ghost" href="/settings.html">הגדרות</a>
-            <button class="btn-ghost" type="button" id="logout-btn">התנתק</button>
-          </div>
-        </form>
+        <form class="profile-form" id="profile-form"></form>
       </div>
 
       <nav id="bottom-nav"></nav>

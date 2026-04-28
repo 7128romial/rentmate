@@ -9,6 +9,8 @@ import {
   approveRenter,
   getRenterDecision,
   getRole,
+  getUserProperties,
+  getUserPropertyInterests,
   rejectRenter,
   undoRenterDecision,
 } from './src/storage.js';
@@ -20,8 +22,10 @@ if (getRole() !== 'landlord') {
 renderBottomNav('landlord');
 
 const params = new URLSearchParams(window.location.search);
-const propertyId = params.get('id') || (DEMO_RENTERS.length ? null : null);
-const property = findDemoProperty(propertyId);
+const propertyId = params.get('id');
+const property =
+  findDemoProperty(propertyId) ||
+  getUserProperties().find((p) => String(p.id) === String(propertyId));
 
 if (!property) {
   window.location.replace('/landlord.html');
@@ -38,7 +42,10 @@ const tabButtons = document.querySelectorAll('.tab');
 let activeTab = 'pending';
 
 function decisionsByGroup() {
-  const ids = getInterestedRenterIds(property.id);
+  const ids = [
+    ...getInterestedRenterIds(property.id),
+    ...getUserPropertyInterests(property.id),
+  ];
   const grouped = { pending: [], approved: [], rejected: [] };
   ids.forEach((rid) => {
     const renter = findDemoRenter(rid);

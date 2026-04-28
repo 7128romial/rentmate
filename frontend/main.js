@@ -1,5 +1,6 @@
 import { FLOW } from './src/onboarding-flow.js';
 import {
+  addUserProperty,
   setProfile,
   setRole,
   setSubrole,
@@ -90,12 +91,10 @@ function applySet(set) {
 }
 
 function finalize(redirect) {
-  // Persist what we collected
   if (ctx.role) setRole(ctx.role);
   if (ctx.subrole) setSubrole(ctx.subrole);
   if (ctx.profile && Object.keys(ctx.profile).length) setProfile(ctx.profile);
 
-  // Roommate host: build a starter listing
   if (ctx.role === 'roommate' && ctx.subrole === 'host' && ctx.listing) {
     const price = Number(ctx.listing.roomPrice) || 2400;
     setUserListing({
@@ -111,9 +110,35 @@ function finalize(redirect) {
       kind: 'shared',
       description: ctx.listing.aboutMe || '',
       host: {
-        name: 'אני',
+        name: ctx.profile.name || 'אני',
         lifestyle: ctx.listing.aboutMe || '',
       },
+    });
+  }
+
+  if (ctx.role === 'landlord' && ctx.firstProperty && ctx.firstProperty.title) {
+    const fp = ctx.firstProperty;
+    const price = Number(fp.price) || 4500;
+    addUserProperty({
+      title: fp.title,
+      price: `₪${price.toLocaleString('he-IL')}/חודש`,
+      address: fp.address || '',
+      location: fp.address || '',
+      image:
+        fp.image && fp.image !== 'דלג'
+          ? fp.image
+          : 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80',
+      matchScore: 95,
+      tags: [],
+      rooms: fp.rooms || null,
+      area: null,
+      floor: null,
+      totalFloors: null,
+      available: '',
+      description: '',
+      amenities: [],
+      nearby: [],
+      kind: 'apartment',
     });
   }
 

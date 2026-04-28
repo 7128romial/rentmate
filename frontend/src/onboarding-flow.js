@@ -210,10 +210,71 @@ export const FLOW = {
       { label: '₪7000+' },
     ],
     save: ['profile', 'priceRange'],
-    next: '_done_landlord',
+    next: 'landlord_offer_property',
+  },
+  landlord_offer_property: {
+    ai: 'רוצה שנוסיף עכשיו את הדירה הראשונה שלך? אפשר גם בהמשך מהדשבורד.',
+    options: [
+      { label: 'כן, נוסיף עכשיו', next: 'landlord_prop_title' },
+      { label: 'אחר כך', next: '_done_landlord' },
+    ],
+    freeText: false,
+  },
+  landlord_prop_title: {
+    ai: 'איך תקראו לדירה? (כותרת קצרה)',
+    options: [
+      { label: 'סטודיו מואר' },
+      { label: 'דירת 2 חדרים' },
+      { label: 'דירת 3 חדרים' },
+    ],
+    save: ['firstProperty', 'title'],
+    next: 'landlord_prop_address',
+  },
+  landlord_prop_address: {
+    ai: 'מה הכתובת? (רחוב, עיר)',
+    options: [
+      { label: 'רוטשילד, תל אביב' },
+      { label: 'דיזנגוף, תל אביב' },
+      { label: 'פלורנטין, תל אביב' },
+      { label: 'יפו' },
+    ],
+    save: ['firstProperty', 'address'],
+    next: 'landlord_prop_price',
+  },
+  landlord_prop_price: {
+    ai: 'מה המחיר החודשי?',
+    options: [
+      { label: '₪3500', value: 3500 },
+      { label: '₪4500', value: 4500 },
+      { label: '₪5500', value: 5500 },
+      { label: '₪7000', value: 7000 },
+    ],
+    save: ['firstProperty', 'price'],
+    next: 'landlord_prop_rooms',
+  },
+  landlord_prop_rooms: {
+    ai: 'כמה חדרים?',
+    options: [
+      { label: '1 (סטודיו)', value: 1 },
+      { label: '2', value: 2 },
+      { label: '3', value: 3 },
+      { label: '4+', value: 4 },
+    ],
+    save: ['firstProperty', 'rooms'],
+    next: 'landlord_prop_image',
+  },
+  landlord_prop_image: {
+    ai: 'יש קישור לתמונה? (אפשר לדלג ונבחר תמונה ברירת מחדל)',
+    options: [{ label: 'דלג' }],
+    save: ['firstProperty', 'image'],
+    next: '_done_landlord_with_property',
   },
   _done_landlord: {
     ai: 'מעולה. פותח/ת לך את לוח הניהול 🔑',
+    final: { redirect: '/landlord.html' },
+  },
+  _done_landlord_with_property: {
+    ai: 'מצוין! פרסמתי את הדירה ופותח/ת את הדשבורד 🔑',
     final: { redirect: '/landlord.html' },
   },
 };

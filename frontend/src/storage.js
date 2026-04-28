@@ -12,6 +12,7 @@ const ROOMMATE_MATCHES_KEY = 'rentmate_roommate_matches';
 const ROOMMATE_HOST_APPROVED_KEY = 'rentmate_host_approved';
 const ROOMMATE_HOST_REJECTED_KEY = 'rentmate_host_rejected';
 const USER_PROPERTIES_KEY = 'rentmate_user_properties';
+const USER_PROPERTY_INTERESTS_KEY = 'rentmate_user_property_interests';
 const USER_LISTING_KEY = 'rentmate_user_listing';
 const FILTER_PREFS_KEY = 'rentmate_filter_prefs';
 const CHAT_MESSAGES_PREFIX = 'rentmate_chat_';
@@ -259,12 +260,31 @@ export function getUserProperties() {
   return Array.isArray(list) ? list : [];
 }
 
+// Demo renter pool used when seeding interest on user-created properties.
+const DEMO_RENTER_POOL = ['renter-1', 'renter-2', 'renter-3', 'renter-4', 'renter-5', 'renter-6'];
+
+function seedInterestsFor(propertyId) {
+  const all = readJSON(USER_PROPERTY_INTERESTS_KEY, {}) || {};
+  if (all[propertyId]) return; // already seeded
+  // Pick 2-3 random demo renters as "interested" so the dashboard demos well.
+  const shuffled = DEMO_RENTER_POOL.slice().sort(() => Math.random() - 0.5);
+  const count = 2 + Math.floor(Math.random() * 2); // 2 or 3
+  all[propertyId] = shuffled.slice(0, count);
+  writeJSON(USER_PROPERTY_INTERESTS_KEY, all);
+}
+
+export function getUserPropertyInterests(propertyId) {
+  const all = readJSON(USER_PROPERTY_INTERESTS_KEY, {}) || {};
+  return Array.isArray(all[propertyId]) ? all[propertyId] : [];
+}
+
 export function addUserProperty(property) {
   if (!property) return getUserProperties();
   const list = getUserProperties();
   const id = property.id || `user-${Date.now()}`;
   list.unshift({ ...property, id, createdAt: new Date().toISOString() });
   writeJSON(USER_PROPERTIES_KEY, list);
+  seedInterestsFor(id);
   return list;
 }
 

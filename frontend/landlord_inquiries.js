@@ -1,6 +1,5 @@
 import { renderBottomNav } from './src/nav.js';
 import {
-  DEMO_PROPERTIES,
   findDemoRenter,
   getInterestedRenterIds,
 } from './src/demo.js';
@@ -8,6 +7,8 @@ import {
   approveRenter,
   getRenterDecision,
   getRole,
+  getUserProperties,
+  getUserPropertyInterests,
   rejectRenter,
 } from './src/storage.js';
 
@@ -22,14 +23,17 @@ const subtitle = document.getElementById('inquiries-subtitle');
 
 function collectPending() {
   const items = [];
-  DEMO_PROPERTIES.forEach((property) => {
-    getInterestedRenterIds(property.id).forEach((rid) => {
+  getUserProperties().forEach((property) => {
+    const ids = [
+      ...getInterestedRenterIds(property.id),
+      ...getUserPropertyInterests(property.id),
+    ];
+    ids.forEach((rid) => {
       if (getRenterDecision(property.id, rid) !== 'pending') return;
       const renter = findDemoRenter(rid);
       if (renter) items.push({ property, renter });
     });
   });
-  // Stable order by match score then renter name.
   items.sort((a, b) => (b.renter.matchScore || 0) - (a.renter.matchScore || 0));
   return items;
 }
