@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - התאמות</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="screen-header">
+        <h1>התאמות</h1>
+        <p id="matches-subtitle">הדירות שאתם והבעלים שלהן הסכמתם זה על זה.</p>
+      </header>
+
+      <div class="filter-bar" id="filter-bar" hidden>
+        <div class="filter-row">
+          <div class="search-input">
+            <span class="search-icon" aria-hidden="true">🔍</span>
+            <input id="filter-search" type="search" placeholder="חפש לפי שם או כתובת..." autocomplete="off">
+            <button class="search-clear" id="filter-clear" type="button" aria-label="נקה" hidden>×</button>
+          </div>
+          <select id="filter-sort" class="filter-sort" aria-label="מיון">
+            <option value="newest">עדכניות</option>
+            <option value="price-asc">מחיר ↑</option>
+            <option value="price-desc">מחיר ↓</option>
+            <option value="match">לפי התאמה</option>
+          </select>
+        </div>
+        <div class="filter-chips" id="filter-chips"></div>
+      </div>
+
+      <div class="screen-body">
+        <div id="match-list" class="match-list"></div>
+      </div>
+
+      <nav id="bottom-nav"></nav>
+    </div>
+    <script type="module" src="/matches.js"></script>
+  </body>
+</html>

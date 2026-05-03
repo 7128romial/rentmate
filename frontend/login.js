@@ -1,5 +1,11 @@
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from './src/firebase.js';
-import { API_BASE, setSession } from './src/config.js';
+import { API_BASE, DEMO_MODE, DEMO_OTP, setSession } from './src/config.js';
+import { fakeSession } from './src/demo.js';
+
+// First-time visitors see the welcome screen.
+if (!localStorage.getItem('rentmate_seen_welcome')) {
+  window.location.replace('/welcome.html');
+}
 
 const loginForm = document.getElementById('login-form');
 const otpForm = document.getElementById('otp-form');
@@ -39,11 +45,25 @@ function setButton(form, label, disabled) {
   btn.textContent = label;
 }
 
+function showError(input, message) {
+  input.value = '';
+  input.placeholder = message;
+}
+
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const phone = normalizePhone(phoneInput.value.trim());
+  const phoneRaw = phoneInput.value.trim();
+  if (!phoneRaw) return;
+
+  if (DEMO_MODE) {
+    loginForm.classList.add('hidden');
+    otpForm.classList.remove('hidden');
+    otpInput.placeholder = `הזן ${DEMO_OTP} (דמו)`;
+    return;
+  }
+
+  const phone = normalizePhone(phoneRaw);
   console.log('[auth] normalized phone being sent to Firebase:', JSON.stringify(phone));
-  if (!phone) return;
   setButton(loginForm, 'שולח...', true);
   try {
     const verifier = createRecaptcha();
@@ -63,6 +83,18 @@ loginForm.addEventListener('submit', async (e) => {
 otpForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const otp = otpInput.value.trim();
+
+  if (DEMO_MODE) {
+    if (otp !== DEMO_OTP) {
+      showError(otpInput, `קוד דמו: ${DEMO_OTP}`);
+      return;
+    }
+    const phone = normalizePhone(phoneInput.value.trim());
+    setSession(fakeSession(phone));
+    window.location.href = '/onboarding.html';
+    return;
+  }
+
   if (!otp || !confirmationResult) return;
   setButton(otpForm, 'מאמת...', true);
   try {
@@ -75,8 +107,7 @@ otpForm.addEventListener('submit', async (e) => {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      otpInput.value = '';
-      otpInput.placeholder = data.error || 'אימות נכשל';
+      showError(otpInput, data.error || 'אימות נכשל');
       setButton(otpForm, 'אמת והתחבר', false);
       return;
     }
@@ -85,8 +116,7 @@ otpForm.addEventListener('submit', async (e) => {
     window.location.href = '/onboarding.html';
   } catch (err) {
     console.error('OTP verify failed', err);
-    otpInput.value = '';
-    otpInput.placeholder = 'קוד שגוי, נסה שוב';
+    showError(otpInput, 'קוד שגוי, נסה שוב');
     setButton(otpForm, 'אמת והתחבר', false);
   }
 });

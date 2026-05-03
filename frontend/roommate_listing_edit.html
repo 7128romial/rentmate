@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - הליסטינג שלי</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="screen-header with-back">
+        <a class="back-btn" href="/roommate_host.html" style="transform: scaleX(-1);">←</a>
+        <div>
+          <h1>הליסטינג שלי</h1>
+          <p>עדכני את הפרטים שאחרים יראו על הדירה ועלייך.</p>
+        </div>
+      </header>
+
+      <div class="screen-body">
+        <form class="profile-form" id="listing-form">
+          <h2 class="form-section-title">על הדירה</h2>
+          <div class="profile-field">
+            <label for="l-title">כותרת *</label>
+            <input class="profile-input" id="l-title" type="text" required maxlength="80" placeholder="חדר בדירת 3 חד׳ בדיזנגוף">
+          </div>
+          <div class="profile-field">
+            <label for="l-price">מחיר חודשי לחדר (₪) *</label>
+            <input class="profile-input" id="l-price" type="number" min="500" step="100" required inputmode="numeric" placeholder="2400">
+          </div>
+          <div class="profile-field">
+            <label for="l-address">כתובת *</label>
+            <input class="profile-input" id="l-address" type="text" required placeholder="דיזנגוף, תל אביב">
+          </div>
+          <div class="profile-field-row">
+            <div class="profile-field">
+              <label for="l-rooms">סך חדרים בדירה</label>
+              <input class="profile-input" id="l-rooms" type="number" min="1" step="0.5" inputmode="decimal" placeholder="3">
+            </div>
+            <div class="profile-field">
+              <label for="l-area">גודל הדירה (מ״ר)</label>
+              <input class="profile-input" id="l-area" type="number" min="10" step="1" inputmode="numeric" placeholder="75">
+            </div>
+          </div>
+          <div class="profile-field">
+            <label for="l-available">תאריך פינוי</label>
+            <input class="profile-input" id="l-available" type="text" placeholder="למשל: 1 ביולי">
+          </div>
+          <div class="profile-field">
+            <label for="l-image">קישור לתמונה</label>
+            <input class="profile-input" id="l-image" type="url" placeholder="https://...">
+          </div>
+          <div class="profile-field">
+            <label for="l-tags">תגיות (מופרדות בפסיק)</label>
+            <input class="profile-input" id="l-tags" type="text" placeholder="דירה משותפת, מרפסת, מרוהט">
+          </div>
+          <div class="profile-field">
+            <label for="l-description">תיאור הדירה והחדר</label>
+            <textarea class="profile-textarea" id="l-description" maxlength="600"></textarea>
+          </div>
+
+          <h2 class="form-section-title">עליי</h2>
+          <div class="profile-field">
+            <label for="h-name">שם</label>
+            <input class="profile-input" id="h-name" type="text" placeholder="איך לקרוא לך?">
+          </div>
+          <div class="profile-field-row">
+            <div class="profile-field">
+              <label for="h-age">גיל</label>
+              <input class="profile-input" id="h-age" type="number" min="18" max="99" inputmode="numeric">
+            </div>
+            <div class="profile-field">
+              <label for="h-occupation">עיסוק</label>
+              <input class="profile-input" id="h-occupation" type="text" placeholder="למשל: מעצבת">
+            </div>
+          </div>
+          <div class="profile-field">
+            <label for="h-lifestyle">אורח חיים</label>
+            <textarea class="profile-textarea" id="h-lifestyle" placeholder="שעות עבודה, שקט/חברתי, חיות, עישון..."></textarea>
+          </div>
+          <div class="profile-field">
+            <label for="h-photo">קישור לתמונה אישית</label>
+            <input class="profile-input" id="h-photo" type="url" placeholder="https://...">
+          </div>
+
+          <div class="profile-actions">
+            <button class="btn-primary" type="submit">שמור ופרסם</button>
+            <a class="btn-ghost" href="/roommate_host.html">ביטול</a>
+          </div>
+        </form>
+      </div>
+
+      <nav id="bottom-nav"></nav>
+    </div>
+    <script type="module" src="/roommate_listing_edit.js"></script>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - מחפש/ת שותף</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="screen-header with-actions">
+        <div>
+          <h1>השותף שלי</h1>
+          <p id="host-subtitle">פרופילים שהביעו עניין לעבור לדירה שלך.</p>
+        </div>
+        <a class="header-cta" href="/roommate_listing_edit.html">ערוך ליסטינג</a>
+      </header>
+
+      <div class="screen-body">
+        <section id="my-listing-card" class="my-listing-card"></section>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="pending" role="tab" aria-selected="true">מתעניינים <span class="tab-count" id="count-pending">0</span></button>
+          <button class="tab" data-tab="approved" role="tab" aria-selected="false">התאמות <span class="tab-count" id="count-approved">0</span></button>
+        </div>
+
+        <div id="people-list" class="renter-list"></div>
+      </div>
+
+      <nav id="bottom-nav"></nav>
+    </div>
+    <script type="module" src="/roommate_host.js"></script>
+  </body>
+</html>

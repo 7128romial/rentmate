@@ -11,18 +11,21 @@
     <div id="app" class="match-app">
       <div class="match-content">
         <h1 class="match-title">יש מאץ'!</h1>
-        <p class="match-subtitle">מעולה! גם בעל הדירה אהב את הפרופיל שלך.</p>
-        
+        <p class="match-subtitle" id="match-subtitle">מעולה! גם בעל הדירה אהב את הפרופיל שלך.</p>
+
         <div class="match-avatars">
           <div class="avatar user"></div>
-          <div class="avatar property" style="background-image: url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80')"></div>
+          <div class="avatar property" id="match-avatar"></div>
         </div>
-        
+
+        <div id="match-map-host" class="match-map-host"></div>
+
         <div class="match-actions">
-          <button class="btn-primary" onclick="window.location.href='/realtime_chat.html'">התחל צ'אט עכשיו</button>
+          <button class="btn-primary" id="match-chat-btn">התחל צ'אט עכשיו</button>
           <button class="btn-secondary" onclick="window.location.href='/swipe.html'">נמשיך לחפש בינתיים</button>
         </div>
       </div>
     </div>
+    <script type="module" src="/match.js"></script>
   </body>
 </html>

@@ -1,15 +1,29 @@
-import { API_BASE, authHeaders, getUserId } from './src/config.js';
+import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
+import { DEMO_PROPERTIES, DEMO_SHARED_LISTINGS } from './src/demo.js';
+import { renderBottomNav } from './src/nav.js';
+import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './src/storage.js';
+import { renderMap } from './src/maps.js';
+import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
+
+renderBottomNav('swipe');
+
+const propertyById = new Map();
+let activeProperties = [];
 
 const swipeContainer = document.getElementById('swipe-container');
-const currentCards = [];
 
-function createCard(property) {
-  const card = document.createElement('div');
-  card.classList.add('swipe-card');
-  card.dataset.id = property.id;
-  // Use setProperty with a URL literal that we have sanitized server-side (URL only).
-  // textContent-safe for everything else; background-image string is the one place we must accept a URL.
-  card.style.backgroundImage = `url(${JSON.stringify(String(property.image || ''))})`;
+function appendList(parent, items) {
+  items.forEach((text) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    parent.appendChild(li);
+  });
+}
+
+function buildHero(property) {
+  const hero = document.createElement('div');
+  hero.classList.add('card-hero');
+  hero.style.backgroundImage = `url(${JSON.stringify(String(property.image || ''))})`;
 
   const gradient = document.createElement('div');
   gradient.classList.add('card-gradient');
@@ -21,12 +35,23 @@ function createCard(property) {
   matchBadge.classList.add('match-badge');
   matchBadge.textContent = `התאמה של ${property.matchScore}%`;
 
+  if (property.kind === 'shared') {
+    const sharedBadge = document.createElement('div');
+    sharedBadge.classList.add('shared-badge');
+    sharedBadge.textContent = '🛏 חדר בדירת שותפים';
+    info.appendChild(sharedBadge);
+  }
+
   const title = document.createElement('h3');
   title.textContent = property.title;
 
   const price = document.createElement('p');
   price.classList.add('card-price');
   price.textContent = property.price;
+
+  const addr = document.createElement('p');
+  addr.classList.add('card-address');
+  if (property.address) addr.textContent = `📍 ${property.address}`;
 
   const tagsContainer = document.createElement('div');
   tagsContainer.classList.add('card-tags');
@@ -39,11 +64,115 @@ function createCard(property) {
   info.appendChild(matchBadge);
   info.appendChild(title);
   info.appendChild(price);
+  if (property.address) info.appendChild(addr);
   info.appendChild(tagsContainer);
 
-  card.appendChild(gradient);
-  card.appendChild(info);
+  const hint = document.createElement('div');
+  hint.className = 'scroll-hint';
+  hint.textContent = 'גלילה למטה לפרטים נוספים ↓';
 
+  hero.appendChild(gradient);
+  hero.appendChild(info);
+  hero.appendChild(hint);
+  return hero;
+}
+
+function buildFactRow(label, value) {
+  if (value == null || value === '') return null;
+  const row = document.createElement('div');
+  row.className = 'fact';
+  const k = document.createElement('span');
+  k.className = 'fact-label';
+  k.textContent = label;
+  const v = document.createElement('span');
+  v.className = 'fact-value';
+  v.textContent = String(value);
+  row.appendChild(k);
+  row.appendChild(v);
+  return row;
+}
+
+function buildDetails(property) {
+  const details = document.createElement('div');
+  details.classList.add('card-details');
+
+  if (property.description) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'על הדירה';
+    const p = document.createElement('p');
+    p.textContent = property.description;
+    sec.appendChild(h);
+    sec.appendChild(p);
+    details.appendChild(sec);
+  }
+
+  const facts = [
+    ['חדרים', property.rooms],
+    ['גודל', property.area ? `${property.area} מ״ר` : null],
+    ['קומה', property.floor != null ? `${property.floor}${property.totalFloors ? ` מתוך ${property.totalFloors}` : ''}` : null],
+    ['פינוי', property.available],
+    ['פיקדון', property.deposit],
+  ].filter(([, v]) => v != null && v !== '');
+  if (facts.length) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'פרטים';
+    const grid = document.createElement('div');
+    grid.className = 'fact-grid';
+    facts.forEach(([k, v]) => {
+      const row = buildFactRow(k, v);
+      if (row) grid.appendChild(row);
+    });
+    sec.appendChild(h);
+    sec.appendChild(grid);
+    details.appendChild(sec);
+  }
+
+  if (Array.isArray(property.amenities) && property.amenities.length) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'מאפיינים';
+    const ul = document.createElement('ul');
+    ul.className = 'amenity-list';
+    appendList(ul, property.amenities);
+    sec.appendChild(h);
+    sec.appendChild(ul);
+    details.appendChild(sec);
+  }
+
+  if (Array.isArray(property.nearby) && property.nearby.length) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'בסביבה';
+    const ul = document.createElement('ul');
+    ul.className = 'nearby-list';
+    appendList(ul, property.nearby);
+    sec.appendChild(h);
+    sec.appendChild(ul);
+    details.appendChild(sec);
+  }
+
+  if (property.address || (Number.isFinite(property.lat) && Number.isFinite(property.lng))) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = 'מיקום';
+    const mapHost = document.createElement('div');
+    sec.appendChild(h);
+    sec.appendChild(mapHost);
+    details.appendChild(sec);
+    renderMap(mapHost, property, { zoom: 15 });
+  }
+
+  return details;
+}
+
+function createCard(property) {
+  const card = document.createElement('div');
+  card.classList.add('swipe-card');
+  card.dataset.id = property.id;
+  card.appendChild(buildHero(property));
+  card.appendChild(buildDetails(property));
   return card;
 }
 
@@ -59,6 +188,11 @@ function showInterestToast() {
 }
 
 async function recordSwipe(property_id, direction) {
+  if (DEMO_MODE) {
+    // For the demo, every 3rd right-swipe "matches"; the rest just send interest.
+    const isMatch = direction !== 'left' && Math.random() < 0.33;
+    return { isMatch, interestSent: direction !== 'left' };
+  }
   if (!getUserId()) return { isMatch: false, interestSent: direction === 'right' || direction === 'up' };
   try {
     const res = await fetch(`${API_BASE}/api/swipe`, {
@@ -78,108 +212,211 @@ async function recordSwipe(property_id, direction) {
   }
 }
 
-async function initCards() {
-  const uid = getUserId();
-  if (!uid) {
-    window.location.href = '/';
-    return;
+function priceToNumber(value) {
+  if (typeof value === 'number') return value;
+  const digits = String(value || '').replace(/[^\d]/g, '');
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function applyFilters(items, prefs) {
+  return items.filter((item) => {
+    if (item.kind === 'shared' && prefs.includeShared === false) return false;
+    if (prefs.area) {
+      const hay = `${item.title || ''} ${item.address || ''} ${item.location || ''}`.toLowerCase();
+      if (!hay.includes(prefs.area.toLowerCase())) return false;
+    }
+    const price = priceToNumber(item.price);
+    if (price && prefs.minPrice && price < prefs.minPrice) return false;
+    if (price && prefs.maxPrice && price > prefs.maxPrice) return false;
+    if (prefs.minRooms && item.rooms != null && Number(item.rooms) < prefs.minRooms) return false;
+    return true;
+  });
+}
+
+async function loadProperties() {
+  if (DEMO_MODE) {
+    return [...getUserProperties(), ...DEMO_PROPERTIES, ...DEMO_SHARED_LISTINGS];
   }
-  let properties = [];
   try {
     const res = await fetch(`${API_BASE}/api/properties`, { headers: authHeaders() });
     if (res.status === 401) {
       window.location.href = '/';
-      return;
+      return [];
     }
-    properties = await res.json();
+    return await res.json();
   } catch (err) {
     console.error('API Error', err);
-    properties = [
-      {
-        id: 1,
-        title: 'סטודיו מואר בתל אביב',
-        price: '₪4,500/חודש',
-        image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80',
-        matchScore: 95,
-        tags: ['שקט', 'משופצת'],
-      },
-    ];
+    return DEMO_PROPERTIES;
+  }
+}
+
+function showEmptyState() {
+  swipeContainer.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.className = 'swipe-empty-state';
+  const h3 = document.createElement('h3');
+  h3.textContent = 'אין דירות שתואמות לסינון';
+  const p = document.createElement('p');
+  p.textContent = 'נסי להרחיב את הטווח או לבטל סינונים.';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-primary';
+  btn.textContent = 'איפוס סינון';
+  btn.addEventListener('click', () => {
+    setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true });
+    refreshSubtitle();
+    initCards();
+  });
+  empty.appendChild(h3);
+  empty.appendChild(p);
+  empty.appendChild(btn);
+  swipeContainer.appendChild(empty);
+}
+
+async function initCards() {
+  if (!DEMO_MODE && !getUserId()) {
+    window.location.href = '/';
+    return;
+  }
+  swipeContainer.innerHTML = '';
+  const all = await loadProperties();
+  const prefs = getFilterPrefs();
+  const filtered = applyFilters(all, prefs);
+  activeProperties = filtered;
+  filtered.forEach((p) => propertyById.set(String(p.id), p));
+
+  if (filtered.length === 0) {
+    showEmptyState();
+    return;
   }
 
-  properties.reverse().forEach((prop) => {
-    const card = createCard(prop);
-    swipeContainer.appendChild(card);
-    currentCards.push(card);
-
-    const hammer = new Hammer(card);
-
-    hammer.on('pan', (ev) => {
-      if (ev.deltaX === 0) return;
-      if (ev.center.x === 0 && ev.center.y === 0) return;
-      const rotate = ev.deltaX * 0.05;
-      card.style.transform = `translate(${ev.deltaX}px, ${ev.deltaY}px) rotate(${rotate}deg)`;
-    });
-
-    hammer.on('panend', (ev) => {
-      const keep = Math.abs(ev.deltaX) < 80;
-      card.classList.toggle('removed', !keep);
-
-      if (keep) {
-        card.style.transform = '';
-      } else {
-        const endX = Math.max(Math.abs(ev.velocity * 800), 300);
-        const toX = ev.deltaX > 0 ? endX : -endX;
-        const endY = Math.abs(ev.velocity * 800) || 300;
-        const toY = ev.deltaY > 0 ? endY : -endY;
-        const rotate = ev.deltaX * 0.03;
-        card.style.transform = `translate(${toX}px, ${toY + ev.deltaY}px) rotate(${rotate}deg)`;
-        setTimeout(() => card.remove(), 300);
-
-        const direction = ev.deltaX > 0 ? 'right' : 'left';
-        handleSwipeCompletion(prop.id, direction);
-      }
-    });
+  mountSwipeDeck({
+    container: swipeContainer,
+    items: filtered,
+    renderCard: createCard,
+    onSwipe: (prop, direction) => handleSwipeCompletion(prop.id, direction),
+    onEmpty: () => {
+      alert('עברנו על כל הדירות שמתאימות לחיפוש. נטעין שוב...');
+      initCards();
+    },
   });
 }
 
 function handleSwipeCompletion(property_id, direction) {
-  const isLastCard = swipeContainer.children.length === 1;
   recordSwipe(property_id, direction).then((result) => {
     if (result.isMatch) {
-      setTimeout(() => (window.location.href = '/match.html'), 500);
+      const prop = propertyById.get(String(property_id));
+      if (prop) addMatch(prop);
+      setTimeout(() => {
+        const url = prop
+          ? `/match.html?id=${encodeURIComponent(prop.id)}`
+          : '/match.html';
+        window.location.href = url;
+      }, 500);
       return;
     }
     if (result.interestSent) showInterestToast();
-    if (isLastCard) {
-      setTimeout(() => {
-        alert('נגמרו הדירות שמתאימות לחיפוש שלך! נחפש מחדש...');
-        window.location.reload();
-      }, 500);
-    }
   });
 }
 
-document.getElementById('btn-nope').addEventListener('click', () => swipeAction('left'));
-document.getElementById('btn-like').addEventListener('click', () => swipeAction('right'));
-document.getElementById('btn-super').addEventListener('click', () => swipeAction('up'));
+const onClickSwipe = (direction) =>
+  programmaticSwipe(
+    swipeContainer,
+    direction,
+    (item, dir) => handleSwipeCompletion(item.id, dir),
+    null,
+    activeProperties,
+  );
+document.getElementById('btn-nope').addEventListener('click', () => onClickSwipe('left'));
+document.getElementById('btn-like').addEventListener('click', () => onClickSwipe('right'));
+document.getElementById('btn-super').addEventListener('click', () => onClickSwipe('up'));
 
-function swipeAction(direction) {
-  const cards = document.querySelectorAll('.swipe-card:not(.removed)');
-  if (!cards.length) return;
-  const topCard = cards[cards.length - 1];
-  topCard.classList.add('removed');
+// --- Filter sheet wiring ---
 
-  let toX = 0;
-  let toY = 0;
-  if (direction === 'left') toX = -1000;
-  if (direction === 'right') toX = 1000;
-  if (direction === 'up') toY = -1000;
+const filterBtn = document.getElementById('filter-btn');
+const filterSheet = document.getElementById('filter-sheet');
+const filterDot = document.getElementById('filter-active-dot');
+const subtitle = document.getElementById('swipe-subtitle');
+const filterArea = document.getElementById('filter-area');
+const filterMin = document.getElementById('filter-min-price');
+const filterMax = document.getElementById('filter-max-price');
+const filterRooms = document.getElementById('filter-rooms');
+const filterShared = document.getElementById('filter-include-shared');
 
-  topCard.style.transform = `translate(${toX}px, ${toY}px) rotate(${toX * 0.03}deg)`;
-  setTimeout(() => topCard.remove(), 300);
-
-  const propId = topCard.dataset.id;
-  handleSwipeCompletion(propId, direction);
+function isFilterActive(prefs) {
+  const def = { area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true };
+  return (
+    prefs.area !== def.area ||
+    prefs.minPrice !== def.minPrice ||
+    prefs.maxPrice !== def.maxPrice ||
+    prefs.minRooms !== def.minRooms ||
+    prefs.includeShared !== def.includeShared
+  );
 }
 
+function refreshSubtitle() {
+  const prefs = getFilterPrefs();
+  filterDot.hidden = !isFilterActive(prefs);
+  if (!isFilterActive(prefs)) {
+    subtitle.textContent = 'גלה התאמות חדשות';
+    return;
+  }
+  const parts = [];
+  if (prefs.area) parts.push(prefs.area);
+  if (prefs.minPrice || prefs.maxPrice) parts.push(`₪${prefs.minPrice || 0}-${prefs.maxPrice || '∞'}`);
+  if (prefs.minRooms) parts.push(`${prefs.minRooms}+ חד׳`);
+  if (!prefs.includeShared) parts.push('בלי שותפים');
+  subtitle.textContent = parts.join(' · ');
+}
+
+function loadFilterIntoForm() {
+  const prefs = getFilterPrefs();
+  filterArea.value = prefs.area || '';
+  filterMin.value = prefs.minPrice || '';
+  filterMax.value = prefs.maxPrice && prefs.maxPrice !== 10000 ? prefs.maxPrice : '';
+  filterRooms.value = String(prefs.minRooms || 0);
+  filterShared.checked = prefs.includeShared !== false;
+}
+
+function openSheet() {
+  loadFilterIntoForm();
+  filterSheet.hidden = false;
+  requestAnimationFrame(() => filterSheet.classList.add('open'));
+}
+
+function closeSheet() {
+  filterSheet.classList.remove('open');
+  setTimeout(() => (filterSheet.hidden = true), 220);
+}
+
+filterBtn.addEventListener('click', openSheet);
+filterSheet.querySelector('.filter-close').addEventListener('click', closeSheet);
+filterSheet.addEventListener('click', (e) => {
+  if (e.target === filterSheet) closeSheet();
+});
+
+document.getElementById('filter-reset').addEventListener('click', () => {
+  setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true });
+  refreshSubtitle();
+  closeSheet();
+  initCards();
+});
+
+document.getElementById('filter-apply').addEventListener('click', () => {
+  const minPrice = parseInt(filterMin.value, 10);
+  const maxPrice = parseInt(filterMax.value, 10);
+  setFilterPrefs({
+    area: filterArea.value.trim(),
+    minPrice: Number.isFinite(minPrice) ? minPrice : 0,
+    maxPrice: Number.isFinite(maxPrice) && maxPrice > 0 ? maxPrice : 10000,
+    minRooms: parseInt(filterRooms.value, 10) || 0,
+    includeShared: !!filterShared.checked,
+  });
+  refreshSubtitle();
+  closeSheet();
+  initCards();
+});
+
+refreshSubtitle();
 initCards();
