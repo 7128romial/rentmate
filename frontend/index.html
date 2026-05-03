@@ -13,11 +13,27 @@
         <h1 class="brand-title">RentMate</h1>
         <p class="brand-subtitle">מצא את הבית הבא שלך ב-7 ימים,<br>לא ב-7 חודשים.</p>
 
-        <form class="auth-form" id="login-form">
-          <input type="email" id="email-input" class="auth-input" placeholder="הזן כתובת אימייל" required autocomplete="email">
-          <input type="password" id="password-input" class="auth-input" placeholder="הזן סיסמה" required autocomplete="current-password" style="margin-top: 10px;">
-          <button type="submit" class="btn-primary" style="margin-top: 20px;">התחבר / הירשם</button>
-        </form>
+        <div class="auth-card">
+          <div class="auth-tabs">
+            <button type="button" id="tab-login" class="auth-tab active">התחברות</button>
+            <button type="button" id="tab-register" class="auth-tab">הרשמה</button>
+          </div>
+
+          <!-- Login Form -->
+          <form class="auth-form" id="login-form">
+            <input type="email" id="login-email" class="auth-input" placeholder="הזן כתובת אימייל" required autocomplete="email">
+            <input type="password" id="login-password" class="auth-input" placeholder="הזן סיסמה" required autocomplete="current-password" style="margin-top: 10px;">
+            <button type="submit" class="btn-primary" style="margin-top: 20px;">התחבר</button>
+          </form>
+
+          <!-- Register Form -->
+          <form class="auth-form hidden" id="register-form">
+            <input type="text" id="register-name" class="auth-input" placeholder="שם מלא (אופציונלי)" autocomplete="name">
+            <input type="email" id="register-email" class="auth-input" placeholder="הזן כתובת אימייל" required autocomplete="email" style="margin-top: 10px;">
+            <input type="password" id="register-password" class="auth-input" placeholder="בחר סיסמה (לפחות 6 תווים)" required autocomplete="new-password" style="margin-top: 10px;">
+            <button type="submit" class="btn-primary" style="margin-top: 20px;">צור חשבון חדש</button>
+          </form>
+        </div>
       </div>
     </div>
     

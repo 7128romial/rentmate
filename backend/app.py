@@ -13,14 +13,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from flask import Flask, g, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
+
 from flask_cors import CORS
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 import openai
 
-import firebase_admin
-from firebase_admin import credentials as fb_credentials, auth as fb_auth
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def _env_bool(name, default=False):
     raw = os.environ.get(name)
@@ -78,7 +76,8 @@ else:
     origins = [o.strip() for o in allowed_origin_raw.split(',') if o.strip()]
     CORS(app, resources={r'/api/*': {'origins': origins}})
 
-db = SQLAlchemy(app)
+from extensions import db
+db.init_app(app)
 
 # Import models after db is defined
 import models  # noqa: E402
@@ -89,17 +88,6 @@ with app.app_context():
 signer = URLSafeTimedSerializer(SECRET_KEY, salt='rentmate-auth')
 
 
-# --- Firebase Admin init ---
-_fb_creds_raw = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-if _fb_creds_raw:
-    try:
-        _fb_cred = fb_credentials.Certificate(json.loads(_fb_creds_raw))
-        firebase_admin.initialize_app(_fb_cred)
-        log.info('Firebase Admin initialized')
-    except Exception as e:
-        log.exception('Firebase Admin init failed: %s', e)
-else:
-    log.warning('FIREBASE_CREDENTIALS_JSON not set; /api/auth/firebase will be unavailable.')
 
 
 # --- Auth helpers ---
@@ -164,44 +152,52 @@ PHONE_RE = re.compile(r'^[0-9+\-\s()]{6,20}$')
 
 
 
-@app.route('/api/auth/firebase', methods=['POST'])
-def auth_firebase():
+@app.route('/api/auth/register', methods=['POST'])
+def register():
     data = request.get_json(silent=True) or {}
-    id_token = (data.get('idToken') or '').strip()
-    if not id_token:
-        return jsonify({'error': 'Missing idToken'}), 400
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password')
+    name = (data.get('name') or '').strip()
 
-    if not firebase_admin._apps:
-        if not app.config.get('DEBUG'):
-            return jsonify({'error': 'Firebase auth not configured on server'}), 503
-        
-        # Fallback for local dev: decode JWT payload without verifying signature
-        log.warning('Firebase Admin not configured. Blindly trusting idToken for local dev!')
-        try:
-            import base64
-            payload = id_token.split('.')[1]
-            payload += '=' * (-len(payload) % 4)
-            decoded = json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
-        except Exception as e:
-            return jsonify({'error': 'Invalid idToken format'}), 401
-    else:
-        try:
-            decoded = fb_auth.verify_id_token(id_token)
-        except Exception as e:
-            log.warning('Firebase token verify failed: %s', e)
-            return jsonify({'error': 'Invalid idToken'}), 401
-    email = decoded.get('email')
-    if not email:
-        return jsonify({'error': 'Email not present in token'}), 400
+    if not email or not password:
+        return jsonify({'error': 'אימייל וסיסמה הם שדות חובה'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
 
-    user = models.User.query.filter_by(email=email).first()
-    if not user:
-        user = models.User(email=email, role='renter')
-        db.session.add(user)
+    existing_user = models.User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({'error': 'האימייל כבר קיים במערכת'}), 400
+
+    hashed_pw = generate_password_hash(password)
+    user = models.User(email=email, password_hash=hashed_pw, role='renter')
+    db.session.add(user)
+    db.session.commit()
+
+    if name:
+        profile = models.PreferenceProfile(user_id=user.id, name=name)
+        db.session.add(profile)
         db.session.commit()
 
     token = _issue_token(user.id)
-    return jsonify({'message': 'Verified', 'user_id': user.id, 'token': token})
+    return jsonify({'message': 'נרשמת בהצלחה', 'user_id': user.id, 'token': token})
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'error': 'אימייל וסיסמה הם שדות חובה'}), 400
+
+    user = models.User.query.filter_by(email=email).first()
+    if not user or not check_password_hash(user.password_hash, password):
+        return jsonify({'error': 'אימייל או סיסמה שגויים'}), 401
+
+    token = _issue_token(user.id)
+    return jsonify({'message': 'התחברת בהצלחה', 'user_id': user.id, 'token': token})
+
 
 
 @app.route('/api/profile', methods=['POST'])
