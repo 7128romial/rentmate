@@ -1806,36 +1806,44 @@ h1, h2, h3 {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
 }
 .feature-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: white;
   position: relative;
-}
-.feature-icon svg {
-  width: 28px;
-  height: 28px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8), 0 8px 24px rgba(0,0,0,0.04);
 }
 .feature-icon::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid rgba(255,255,255,0.18);
-  pointer-events: none;
+  display: none;
+}
+.feature-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke-width: 1.5;
 }
 .feature-icon.icon-renter {
-  background: linear-gradient(135deg, #FF385C 0%, #E61E4D 100%);
+  background: linear-gradient(135deg, rgba(255,56,92,0.15) 0%, rgba(230,30,77,0.05) 100%);
+  color: #E61E4D;
+}
+.feature-icon.icon-renter svg {
+  filter: drop-shadow(0 4px 8px rgba(230,30,77,0.3));
 }
 .feature-icon.icon-roommate {
-  background: linear-gradient(135deg, #00C689 0%, #00A37A 100%);
+  background: linear-gradient(135deg, rgba(0,198,137,0.15) 0%, rgba(0,163,122,0.05) 100%);
+  color: #00A37A;
+}
+.feature-icon.icon-roommate svg {
+  filter: drop-shadow(0 4px 8px rgba(0,163,122,0.3));
 }
 .feature-icon.icon-landlord {
-  background: linear-gradient(135deg, #6C5CE7 0%, #5546C9 100%);
+  background: linear-gradient(135deg, rgba(108,92,231,0.15) 0%, rgba(85,70,201,0.05) 100%);
+  color: #5546C9;
+}
+.feature-icon.icon-landlord svg {
+  filter: drop-shadow(0 4px 8px rgba(85,70,201,0.3));
 }
 .feature-text {
   display: flex;
