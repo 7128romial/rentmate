@@ -1,5 +1,5 @@
-import { auth, RecaptchaVerifier, signInWithPhoneNumber } from './src/firebase.js';
-import { API_BASE, DEMO_MODE, DEMO_OTP, setSession } from './src/config.js';
+import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from './src/firebase.js';
+import { API_BASE, DEMO_MODE, setSession } from './src/config.js';
 import { fakeSession } from './src/demo.js';
 
 // First-time visitors see the welcome screen.
@@ -8,35 +8,8 @@ if (!localStorage.getItem('rentmate_seen_welcome')) {
 }
 
 const loginForm = document.getElementById('login-form');
-const otpForm = document.getElementById('otp-form');
-const phoneInput = document.getElementById('phone-input');
-const otpInput = document.getElementById('otp-input');
-
-let recaptchaVerifier = null;
-let confirmationResult = null;
-
-function createRecaptcha() {
-  if (recaptchaVerifier) {
-    try { recaptchaVerifier.clear(); } catch (_) {}
-    recaptchaVerifier = null;
-  }
-  const old = document.getElementById('recaptcha-container');
-  if (old && old.parentNode) old.parentNode.removeChild(old);
-  const fresh = document.createElement('div');
-  fresh.id = 'recaptcha-container';
-  document.body.appendChild(fresh);
-  recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    size: 'invisible',
-  });
-  return recaptchaVerifier;
-}
-
-function normalizePhone(raw) {
-  let p = raw.replace(/[\s\-()]/g, '');
-  if (p.startsWith('0')) return '+972' + p.slice(1);
-  if (!p.startsWith('+')) return '+' + p;
-  return p;
-}
+const emailInput = document.getElementById('email-input');
+const passwordInput = document.getElementById('password-input');
 
 function setButton(form, label, disabled) {
   const btn = form.querySelector('button[type=submit]');
@@ -52,71 +25,68 @@ function showError(input, message) {
 
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const phoneRaw = phoneInput.value.trim();
-  if (!phoneRaw) return;
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  if (!email || !password) return;
 
   if (DEMO_MODE) {
-    loginForm.classList.add('hidden');
-    otpForm.classList.remove('hidden');
-    otpInput.placeholder = `הזן ${DEMO_OTP} (דמו)`;
-    return;
-  }
-
-  const phone = normalizePhone(phoneRaw);
-  console.log('[auth] normalized phone being sent to Firebase:', JSON.stringify(phone));
-  setButton(loginForm, 'שולח...', true);
-  try {
-    const verifier = createRecaptcha();
-    confirmationResult = await signInWithPhoneNumber(auth, phone, verifier);
-    loginForm.classList.add('hidden');
-    otpForm.classList.remove('hidden');
-    setButton(loginForm, 'שלח קוד ב-SMS', false);
-  } catch (err) {
-    console.error('Firebase signInWithPhoneNumber failed', err);
-    alert('שגיאה בשליחת הקוד: ' + (err.message || err));
-    setButton(loginForm, 'שלח קוד ב-SMS', false);
-    try { recaptchaVerifier && recaptchaVerifier.clear(); } catch (_) {}
-    recaptchaVerifier = null;
-  }
-});
-
-otpForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const otp = otpInput.value.trim();
-
-  if (DEMO_MODE) {
-    if (otp !== DEMO_OTP) {
-      showError(otpInput, `קוד דמו: ${DEMO_OTP}`);
+    if (password !== '1234') {
+      showError(passwordInput, 'סיסמת דמו היא 1234');
       return;
     }
-    const phone = normalizePhone(phoneInput.value.trim());
-    setSession(fakeSession(phone));
+    setSession(fakeSession(email));
     window.location.href = '/onboarding.html';
     return;
   }
 
-  if (!otp || !confirmationResult) return;
-  setButton(otpForm, 'מאמת...', true);
+  setButton(loginForm, 'מתחבר...', true);
   try {
-    const cred = await confirmationResult.confirm(otp);
+    let cred;
+    try {
+      // Try to sign in first
+      cred = await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      // If user not found, create a new one
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        try {
+          cred = await createUserWithEmailAndPassword(auth, email, password);
+        } catch (createErr) {
+          throw createErr;
+        }
+      } else {
+        throw err;
+      }
+    }
+
     const idToken = await cred.user.getIdToken();
     const res = await fetch(`${API_BASE}/api/auth/firebase`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),
     });
+    
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      showError(otpInput, data.error || 'אימות נכשל');
-      setButton(otpForm, 'אמת והתחבר', false);
+      showError(passwordInput, data.error || 'התחברות נכשלה מול השרת');
+      setButton(loginForm, 'התחבר / הירשם', false);
       return;
     }
+    
     const data = await res.json();
     setSession({ user_id: data.user_id, token: data.token });
     window.location.href = '/onboarding.html';
+
   } catch (err) {
-    console.error('OTP verify failed', err);
-    showError(otpInput, 'קוד שגוי, נסה שוב');
-    setButton(otpForm, 'אמת והתחבר', false);
+    console.error('Firebase Auth failed', err);
+    if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      showError(passwordInput, 'סיסמה שגויה');
+    } else if (err.code === 'auth/weak-password') {
+      showError(passwordInput, 'סיסמה חלשה מדי (לפחות 6 תווים)');
+    } else if (err.code === 'auth/email-already-in-use') {
+      showError(emailInput, 'אימייל זה כבר בשימוש');
+    } else {
+      alert('שגיאה בהתחברות: ' + (err.message || err));
+    }
+    setButton(loginForm, 'התחבר / הירשם', false);
   }
 });

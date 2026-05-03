@@ -3,7 +3,7 @@ from datetime import datetime
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    phone = db.Column(db.String(20), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     role = db.Column(db.String(20), nullable=False, default='renter') # 'renter', 'roommate', 'landlord'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -46,12 +46,3 @@ class ChatMessage(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class OtpCode(db.Model):
-    # Stores hashed OTPs so the raw code never touches the DB.
-    id = db.Column(db.Integer, primary_key=True)
-    phone = db.Column(db.String(20), nullable=False, index=True)
-    code_hash = db.Column(db.String(128), nullable=False)
-    expires_at = db.Column(db.DateTime, nullable=False)
-    consumed = db.Column(db.Boolean, nullable=False, default=False)
-    attempts = db.Column(db.Integer, nullable=False, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)

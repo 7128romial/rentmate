@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCUTXCTOrO6BqtPw3fm1T16FQa2vdr-Pzw',
@@ -15,4 +15,4 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 auth.languageCode = 'he';
 
-export { RecaptchaVerifier, signInWithPhoneNumber };
+export { signInWithEmailAndPassword, createUserWithEmailAndPassword };

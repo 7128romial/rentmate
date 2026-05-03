@@ -104,9 +104,6 @@ else:
 
 # --- Auth helpers ---
 
-def _hash_otp(code, phone):
-    # Tie the hash to the phone so a leaked hash can't be replayed against another number.
-    return hashlib.sha256(f'{phone}:{code}'.encode('utf-8')).hexdigest()
 
 
 def _issue_token(user_id):
@@ -165,99 +162,41 @@ def _chat_rate_check(uid):
 PHONE_RE = re.compile(r'^[0-9+\-\s()]{6,20}$')
 
 
-@app.route('/api/auth/login', methods=['POST'])
-def login():
-    data = request.get_json(silent=True) or {}
-    phone = (data.get('phone') or '').strip()
-    if not phone or not PHONE_RE.match(phone):
-        return jsonify({'error': 'Valid phone number required'}), 400
-
-    # Invalidate any outstanding codes for this phone before issuing a new one.
-    models.OtpCode.query.filter_by(phone=phone, consumed=False).update({'consumed': True})
-
-    demo_otp = os.environ.get('DEMO_OTP')
-    code = demo_otp if demo_otp else f'{secrets.randbelow(10000):04d}'
-    entry = models.OtpCode(
-        phone=phone,
-        code_hash=_hash_otp(code, phone),
-        expires_at=datetime.utcnow() + timedelta(seconds=OTP_TTL_SECONDS),
-    )
-    db.session.add(entry)
-    db.session.commit()
-
-    # In dev we return the code so the demo still works; in prod we'd send it via SMS.
-    body = {'message': 'OTP sent', 'phone': phone}
-    if app.config.get('DEBUG') or _env_bool('EXPOSE_OTP', False):
-        body['otp'] = code
-    else:
-        log.info('Issued OTP for phone=%s (len=%d)', phone, len(code))
-    return jsonify(body)
-
-
-@app.route('/api/auth/verify', methods=['POST'])
-def verify():
-    data = request.get_json(silent=True) or {}
-    phone = (data.get('phone') or '').strip()
-    otp = (data.get('otp') or '').strip()
-    if not phone or not otp:
-        return jsonify({'error': 'Missing credentials'}), 400
-
-    entry = (
-        models.OtpCode.query
-        .filter_by(phone=phone, consumed=False)
-        .order_by(models.OtpCode.created_at.desc())
-        .first()
-    )
-    if not entry:
-        return jsonify({'error': 'No active code for this number'}), 401
-    if entry.expires_at < datetime.utcnow():
-        entry.consumed = True
-        db.session.commit()
-        return jsonify({'error': 'Code expired'}), 401
-    if entry.attempts >= OTP_MAX_ATTEMPTS:
-        entry.consumed = True
-        db.session.commit()
-        return jsonify({'error': 'Too many attempts'}), 429
-
-    entry.attempts += 1
-    expected = entry.code_hash
-    got = _hash_otp(otp, phone)
-    if not hmac.compare_digest(expected, got):
-        db.session.commit()
-        return jsonify({'error': 'Incorrect code'}), 401
-
-    entry.consumed = True
-
-    user = models.User.query.filter_by(phone=phone).first()
-    if not user:
-        user = models.User(phone=phone, role='renter')
-        db.session.add(user)
-    db.session.commit()
-
-    token = _issue_token(user.id)
-    return jsonify({'message': 'Verified', 'user_id': user.id, 'token': token})
 
 
 @app.route('/api/auth/firebase', methods=['POST'])
 def auth_firebase():
-    if not firebase_admin._apps:
-        return jsonify({'error': 'Firebase auth not configured on server'}), 503
     data = request.get_json(silent=True) or {}
     id_token = (data.get('idToken') or '').strip()
     if not id_token:
         return jsonify({'error': 'Missing idToken'}), 400
-    try:
-        decoded = fb_auth.verify_id_token(id_token)
-    except Exception as e:
-        log.warning('Firebase token verify failed: %s', e)
-        return jsonify({'error': 'Invalid idToken'}), 401
-    phone = decoded.get('phone_number')
-    if not phone:
-        return jsonify({'error': 'Phone not present in token'}), 400
 
-    user = models.User.query.filter_by(phone=phone).first()
+    if not firebase_admin._apps:
+        if not app.config.get('DEBUG'):
+            return jsonify({'error': 'Firebase auth not configured on server'}), 503
+        
+        # Fallback for local dev: decode JWT payload without verifying signature
+        log.warning('Firebase Admin not configured. Blindly trusting idToken for local dev!')
+        try:
+            import base64
+            payload = id_token.split('.')[1]
+            payload += '=' * (-len(payload) % 4)
+            decoded = json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
+        except Exception as e:
+            return jsonify({'error': 'Invalid idToken format'}), 401
+    else:
+        try:
+            decoded = fb_auth.verify_id_token(id_token)
+        except Exception as e:
+            log.warning('Firebase token verify failed: %s', e)
+            return jsonify({'error': 'Invalid idToken'}), 401
+    email = decoded.get('email')
+    if not email:
+        return jsonify({'error': 'Email not present in token'}), 400
+
+    user = models.User.query.filter_by(email=email).first()
     if not user:
-        user = models.User(phone=phone, role='renter')
+        user = models.User(email=email, role='renter')
         db.session.add(user)
         db.session.commit()
 
