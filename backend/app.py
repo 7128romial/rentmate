@@ -43,9 +43,12 @@ app = Flask(__name__)
 
 # --- Config ---
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+database_url = os.environ.get(
     'DATABASE_URL', 'sqlite:///' + os.path.join(basedir, 'rentmate_v3.db')
 )
+if database_url.startswith('postgres://'):
+    database_url = 'postgresql://' + database_url[len('postgres://'):]
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
