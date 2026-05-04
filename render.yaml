@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: rentmate-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 30 app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: ALLOWED_ORIGIN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: TOKEN_TTL_SECONDS
+        value: "604800"
+      - key: CHAT_MAX_PER_HOUR
+        value: "60"
+      - key: LOGIN_MAX_PER_15_MIN
+        value: "10"
+      - key: LOG_LEVEL
+        value: INFO
