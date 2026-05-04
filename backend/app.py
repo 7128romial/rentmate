@@ -1,12 +1,8 @@
-import hashlib
-import hmac
 import json
 import logging
 import os
 import re
-import secrets
 import time
-from datetime import datetime, timedelta
 from functools import wraps
 
 from dotenv import load_dotenv
@@ -16,7 +12,7 @@ from flask import Flask, g, jsonify, request
 
 from flask_cors import CORS
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
-import openai
+from openai import OpenAI, OpenAIError
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -62,14 +58,19 @@ if not SECRET_KEY:
 app.config['SECRET_KEY'] = SECRET_KEY
 
 TOKEN_TTL_SECONDS = _env_int('TOKEN_TTL_SECONDS', 60 * 60 * 24 * 7)  # 7 days
-OTP_TTL_SECONDS = _env_int('OTP_TTL_SECONDS', 5 * 60)  # 5 minutes
-OTP_MAX_ATTEMPTS = _env_int('OTP_MAX_ATTEMPTS', 5)
 CHAT_MAX_CHARS = _env_int('CHAT_MAX_CHARS', 2000)
 CHAT_MIN_INTERVAL_SECONDS = _env_int('CHAT_MIN_INTERVAL_SECONDS', 2)
 CHAT_MAX_PER_HOUR = _env_int('CHAT_MAX_PER_HOUR', 60)
+LOGIN_MAX_PER_15_MIN = _env_int('LOGIN_MAX_PER_15_MIN', 10)
+VALID_ROLES = {'renter', 'roommate', 'landlord'}
 
 allowed_origin_raw = os.environ.get('ALLOWED_ORIGIN', '*')
 if allowed_origin_raw.strip() == '*':
+    if not _env_bool('FLASK_DEBUG', False):
+        raise RuntimeError(
+            'ALLOWED_ORIGIN=* is not permitted in non-debug mode. '
+            'Set ALLOWED_ORIGIN to a comma-separated list of trusted origins.'
+        )
     CORS(app)
     log.warning('CORS is open to all origins (ALLOWED_ORIGIN=*).')
 else:
@@ -82,10 +83,59 @@ db.init_app(app)
 # Import models after db is defined
 import models  # noqa: E402
 
+DEMO_SEED_CITIES = [
+    {
+        'city': 'תל אביב',
+        'base_price': 5500,
+        'images': [
+            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1502672260266-1c1de2d93688?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80',
+        ],
+    },
+    {
+        'city': 'ירושלים',
+        'base_price': 4200,
+        'images': [
+            'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80',
+        ],
+    },
+]
+
+
+def seed_demo_properties():
+    """Idempotent seed of a small demo catalogue. Runs once on startup."""
+    if models.Property.query.first() is not None:
+        return
+    for spec in DEMO_SEED_CITIES:
+        city = spec['city']
+        base = spec['base_price']
+        for i, image in enumerate(spec['images']):
+            db.session.add(
+                models.Property(
+                    title=(
+                        f'סטודיו מואר ב{city}' if i == 0
+                        else f'דירה מהממת ב{city}' if i == 1
+                        else f'לופט יוקרתי ב{city}'
+                    ),
+                    price=base + i * 600,
+                    location=city,
+                    image=image,
+                    tags='שקט,משופצת' if i == 0 else 'מרווחת,זוגות' if i == 1 else 'פרימיום,מרפסת',
+                )
+            )
+    db.session.commit()
+
+
 with app.app_context():
     db.create_all()
+    seed_demo_properties()
 
 signer = URLSafeTimedSerializer(SECRET_KEY, salt='rentmate-auth')
+
+openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY')) if os.environ.get('OPENAI_API_KEY') else None
 
 
 
@@ -128,6 +178,7 @@ def require_auth(func):
 
 # --- Simple per-user rate limiter (in-memory; adequate for a single-process MVP) ---
 _chat_rate = {}  # uid -> {'last': float, 'window_start': float, 'count': int}
+_login_rate = {}  # ip -> [timestamp, ...] within the last 15 min
 
 
 def _chat_rate_check(uid):
@@ -145,19 +196,43 @@ def _chat_rate_check(uid):
     return True, None
 
 
-# --- API ENDPOINTS ---
+def _login_rate_check(ip):
+    """Throttles login + register by client IP. Resets per 15 min window."""
+    now = time.time()
+    cutoff = now - 15 * 60
+    bucket = [t for t in _login_rate.get(ip, []) if t > cutoff]
+    if len(bucket) >= LOGIN_MAX_PER_15_MIN:
+        _login_rate[ip] = bucket
+        return False
+    bucket.append(now)
+    _login_rate[ip] = bucket
+    return True
 
-PHONE_RE = re.compile(r'^[0-9+\-\s()]{6,20}$')
+
+def _client_ip():
+    fwd = request.headers.get('X-Forwarded-For', '')
+    if fwd:
+        return fwd.split(',')[0].strip()
+    return request.remote_addr or 'unknown'
+
+
+# --- API ENDPOINTS ---
 
 
 
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
+    if not _login_rate_check(_client_ip()):
+        return jsonify({'error': 'יותר מדי נסיונות, נסו שוב בעוד מספר דקות'}), 429
+
     data = request.get_json(silent=True) or {}
     email = (data.get('email') or '').strip().lower()
     password = data.get('password')
     name = (data.get('name') or '').strip()
+    role = (data.get('role') or 'renter').strip()
+    if role not in VALID_ROLES:
+        role = 'renter'
 
     if not email or not password:
         return jsonify({'error': 'אימייל וסיסמה הם שדות חובה'}), 400
@@ -169,7 +244,7 @@ def register():
         return jsonify({'error': 'האימייל כבר קיים במערכת'}), 400
 
     hashed_pw = generate_password_hash(password)
-    user = models.User(email=email, password_hash=hashed_pw, role='renter')
+    user = models.User(email=email, password_hash=hashed_pw, role=role)
     db.session.add(user)
     db.session.commit()
 
@@ -179,11 +254,20 @@ def register():
         db.session.commit()
 
     token = _issue_token(user.id)
-    return jsonify({'message': 'נרשמת בהצלחה', 'user_id': user.id, 'token': token})
+    return jsonify({
+        'message': 'נרשמת בהצלחה',
+        'user_id': user.id,
+        'token': token,
+        'role': user.role,
+        'profile_complete': False,
+    })
 
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
+    if not _login_rate_check(_client_ip()):
+        return jsonify({'error': 'יותר מדי נסיונות, נסו שוב בעוד מספר דקות'}), 429
+
     data = request.get_json(silent=True) or {}
     email = (data.get('email') or '').strip().lower()
     password = data.get('password')
@@ -195,9 +279,38 @@ def login():
     if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'error': 'אימייל או סיסמה שגויים'}), 401
 
-    token = _issue_token(user.id)
-    return jsonify({'message': 'התחברת בהצלחה', 'user_id': user.id, 'token': token})
+    profile = models.PreferenceProfile.query.filter_by(user_id=user.id).first()
+    profile_complete = bool(profile and profile.city and profile.max_budget)
 
+    token = _issue_token(user.id)
+    return jsonify({
+        'message': 'התחברת בהצלחה',
+        'user_id': user.id,
+        'token': token,
+        'role': user.role,
+        'profile_complete': profile_complete,
+    })
+
+
+@app.route('/api/profile', methods=['GET'])
+@require_auth
+def get_profile():
+    user = db.session.get(models.User, g.user_id)
+    if user is None:
+        return jsonify({'error': 'User not found'}), 404
+    profile = models.PreferenceProfile.query.filter_by(user_id=user.id).first()
+    payload = {
+        'role': user.role,
+        'profile_complete': bool(profile and profile.city and profile.max_budget),
+        'profile': {
+            'name': profile.name if profile else None,
+            'city': profile.city if profile else None,
+            'budget': profile.max_budget if profile else None,
+            'type': profile.type if profile else None,
+            'extras': profile.extras if profile else None,
+        },
+    }
+    return jsonify(payload)
 
 
 @app.route('/api/profile', methods=['POST'])
@@ -206,6 +319,14 @@ def update_profile():
     data = request.get_json(silent=True) or {}
     user_id = g.user_id
 
+    user = db.session.get(models.User, user_id)
+    if user is None:
+        return jsonify({'error': 'User not found'}), 404
+
+    role = (data.get('role') or '').strip()
+    if role and role in VALID_ROLES:
+        user.role = role
+
     profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
     if not profile:
         profile = models.PreferenceProfile(user_id=user_id)
@@ -213,14 +334,12 @@ def update_profile():
 
     name = (data.get('name') or '').strip()[:100]
     city = (data.get('city') or '').strip()[:100]
-    budget_str = str(data.get('budget', ''))
-    nums = re.findall(r'\d+', budget_str)
+    budget_raw = data.get('budget')
     try:
-        budget = int(nums[0]) if nums else 4500
-    except (ValueError, IndexError):
-        budget = 4500
-    if budget < 100:
-        budget *= 1000
+        budget = int(budget_raw) if budget_raw not in (None, '') else (profile.max_budget or 0)
+    except (TypeError, ValueError):
+        nums = re.findall(r'\d+', str(budget_raw))
+        budget = int(nums[0]) if nums else (profile.max_budget or 0)
     budget = max(0, min(budget, 1_000_000))
     ptype = (data.get('type') or '').strip()[:50]
     extras = (data.get('extras') or '').strip()[:500]
@@ -232,7 +351,7 @@ def update_profile():
     profile.extras = extras or profile.extras
 
     db.session.commit()
-    return jsonify({'message': 'Profile saved'})
+    return jsonify({'message': 'Profile saved', 'role': user.role})
 
 
 @app.route('/api/properties', methods=['GET'])
@@ -241,35 +360,15 @@ def get_properties():
     user_id = g.user_id
     profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
 
-    city = profile.city if profile and profile.city else 'תל אביב'
+    city = profile.city if profile and profile.city else None
     base_price = profile.max_budget if profile and profile.max_budget and profile.max_budget > 0 else 4500
 
-    props = models.Property.query.filter_by(location=city).all()
-    if not props:
-        prop1 = models.Property(
-            title=f"סטודיו מואר ב{city}",
-            price=base_price,
-            location=city,
-            image="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
-            tags="שקט,משופצת"
-        )
-        prop2 = models.Property(
-            title=f"דירה מהממת ב{city}",
-            price=base_price + 350,
-            location=city,
-            image="https://images.unsplash.com/photo-1502672260266-1c1de2d93688?auto=format&fit=crop&w=600&q=80",
-            tags="מרווחת,זוגות"
-        )
-        prop3 = models.Property(
-            title=f"לופט יוקרתי ליד הים",
-            price=base_price + 1200,
-            location=city,
-            image="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80",
-            tags="פרימיום,מרפסת"
-        )
-        db.session.add_all([prop1, prop2, prop3])
-        db.session.commit()
-        props = [prop1, prop2, prop3]
+    query = models.Property.query
+    if city:
+        in_city = query.filter_by(location=city).all()
+        props = in_city if in_city else query.all()
+    else:
+        props = query.all()
 
     result = []
     for p in props:
@@ -360,17 +459,15 @@ def chat():
     for msg in history:
         messages.append({"role": msg.role, "content": msg.content})
 
-    api_key = os.environ.get('OPENAI_API_KEY')
-    if api_key:
-        openai.api_key = api_key
+    if openai_client is not None:
         try:
-            response = openai.ChatCompletion.create(
+            response = openai_client.chat.completions.create(
                 model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'),
                 messages=messages,
                 timeout=_env_int('OPENAI_TIMEOUT_SECONDS', 20),
             )
             ai_text = response.choices[0].message.content
-        except (openai.error.OpenAIError, TimeoutError, ConnectionError) as e:
+        except (OpenAIError, TimeoutError, ConnectionError) as e:
             log.exception('OpenAI call failed: %s', e)
             ai_text = "סליחה, יש לי קצת עומס במערכת. תוכל לחזור על זה?"
     else:

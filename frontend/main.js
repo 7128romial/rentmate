@@ -1,4 +1,5 @@
 import { FLOW } from './src/onboarding-flow.js';
+import { API_BASE, authHeaders, getToken } from './src/config.js';
 import {
   addUserProperty,
   setProfile,
@@ -6,6 +7,26 @@ import {
   setSubrole,
   setUserListing,
 } from './src/storage.js';
+
+async function syncToBackend(role, profile) {
+  if (!getToken()) return;
+  try {
+    await fetch(`${API_BASE}/api/profile`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        role,
+        name: profile.name || '',
+        city: profile.city || '',
+        budget: Number(profile.budget) || 0,
+        type: profile.type || '',
+        extras: profile.extras || '',
+      }),
+    });
+  } catch (err) {
+    console.error('Profile sync failed', err);
+  }
+}
 
 const messagesContainer = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
@@ -207,6 +228,8 @@ function finalize(redirect) {
       kind: 'apartment',
     });
   }
+
+  syncToBackend(ctx.role, ctx.profile || {});
 
   setTimeout(() => {
     window.location.href = redirect || '/swipe.html';
