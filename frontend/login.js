@@ -62,6 +62,44 @@ function destinationFor(data) {
   return '/onboarding.html';
 }
 
+// Render's free tier sleeps after 15 min of inactivity; the first request
+// after a wake-up can take 30-60s. Allow up to 75s before giving up.
+const REQUEST_TIMEOUT_MS = 75_000;
+// After this delay, swap the button label to a "still waking up" hint so the
+// user knows we're not frozen.
+const WAKE_HINT_MS = 4_000;
+
+async function authFetch(url, body) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function startWakeHint(form, hintLabel) {
+  const btn = form.querySelector('button[type=submit]');
+  if (!btn) return () => {};
+  const timer = setTimeout(() => {
+    btn.textContent = hintLabel;
+  }, WAKE_HINT_MS);
+  return () => clearTimeout(timer);
+}
+
+function describeNetworkError(err) {
+  if (err && err.name === 'AbortError') {
+    return 'השרת לא הגיב בזמן. נסי שוב — לפעמים הוא צריך רגע להתעורר.';
+  }
+  return 'שגיאת תקשורת עם השרת. בדקי את החיבור לאינטרנט ונסי שוב.';
+}
+
 // Handle Login
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -71,15 +109,12 @@ loginForm.addEventListener('submit', async (e) => {
   if (!email || !password) return;
 
   setButton(loginForm, 'מתחבר...', true);
+  const cancelHint = startWakeHint(loginForm, 'מעיר את השרת… (עד דקה)');
 
   try {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    const res = await authFetch(`${API_BASE}/api/auth/login`, { email, password });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       showError(loginForm, data.error || 'התחברות נכשלה');
       setButton(loginForm, 'התחבר', false);
@@ -92,8 +127,10 @@ loginForm.addEventListener('submit', async (e) => {
 
   } catch (err) {
     console.error('Login error', err);
-    showError(loginForm, 'שגיאת תקשורת עם השרת');
+    showError(loginForm, describeNetworkError(err));
     setButton(loginForm, 'התחבר', false);
+  } finally {
+    cancelHint();
   }
 });
 
@@ -108,15 +145,12 @@ registerForm.addEventListener('submit', async (e) => {
   if (!email || !password) return;
 
   setButton(registerForm, 'יוצר חשבון...', true);
+  const cancelHint = startWakeHint(registerForm, 'מעיר את השרת… (עד דקה)');
 
   try {
-    const res = await fetch(`${API_BASE}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
-    });
+    const res = await authFetch(`${API_BASE}/api/auth/register`, { email, password, name });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       showError(registerForm, data.error || 'הרשמה נכשלה');
       setButton(registerForm, 'צור חשבון חדש', false);
@@ -129,7 +163,9 @@ registerForm.addEventListener('submit', async (e) => {
 
   } catch (err) {
     console.error('Registration error', err);
-    showError(registerForm, 'שגיאת תקשורת עם השרת');
+    showError(registerForm, describeNetworkError(err));
     setButton(registerForm, 'צור חשבון חדש', false);
+  } finally {
+    cancelHint();
   }
 });
