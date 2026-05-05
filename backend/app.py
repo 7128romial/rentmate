@@ -381,7 +381,8 @@ def get_properties():
             'price': f"₪{p.price:,}/חודש",
             'image': p.image,
             'matchScore': 98 if p.price <= base_price else 88,
-            'tags': p.tags.split(',') if p.tags else []
+            'tags': p.tags.split(',') if p.tags else [],
+            'address': p.location
         })
 
     return jsonify(result)
@@ -450,12 +451,14 @@ def chat():
         {
             "role": "system",
             "content": (
-                "You are RentMate AI. Ask the user questions to discover their apartment "
-                "preferences (budget, city, roommates, etc). Be friendly, short, and "
-                "conversational. Speak in Hebrew. When you have enough info to create a "
-                "profile, output a JSON object starting with 'PROFILE_JSON=' followed by the "
-                "JSON string containing: {'name', 'city', 'budget', 'type', 'extras'}. Do NOT "
-                "output the JSON until you are sure you have at least a city and budget."
+                "You are RentMate AI. You assist users in Hebrew. Discover their goal first, there are 4 paths: "
+                "1) renter (wants to rent an apartment) 2) landlord (wants to rent out their apartment) "
+                "3) roommate_seeker (looking for a roommate) 4) roommate_host (has an apartment, needs a roommate). "
+                "Ask relevant follow-ups (city, budget/price, name, extras/lifestyle). Be friendly, short, and conversational. "
+                "When you have enough info to create their profile, output a JSON object starting with 'PROFILE_JSON=' "
+                "followed by the JSON string containing: {'role': 'renter'|'landlord'|'roommate', "
+                "'subrole': 'seeker'|'host' (if roommate), 'name', 'city', 'budget', 'type', 'extras'}. "
+                "Do NOT output the JSON until you have the core info."
             ),
         }
     ]
@@ -480,8 +483,18 @@ def chat():
             ai_text = "מעולה! איפה היית רוצה לגור ומה התקציב שלך? (גרסת דמו)"
 
     profile_complete = False
+    assigned_role = None
+    assigned_subrole = None
+
     if 'PROFILE_JSON=' in ai_text:
-        json_str = ai_text.split('PROFILE_JSON=', 1)[1].strip()
+        raw_json_str = ai_text.split('PROFILE_JSON=', 1)[1].strip()
+        start_idx = raw_json_str.find('{')
+        end_idx = raw_json_str.rfind('}')
+        if start_idx != -1 and end_idx != -1 and end_idx >= start_idx:
+            json_str = raw_json_str[start_idx:end_idx+1]
+        else:
+            json_str = raw_json_str
+            
         try:
             profile_data = json.loads(json_str)
             if not isinstance(profile_data, dict):
@@ -490,17 +503,37 @@ def chat():
             if not profile:
                 profile = models.PreferenceProfile(user_id=user_id)
                 db.session.add(profile)
+            
+            user = db.session.get(models.User, user_id)
+            if 'role' in profile_data and profile_data['role'] in VALID_ROLES:
+                user.role = profile_data['role']
+                assigned_role = user.role
+            else:
+                assigned_role = user.role
+
+            assigned_subrole = profile_data.get('subrole')
+
             profile.name = str(profile_data.get('name', 'משתמש'))[:100]
             profile.city = str(profile_data.get('city', 'תל אביב'))[:100]
             try:
                 profile.max_budget = int(profile_data.get('budget', 4500))
             except (TypeError, ValueError):
                 profile.max_budget = 4500
-            profile.type = str(profile_data.get('type', ''))[:50]
+            
+            subr = str(profile_data.get('subrole', ''))
+            ptyp = str(profile_data.get('type', ''))
+            profile.type = f"{ptyp} {subr}".strip()[:50]
             profile.extras = str(profile_data.get('extras', ''))[:500]
             db.session.commit()
             profile_complete = True
-            ai_text = "מעולה! בניתי לך פרופיל אישי. מעביר אותך לדירות..."
+            
+            if assigned_role == 'landlord':
+                ai_text = "מעולה! אני פותח לך את ממשק ניהול הנכסים 🔑"
+            elif assigned_role == 'roommate':
+                ai_text = "מצוין! בונה לך פרופיל שותפים ומעביר אותך לחיפוש 🤝"
+            else:
+                ai_text = "מעולה! בניתי לך פרופיל אישי. מעביר אותך לדירות ✨"
+                
         except (ValueError, TypeError) as e:
             log.warning('Failed to parse PROFILE_JSON payload: %s', e)
             ai_text = "הייתה בעיה בשמירת הפרופיל, בוא ננסה שוב."
@@ -509,7 +542,12 @@ def chat():
     db.session.add(ai_msg)
     db.session.commit()
 
-    return jsonify({'response': ai_text, 'profile_complete': profile_complete})
+    return jsonify({
+        'response': ai_text, 
+        'profile_complete': profile_complete, 
+        'role': assigned_role,
+        'subrole': assigned_subrole
+    })
 
 
 if __name__ == '__main__':
