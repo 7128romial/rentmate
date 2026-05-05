@@ -23,16 +23,16 @@ const subtitleEl = document.getElementById('profile-subtitle');
 const form = document.getElementById('profile-form');
 
 if (role === 'landlord') {
-  titleEl.textContent = 'הפרופיל שלי';
+  titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב משכיר/ה 🔑</span>';
   subtitleEl.textContent = 'פרטי המשכיר/ה — מופיעים לשוכרים שמתעניינים בדירות שלך.';
 } else if (role === 'roommate' && subrole === 'host') {
-  titleEl.textContent = 'הפרופיל וליסטינג';
+  titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב שותף מארח 🛏</span>';
   subtitleEl.textContent = 'הפרטים שאחרים יראו עליך ועל החדר.';
 } else if (role === 'roommate' && subrole === 'seeker') {
-  titleEl.textContent = 'הפרופיל שלי';
+  titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב מחפש/ת שותפים 🤝</span>';
   subtitleEl.textContent = 'הפרטים שמופיעים לשותפים פוטנציאליים.';
 } else {
-  titleEl.textContent = 'הפרופיל שלי';
+  titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב שוכר/ת דירה 🏡</span>';
   subtitleEl.textContent = 'הפרטים האלה משמשים להתאמת דירות מדויקת יותר.';
 }
 
