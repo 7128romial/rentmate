@@ -357,6 +357,22 @@ def update_profile():
     return jsonify({'message': 'Profile saved', 'role': user.role})
 
 
+@app.route('/api/reset', methods=['POST'])
+@require_auth
+def reset_account():
+    user_id = g.user_id
+    models.ChatMessage.query.filter_by(user_id=user_id).delete()
+    models.PreferenceProfile.query.filter_by(user_id=user_id).delete()
+    models.Swipe.query.filter_by(user_id=user_id).delete()
+    models.Match.query.filter_by(user_id=user_id).delete()
+    
+    user = db.session.get(models.User, user_id)
+    if user:
+        user.role = 'renter'
+        
+    db.session.commit()
+    return jsonify({'success': True})
+
 @app.route('/api/properties', methods=['GET'])
 @require_auth
 def get_properties():

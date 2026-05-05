@@ -91,8 +91,18 @@ privacyRadios.forEach((r) => {
   });
 });
 
-resetBtn.addEventListener('click', () => {
+resetBtn.addEventListener('click', async () => {
   if (!confirm('לאפס את כל הנתונים המקומיים? זה ימחק את כל ההתאמות, ההודעות והפרופיל.')) return;
+  
+  try {
+    await fetch(`${API_BASE}/api/reset`, {
+      method: 'POST',
+      headers: authHeaders()
+    });
+  } catch (err) {
+    console.error('Failed to reset backend data', err);
+  }
+
   try {
     Object.keys(localStorage)
       .filter((k) => k.startsWith('rentmate_'))
