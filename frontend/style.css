@@ -2136,3 +2136,167 @@ h1, h2, h3 {
   background: rgba(255, 255, 255, 0.1);
   color: white;
 }
+
+/* AI assist panel for landlord add form */
+.ai-assist {
+  background: linear-gradient(135deg, #fff7f9 0%, #fff 100%);
+  border: 1px solid rgba(255, 56, 92, 0.18);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 14px rgba(255, 56, 92, 0.06);
+}
+.ai-assist-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.ai-assist-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.ai-assist-header h2 {
+  font-size: 16px;
+  margin: 0 0 2px;
+  color: var(--text-main);
+}
+.ai-assist-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.ai-assist-log {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-assist-log:empty {
+  display: none;
+}
+.ai-msg {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  max-width: 85%;
+  word-break: break-word;
+}
+.ai-msg.user {
+  align-self: flex-end;
+  background: #FF385C;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.ai-msg.assistant {
+  align-self: flex-start;
+  background: white;
+  color: var(--text-main);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-bottom-left-radius: 4px;
+}
+.ai-msg.assistant.thinking {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.ai-assist-input-row {
+  display: flex;
+  gap: 8px;
+}
+.ai-assist-input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: white;
+  font-size: 14px;
+  font-family: inherit;
+}
+.ai-assist-input:focus {
+  outline: none;
+  border-color: #FF385C;
+  box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
+}
+.ai-assist-send {
+  padding: 0 18px;
+  margin: 0;
+}
+.ai-assist-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.profile-input.ai-filled {
+  background: rgba(255, 56, 92, 0.04);
+  border-color: rgba(255, 56, 92, 0.3);
+  animation: aiFillPulse 0.6s ease;
+}
+@keyframes aiFillPulse {
+  0% { background: rgba(255, 56, 92, 0.2); }
+  100% { background: rgba(255, 56, 92, 0.04); }
+}
+
+/* Property status badges (landlord dashboard) */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.status-badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.status-badge.available { background: #E8F8EE; color: #0E7A3A; }
+.status-badge.rented { background: #E5F0FF; color: #1F5DB5; }
+.status-badge.pending { background: #FFF6E0; color: #8C5A00; }
+.status-badge.off_market { background: #EDEDED; color: #5C5C5C; }
+
+.status-menu {
+  position: absolute;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 6px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.status-menu button {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  text-align: right;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-menu button:hover {
+  background: rgba(255, 56, 92, 0.06);
+}
+.status-menu button[aria-current="true"] {
+  font-weight: 700;
+  color: #FF385C;
+}

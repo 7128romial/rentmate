@@ -278,11 +278,14 @@ export function getUserPropertyInterests(propertyId) {
   return Array.isArray(all[propertyId]) ? all[propertyId] : [];
 }
 
+export const PROPERTY_STATUSES = ['available', 'rented', 'pending', 'off_market'];
+
 export function addUserProperty(property) {
   if (!property) return getUserProperties();
   const list = getUserProperties();
   const id = property.id || `user-${Date.now()}`;
-  list.unshift({ ...property, id, createdAt: new Date().toISOString() });
+  const status = PROPERTY_STATUSES.includes(property.status) ? property.status : 'available';
+  list.unshift({ ...property, id, status, createdAt: new Date().toISOString() });
   writeJSON(USER_PROPERTIES_KEY, list);
   seedInterestsFor(id);
   return list;
@@ -294,6 +297,11 @@ export function updateUserProperty(id, patch) {
   );
   writeJSON(USER_PROPERTIES_KEY, list);
   return list;
+}
+
+export function setUserPropertyStatus(id, status) {
+  if (!PROPERTY_STATUSES.includes(status)) return getUserProperties();
+  return updateUserProperty(id, { status });
 }
 
 export function removeUserProperty(id) {

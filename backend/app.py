@@ -566,5 +566,136 @@ def chat():
     })
 
 
+PROPERTY_EXTRACTION_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "fill_property_form",
+        "description": (
+            "Update the apartment listing form with any details mentioned so far, "
+            "and ask one friendly follow-up question (in Hebrew) about the most important "
+            "missing field. Always include the function call, even on the first turn."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "extracted": {
+                    "type": "object",
+                    "description": "Property fields extracted from the conversation. Omit fields you have no info for.",
+                    "properties": {
+                        "title": {"type": "string", "description": "Short Hebrew listing title, e.g. 'דירת 3 חדרים בלב רוטשילד'."},
+                        "price_min": {"type": "integer", "description": "Minimum monthly rent in NIS."},
+                        "price_max": {"type": "integer", "description": "Maximum monthly rent in NIS."},
+                        "address": {"type": "string", "description": "Street address including city if known."},
+                        "rooms": {"type": "number", "description": "Number of rooms (allow halves like 2.5)."},
+                        "area": {"type": "integer", "description": "Apartment area in square meters."},
+                        "floor": {"type": "integer", "description": "Floor of the apartment."},
+                        "total_floors": {"type": "integer", "description": "Total floors in the building."},
+                        "available": {"type": "string", "description": "Move-in date in Hebrew, e.g. 'מיידית' or '1 ביולי'."},
+                        "tags": {"type": "array", "items": {"type": "string"}, "description": "Short tags like 'מרפסת', 'משופצת'."},
+                        "description": {"type": "string", "description": "Free-form description of the apartment and area."},
+                        "amenities": {"type": "array", "items": {"type": "string"}, "description": "Amenities, e.g. 'מזגן', 'חניה'."}
+                    },
+                    "additionalProperties": False
+                },
+                "next_question": {
+                    "type": "string",
+                    "description": "One short, friendly Hebrew question or acknowledgment. Empty string if everything is filled."
+                },
+                "ready": {
+                    "type": "boolean",
+                    "description": "True when title, address, price_min and price_max are all populated."
+                }
+            },
+            "required": ["extracted", "next_question", "ready"],
+            "additionalProperties": False
+        }
+    }
+}
+
+
+@app.route('/api/landlord/extract-property', methods=['POST'])
+@require_auth
+def extract_property():
+    user_id = g.user_id
+    data = request.get_json(silent=True) or {}
+    history = data.get('messages')
+    if not isinstance(history, list) or not history:
+        return jsonify({'error': 'Missing messages'}), 400
+
+    ok, err = _chat_rate_check(user_id)
+    if not ok:
+        return jsonify({'error': err}), 429
+
+    safe_messages = []
+    for m in history[-20:]:
+        if not isinstance(m, dict):
+            continue
+        role = m.get('role')
+        content = m.get('content', '')
+        if role not in ('user', 'assistant') or not isinstance(content, str):
+            continue
+        safe_messages.append({'role': role, 'content': content[:CHAT_MAX_CHARS]})
+    if not safe_messages:
+        return jsonify({'error': 'No valid messages'}), 400
+
+    system_msg = {
+        'role': 'system',
+        'content': (
+            "אתה עוזר חכם של RentMate שעוזר למשכיר להוסיף דירה. דבר עברית, קצר וידידותי. "
+            "אסוף בהדרגה את הפרטים: כותרת, כתובת, טווח מחיר חודשי (מינימום ומקסימום), "
+            "חדרים, גודל במ\"ר, קומה, תאריך פינוי, תיאור, ותגיות/מאפיינים. "
+            "בכל תגובה — קרא תמיד לכלי fill_property_form: בשדה extracted שים רק שדות שהמשתמש הזכיר במפורש; "
+            "ב-next_question שאל שאלה אחת קצרה על השדה החשוב הבא שחסר; "
+            "סמן ready=true רק כשכותרת, כתובת, price_min ו-price_max מולאו. "
+            "אל תמציא ערכים. אם המשתמש נתן מחיר אחד (\"6500\"), הצב אותו גם ב-price_min וגם ב-price_max."
+        )
+    }
+    messages = [system_msg] + safe_messages
+
+    if openai_client is None:
+        return jsonify({
+            'extracted': {},
+            'next_question': 'מצב דמו: ספרי לי על הדירה — מה הכתובת, כמה חדרים ומחיר?',
+            'ready': False
+        })
+
+    try:
+        response = openai_client.chat.completions.create(
+            model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'),
+            messages=messages,
+            tools=[PROPERTY_EXTRACTION_TOOL],
+            tool_choice={'type': 'function', 'function': {'name': 'fill_property_form'}},
+            timeout=_env_int('OPENAI_TIMEOUT_SECONDS', 20),
+        )
+    except (OpenAIError, TimeoutError, ConnectionError) as e:
+        log.exception('OpenAI extraction failed: %s', e)
+        return jsonify({'error': 'AI temporarily unavailable'}), 503
+
+    choice = response.choices[0]
+    tool_calls = getattr(choice.message, 'tool_calls', None) or []
+    if not tool_calls:
+        return jsonify({
+            'extracted': {},
+            'next_question': choice.message.content or 'תוכלי לפרט קצת על הדירה?',
+            'ready': False
+        })
+
+    try:
+        args = json.loads(tool_calls[0].function.arguments)
+    except (ValueError, TypeError, AttributeError) as e:
+        log.warning('Failed to parse tool arguments: %s', e)
+        return jsonify({'error': 'AI returned malformed data'}), 502
+
+    extracted = args.get('extracted') or {}
+    if not isinstance(extracted, dict):
+        extracted = {}
+
+    return jsonify({
+        'extracted': extracted,
+        'next_question': str(args.get('next_question') or '')[:500],
+        'ready': bool(args.get('ready', False))
+    })
+
+
 if __name__ == '__main__':
     app.run(debug=_env_bool('FLASK_DEBUG', False), port=_env_int('PORT', 5000))

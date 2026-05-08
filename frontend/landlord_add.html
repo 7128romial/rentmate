@@ -18,14 +18,35 @@
       </header>
 
       <div class="screen-body">
+        <section class="ai-assist" id="ai-assist">
+          <div class="ai-assist-header">
+            <span class="ai-assist-icon">✨</span>
+            <div>
+              <h2>תאר/י את הדירה ואני אמלא את הטופס</h2>
+              <p>אפשר לכתוב חופשי, כמו לחבר/ה. הפרטים יתמלאו אוטומטית למטה.</p>
+            </div>
+          </div>
+          <div class="ai-assist-log" id="ai-assist-log" aria-live="polite"></div>
+          <form class="ai-assist-input-row" id="ai-assist-form">
+            <input class="ai-assist-input" id="ai-assist-input" type="text" placeholder="למשל: יש לי דירת 3 חדרים ברוטשילד 12, קומה 5, ב-6500-7000" autocomplete="off">
+            <button class="btn-primary ai-assist-send" type="submit" id="ai-assist-send">שלח</button>
+          </form>
+        </section>
+
         <form class="profile-form" id="property-form">
           <div class="profile-field">
             <label for="p-title">כותרת *</label>
             <input class="profile-input" id="p-title" type="text" required maxlength="80" placeholder="למשל: סטודיו מואר ברוטשילד">
           </div>
-          <div class="profile-field">
-            <label for="p-price">מחיר חודשי (₪) *</label>
-            <input class="profile-input" id="p-price" type="number" min="500" step="100" required inputmode="numeric" placeholder="4500">
+          <div class="profile-field-row">
+            <div class="profile-field">
+              <label for="p-price-min">מחיר מינימום (₪) *</label>
+              <input class="profile-input" id="p-price-min" type="number" min="500" step="100" required inputmode="numeric" placeholder="4500">
+            </div>
+            <div class="profile-field">
+              <label for="p-price-max">מחיר מקסימום (₪) *</label>
+              <input class="profile-input" id="p-price-max" type="number" min="500" step="100" required inputmode="numeric" placeholder="5500">
+            </div>
           </div>
           <div class="profile-field">
             <label for="p-address">כתובת *</label>
