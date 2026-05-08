@@ -103,6 +103,6 @@ chatForm.addEventListener('submit', (e) => {
 // Start the chat with an initial prompt
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
-    appendMessage("היי! אני ה-AI של RentMate 🤖\nספר/י לי קצת על עצמך — את/ה מחפש/ת דירה? שותפים? או שאולי יש לך דירה שאת/ה רוצה להשכיר?", 'ai');
+    appendMessage("היי! אני ה-AI של RentMate 🤖\nקודם כל, איך קוראים לך?\nולאחר מכן, ספר/י לי על עצמך — את/ה מחפש/ת דירה? שותפים? או שאולי יש לך דירה שאת/ה רוצה להשכיר?", 'ai');
   }, 500);
 });
