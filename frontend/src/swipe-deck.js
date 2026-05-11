@@ -32,6 +32,10 @@ export function mountSwipeDeck({ container, items, renderCard, onSwipe, onEmpty 
     const hammer = new Hammer(card, { touchAction: 'pan-y' });
     hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 12 });
 
+    hammer.on('panstart', () => {
+      card.classList.add('dragging');
+    });
+
     hammer.on('pan', (ev) => {
       if (ev.deltaX === 0) return;
       if (ev.center.x === 0 && ev.center.y === 0) return;
@@ -40,6 +44,7 @@ export function mountSwipeDeck({ container, items, renderCard, onSwipe, onEmpty 
     });
 
     hammer.on('panend', (ev) => {
+      card.classList.remove('dragging');
       const keep = Math.abs(ev.deltaX) < PAN_THRESHOLD;
       card.classList.toggle('removed', !keep);
 
