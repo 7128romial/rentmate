@@ -551,6 +551,34 @@ def create_property():
     db.session.commit()
     return jsonify({'success': True, 'id': prop.id})
 
+@app.route('/api/landlord/properties/<int:prop_id>', methods=['GET'])
+@require_auth
+def get_landlord_property(prop_id):
+    user_id = g.user_id
+    p = db.session.get(models.Property, prop_id)
+    if not p or p.owner_id != user_id:
+        return jsonify({'error': 'Not found or unauthorized'}), 404
+    return jsonify({
+        'id': p.id,
+        'title': p.title,
+        'price': p.price_label,
+        'priceMin': p.price_min,
+        'priceMax': p.price_max,
+        'address': p.address,
+        'location': p.location,
+        'image': p.image,
+        'status': p.status,
+        'tags': p.tags.split(',') if p.tags else [],
+        'rooms': p.rooms,
+        'area': p.area,
+        'floor': p.floor,
+        'totalFloors': p.total_floors,
+        'available': p.available,
+        'description': p.description,
+        'amenities': json.loads(p.amenities) if p.amenities else [],
+    })
+
+
 @app.route('/api/landlord/properties/<int:prop_id>', methods=['PUT', 'PATCH'])
 @require_auth
 def update_property(prop_id):

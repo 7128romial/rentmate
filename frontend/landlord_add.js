@@ -268,15 +268,17 @@ aiForm.addEventListener('submit', async (e) => {
 window.addEventListener('DOMContentLoaded', async () => {
   if (isEdit) {
     try {
-      const res = await fetch(`${API_BASE}/api/landlord/properties`, { headers: authHeaders() });
-      if (!res.ok) return;
-      const list = await res.json();
-      const prop = (list || []).find((p) => String(p.id) === String(editId));
-      if (!prop) {
+      const res = await fetch(`${API_BASE}/api/landlord/properties/${encodeURIComponent(editId)}`, { headers: authHeaders() });
+      if (res.status === 404) {
         alert('הדירה לא נמצאה. חוזרים לדשבורד.');
         window.location.href = '/landlord.html';
         return;
       }
+      if (!res.ok) {
+        console.error('Failed to load property for edit', res.status);
+        return;
+      }
+      const prop = await res.json();
       const set = (id, v) => { if (v !== undefined && v !== null && v !== '') setFieldValue(id, String(v)); };
       set('p-title', prop.title);
       set('p-price-min', prop.priceMin ?? prop.price_min);

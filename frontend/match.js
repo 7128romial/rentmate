@@ -1,32 +1,55 @@
-import { findDemoProperty } from './src/demo.js';
+import { findDemoProperty, findRoommatePerson } from './src/demo.js';
 import { renderMap } from './src/maps.js';
-import { getMatch, getMatches } from './src/storage.js';
+import { getMatch, getMatches, getRoommateMatches } from './src/storage.js';
 
-function resolveProperty() {
-  const id = new URLSearchParams(window.location.search).get('id');
-  if (id) {
-    return getMatch(id) || findDemoProperty(id);
+const params = new URLSearchParams(window.location.search);
+const personId = params.get('person');
+const propId = params.get('id');
+
+const subtitle = document.getElementById('match-subtitle');
+const avatar = document.getElementById('match-avatar');
+const mapHost = document.getElementById('match-map-host');
+const chatBtn = document.getElementById('match-chat-btn');
+const continueBtn = document.getElementById('match-continue-btn');
+
+if (personId) {
+  // Roommate person match
+  const fromMatches = getRoommateMatches().find((p) => String(p.id) === String(personId));
+  const person = fromMatches || findRoommatePerson(personId);
+  if (person) {
+    if (subtitle) subtitle.textContent = `מצאתם זה את זה — ${person.name}, ${person.age}`;
+    if (avatar && person.photo) {
+      avatar.style.backgroundImage = `url(${JSON.stringify(String(person.photo))})`;
+    }
+    if (mapHost) mapHost.style.display = 'none';
   }
-  const matches = getMatches();
-  if (matches.length) return matches[0];
-  return findDemoProperty('demo-1');
+  chatBtn.addEventListener('click', () => {
+    window.location.href = `/realtime_chat.html?person=${encodeURIComponent(personId)}`;
+  });
+  continueBtn.addEventListener('click', () => {
+    window.location.href = '/roommate_seeker.html';
+  });
+} else {
+  // Property match
+  const property = (propId && (getMatch(propId) || findDemoProperty(propId)))
+    || getMatches()[0]
+    || findDemoProperty('demo-1');
+
+  if (property) {
+    if (subtitle && property.title) {
+      subtitle.textContent = `מצאתם זה את זה — ${property.title}`;
+    }
+    if (avatar && property.image) {
+      avatar.style.backgroundImage = `url(${JSON.stringify(String(property.image))})`;
+    }
+    renderMap(mapHost, property, { zoom: 15 });
+  }
+
+  chatBtn.addEventListener('click', () => {
+    const q = property && property.id ? `?id=${encodeURIComponent(property.id)}` : '';
+    window.location.href = `/realtime_chat.html${q}`;
+  });
+  continueBtn.addEventListener('click', () => {
+    window.location.href = '/swipe.html';
+  });
 }
-
-const property = resolveProperty();
-
-if (property) {
-  const subtitle = document.getElementById('match-subtitle');
-  if (subtitle && property.title) {
-    subtitle.textContent = `מצאתם זה את זה — ${property.title}`;
-  }
-  const avatar = document.getElementById('match-avatar');
-  if (avatar && property.image) {
-    avatar.style.backgroundImage = `url(${JSON.stringify(String(property.image))})`;
-  }
-  renderMap(document.getElementById('match-map-host'), property, { zoom: 15 });
-}
-
-document.getElementById('match-chat-btn').addEventListener('click', () => {
-  const id = property && property.id ? `?id=${encodeURIComponent(property.id)}` : '';
-  window.location.href = `/realtime_chat.html${id}`;
-});
