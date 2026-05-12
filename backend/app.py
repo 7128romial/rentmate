@@ -766,6 +766,84 @@ def roommate_compatibility(target_user_id):
         log.exception('Compatibility check failed: %s', e)
         return jsonify({'score': 85, 'explanation': 'התאמה כללית, כדאי לשוחח ולהכיר!'})
 
+@app.route('/api/chat/roleplay', methods=['POST'])
+@require_auth
+def chat_roleplay():
+    if not openai_client:
+        return jsonify({'reply': 'אהלן! נראה לי שיהיה לנו מעניין לדבר. ספר/י קצת על עצמך?'})
+
+    data = request.get_json(silent=True) or {}
+    history = data.get('history') or []
+    prop = data.get('property') or {}
+    persona = (data.get('persona') or 'landlord').strip()
+    other_name = (data.get('other_name') or '').strip()
+
+    address = prop.get('address') or prop.get('location') or 'הדירה'
+    if prop.get('price'):
+        rent = prop['price']
+    elif prop.get('price_max'):
+        rent = f"₪{prop['price_max']}/חודש"
+    else:
+        rent = ''
+    rooms = prop.get('rooms')
+    available = prop.get('available')
+
+    persona_briefs = {
+        'landlord': f"You are the landlord of an apartment at {address}. The user just matched with your listing and is a potential tenant. You want to find a serious, respectful tenant.",
+        'tenant': f"You are a tenant who matched with the user's apartment at {address}. You're considering renting it and are asking questions before committing.",
+        'roommate_host': f"You currently live in an apartment at {address} and are looking for a roommate. The user is a potential roommate who matched with your post.",
+        'roommate_seeker': f"You are looking for a place to share. The user has a room available at {address} that you matched with.",
+    }
+    persona_brief = persona_briefs.get(persona, persona_briefs['landlord'])
+
+    extra_details = []
+    if rent:
+        extra_details.append(f"Monthly rent: {rent}")
+    if rooms is not None:
+        extra_details.append(f"Rooms: {rooms}")
+    if available:
+        extra_details.append(f"Available from: {available}")
+    details_block = ('\n'.join(f'- {d}' for d in extra_details)) if extra_details else '(no extra details)'
+
+    name_line = f"Your first name is {other_name}." if other_name else "Pick a realistic Israeli first name and stick with it."
+
+    system = (
+        f"{persona_brief}\n"
+        f"{name_line}\n"
+        f"Apartment details you can reference if asked:\n{details_block}\n\n"
+        "Respond in Hebrew like a real WhatsApp message — casual, friendly, 1-2 short sentences.\n"
+        "Stay in character. Ask one relevant question or share one relevant detail at a time.\n"
+        "Don't reveal you're an AI. Don't use emoji-heavy or overly formal language.\n"
+        "If the user wants to schedule a viewing, suggest concrete times. If they ask about price, refer to the rent above."
+    )
+
+    messages = [{"role": "system", "content": system}]
+    for msg in history[-15:]:
+        if not isinstance(msg, dict):
+            continue
+        role = 'user' if msg.get('role') == 'user' else 'assistant'
+        content = (msg.get('content') or '').strip()
+        if content:
+            messages.append({"role": role, "content": content})
+
+    if len(messages) == 1:
+        messages.append({"role": "user", "content": "(אין הודעות עדיין — פתח/י את השיחה בהודעת קבלת פנים קצרה ושאלה אחת.)"})
+
+    try:
+        response = openai_client.with_options(max_retries=1).chat.completions.create(
+            model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'),
+            messages=messages,
+            max_tokens=150,
+            timeout=_env_int('OPENAI_TIMEOUT_SECONDS', 20),
+        )
+        reply = (response.choices[0].message.content or '').strip()
+        if not reply:
+            reply = 'מצטער/ת, פספסתי את ההודעה. תוכל/י לחזור עליה?'
+        return jsonify({'reply': reply})
+    except Exception as e:
+        log.exception('Chat roleplay failed: %s', e)
+        return jsonify({'reply': 'סליחה, אני בדרכים כרגע — אכתוב לך בעוד רגע!'})
+
 @app.route('/api/chat', methods=['POST'])
 @require_auth
 def chat():

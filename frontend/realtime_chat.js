@@ -1,6 +1,6 @@
 import { findDemoProperty, findRoommatePerson, findSharedListing } from './src/demo.js';
 import { renderMap } from './src/maps.js';
-import { getMatch, getMatches, getRole, getProfile } from './src/storage.js';
+import { getMatch, getMatches, getRole, getSubrole, getProfile } from './src/storage.js';
 import { API_BASE, getToken, getUserId } from './src/config.js';
 
 const myUserId = parseInt(getUserId(), 10);
@@ -88,7 +88,31 @@ function appendMessage(text, role) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-if (ctx.isP2P && window.io) {
+const isNumericId = (v) => /^\d+$/.test(String(v ?? ''));
+const useSocketChat = ctx.isP2P && window.io && isNumericId(ctx.propertyId);
+
+function getPersona() {
+  const myRole = getRole();
+  const mySubrole = getSubrole();
+  if (myRole === 'landlord') return 'tenant';
+  if (myRole === 'renter') return 'landlord';
+  if (myRole === 'roommate') return mySubrole === 'host' ? 'roommate_seeker' : 'roommate_host';
+  return 'landlord';
+}
+
+function appendTyping() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message ai typing';
+  const content = document.createElement('div');
+  content.className = 'message-content';
+  content.textContent = '...מקליד/ה';
+  wrapper.appendChild(content);
+  messages.appendChild(wrapper);
+  messages.scrollTop = messages.scrollHeight;
+  return wrapper;
+}
+
+if (useSocketChat) {
   const socket = io(API_BASE);
 
   socket.on('connect', () => {
@@ -121,7 +145,7 @@ if (ctx.isP2P && window.io) {
     event.preventDefault();
     const value = input.value.trim();
     if (!value) return;
-    
+
     appendMessage(value, 'user');
     socket.emit('send_message', {
       token: getToken(),
@@ -131,7 +155,56 @@ if (ctx.isP2P && window.io) {
     });
     input.value = '';
   });
+} else {
+  const conversationHistory = [];
 
+  async function fetchAIReply() {
+    const typingEl = appendTyping();
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/roleplay`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          history: conversationHistory.slice(-15),
+          property: ctx.location || {},
+          persona: getPersona(),
+          other_name: (ctx.title || '').split(',')[0].trim()
+        })
+      });
+      typingEl.remove();
+      if (res.ok) {
+        const data = await res.json();
+        const reply = (data && data.reply) || 'אהלן! איך אפשר לעזור?';
+        appendMessage(reply, 'other');
+        conversationHistory.push({ role: 'other', content: reply });
+      } else {
+        appendMessage('סליחה, יש לי בעיה כרגע. נסי שוב בעוד רגע.', 'other');
+      }
+    } catch (e) {
+      typingEl.remove();
+      console.error(e);
+      appendMessage('סליחה, יש בעיית קישור. נסי שוב.', 'other');
+    }
+  }
+
+  messages.innerHTML = '';
+  fetchAIReply();
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = input.value.trim();
+    if (!value) return;
+    appendMessage(value, 'user');
+    conversationHistory.push({ role: 'user', content: value });
+    input.value = '';
+    fetchAIReply();
+  });
+}
+
+if (ctx.isP2P) {
   const btnGenerateLease = document.getElementById('btn-generate-lease');
   const leaseModal = document.getElementById('lease-modal');
   const closeLeaseModal = document.getElementById('close-lease-modal');
@@ -196,20 +269,5 @@ if (ctx.isP2P && window.io) {
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
-  });
-
-} else {
-  // Fallback demo mode
-  messages.innerHTML = '';
-  appendMessage('היי! ראיתי שעשינו מאץ\'. עדיין רלוונטי?', 'other');
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const value = input.value.trim();
-    if (!value) return;
-    appendMessage(value, 'user');
-    input.value = '';
-    setTimeout(() => {
-      appendMessage('אני במצב דמו, אבל תדמיין שעניתי לך!', 'other');
-    }, 1000);
   });
 }
