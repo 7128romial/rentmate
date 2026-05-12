@@ -325,12 +325,23 @@ export async function addUserProperty(property) {
   return await getUserProperties();
 }
 
-export function updateUserProperty(id, patch) {
-  const list = getUserProperties().map((p) =>
-    String(p.id) === String(id) ? { ...p, ...patch } : p,
-  );
-  writeJSON(USER_PROPERTIES_KEY, list);
-  return list;
+export async function updateUserProperty(id, patch) {
+  if (!id || !patch) return [];
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    const res = await fetch(`${API_BASE}/api/landlord/properties/${id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify(patch),
+    });
+    if (res.ok) {
+      return await getUserProperties();
+    }
+    console.error('Update failed', res.status);
+  } catch (e) {
+    console.error(e);
+  }
+  return await getUserProperties();
 }
 
 export async function setUserPropertyStatus(id, status) {

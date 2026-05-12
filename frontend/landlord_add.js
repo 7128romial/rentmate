@@ -1,5 +1,5 @@
 import { renderBottomNav } from './src/nav.js';
-import { addUserProperty, getRole } from './src/storage.js';
+import { addUserProperty, getRole, updateUserProperty } from './src/storage.js';
 import { API_BASE, authHeaders, getToken } from './src/config.js';
 
 if (getRole() !== 'landlord') {
@@ -7,6 +7,15 @@ if (getRole() !== 'landlord') {
 }
 
 renderBottomNav('landlord');
+
+const editId = new URLSearchParams(window.location.search).get('id');
+const isEdit = !!editId;
+
+if (isEdit) {
+  document.getElementById('form-title').textContent = 'ערוך דירה';
+  const submitBtn = document.querySelector('#property-form button[type="submit"]');
+  if (submitBtn) submitBtn.textContent = 'שמור שינויים';
+}
 
 const form = document.getElementById('property-form');
 const get = (id) => document.getElementById(id).value.trim();
@@ -92,8 +101,13 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  await addUserProperty(property);
-  window.location.href = '/landlord.html';
+  if (isEdit) {
+    await updateUserProperty(editId, property);
+    window.location.href = `/landlord_property.html?id=${encodeURIComponent(editId)}`;
+  } else {
+    await addUserProperty(property);
+    window.location.href = '/landlord.html';
+  }
 });
 
 const fileInputEl = document.getElementById('p-image');
@@ -250,8 +264,42 @@ aiForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Auto-fill from onboarding profile if available
+// Prefill from existing property in edit mode, otherwise from onboarding profile
 window.addEventListener('DOMContentLoaded', async () => {
+  if (isEdit) {
+    try {
+      const res = await fetch(`${API_BASE}/api/landlord/properties`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const list = await res.json();
+      const prop = (list || []).find((p) => String(p.id) === String(editId));
+      if (!prop) {
+        alert('הדירה לא נמצאה. חוזרים לדשבורד.');
+        window.location.href = '/landlord.html';
+        return;
+      }
+      const set = (id, v) => { if (v !== undefined && v !== null && v !== '') setFieldValue(id, String(v)); };
+      set('p-title', prop.title);
+      set('p-price-min', prop.priceMin ?? prop.price_min);
+      set('p-price-max', prop.priceMax ?? prop.price_max);
+      set('p-address', prop.address || prop.location);
+      set('p-rooms', prop.rooms);
+      set('p-area', prop.area);
+      set('p-floor', prop.floor);
+      set('p-total-floors', prop.totalFloors ?? prop.total_floors);
+      set('p-available', prop.available);
+      set('p-description', prop.description);
+      if (Array.isArray(prop.tags)) set('p-tags', prop.tags.join(', '));
+      else if (typeof prop.tags === 'string') set('p-tags', prop.tags);
+      if (Array.isArray(prop.amenities)) set('p-amenities', prop.amenities.join('\n'));
+      if (prop.image) {
+        document.getElementById('p-image').dataset.uploadedUrl = prop.image;
+      }
+    } catch (e) {
+      console.error('Failed to fetch property for edit', e);
+    }
+    return;
+  }
+
   try {
     const res = await fetch(`${API_BASE}/api/profile`, {
       headers: authHeaders()
@@ -269,7 +317,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (data.profile.extras && !document.getElementById('p-amenities').value) {
           setFieldValue('p-amenities', data.profile.extras.split(',').join('\n'));
         }
-        
+
         // Try to parse rooms from type if possible
         if (data.profile.type) {
           const roomsMatch = data.profile.type.match(/(\d+(\.\d+)?)/);

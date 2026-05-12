@@ -36,6 +36,12 @@ document.getElementById('property-subtitle').textContent = property.address
   ? `📍 ${property.address} · ${property.price}`
   : property.price;
 
+const editBtn = document.getElementById('edit-property-btn');
+if (editBtn && /^\d+$/.test(String(propertyId))) {
+  editBtn.href = `/landlord_add.html?id=${encodeURIComponent(propertyId)}`;
+  editBtn.style.display = 'inline-flex';
+}
+
 const list = document.getElementById('renter-list');
 const tabButtons = document.querySelectorAll('.tab');
 

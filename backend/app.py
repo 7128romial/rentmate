@@ -548,6 +548,47 @@ def create_property():
     db.session.commit()
     return jsonify({'success': True, 'id': prop.id})
 
+@app.route('/api/landlord/properties/<int:prop_id>', methods=['PUT', 'PATCH'])
+@require_auth
+def update_property(prop_id):
+    data = request.get_json(silent=True) or {}
+    user_id = g.user_id
+    prop = db.session.get(models.Property, prop_id)
+    if not prop or prop.owner_id != user_id:
+        return jsonify({'error': 'Not found or unauthorized'}), 404
+
+    field_map = {
+        'title': 'title',
+        'priceMin': 'price_min',
+        'priceMax': 'price_max',
+        'price': 'price_label',
+        'location': 'location',
+        'address': 'address',
+        'image': 'image',
+        'rooms': 'rooms',
+        'area': 'area',
+        'floor': 'floor',
+        'totalFloors': 'total_floors',
+        'available': 'available',
+        'description': 'description',
+        'status': 'status',
+    }
+    for in_key, col in field_map.items():
+        if in_key in data:
+            setattr(prop, col, data[in_key])
+
+    if 'tags' in data and isinstance(data['tags'], list):
+        prop.tags = ','.join(str(t) for t in data['tags'])
+    if 'amenities' in data and isinstance(data['amenities'], list):
+        prop.amenities = json.dumps(data['amenities'])
+
+    if 'address' in data and 'location' not in data:
+        prop.location = data['address']
+
+    db.session.commit()
+    return jsonify({'success': True, 'id': prop.id})
+
+
 @app.route('/api/landlord/properties/<int:prop_id>/status', methods=['POST'])
 @require_auth
 def update_property_status(prop_id):

@@ -1,9 +1,16 @@
 import { findDemoProperty, findRoommatePerson, findSharedListing } from './src/demo.js';
 import { renderMap } from './src/maps.js';
-import { getMatch, getMatches, getRole, getSubrole, getProfile } from './src/storage.js';
+import { getMatch, getMatches, getRole, getSubrole, getProfile, getChatMessages, addChatMessage } from './src/storage.js';
 import { API_BASE, getToken, getUserId } from './src/config.js';
 
 const myUserId = parseInt(getUserId(), 10);
+
+const chatId = (() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('person')) return `person:${params.get('person')}`;
+  if (params.get('id')) return `property:${params.get('id')}`;
+  return null;
+})();
 
 function resolveContext() {
   const params = new URLSearchParams(window.location.search);
@@ -156,7 +163,16 @@ if (useSocketChat) {
     });
   };
 } else {
-  const conversationHistory = [];
+  const stored = chatId ? getChatMessages(chatId) : [];
+  const conversationHistory = stored.map((m) => ({
+    role: m.role === 'user' ? 'user' : 'other',
+    content: m.content,
+  }));
+
+  function persistMessage(role, content) {
+    if (!chatId) return;
+    addChatMessage(chatId, { role, content });
+  }
 
   async function fetchAIReply() {
     const typingEl = appendTyping();
@@ -180,6 +196,7 @@ if (useSocketChat) {
         const reply = (data && data.reply) || 'אהלן! איך אפשר לעזור?';
         appendMessage(reply, 'other');
         conversationHistory.push({ role: 'other', content: reply });
+        persistMessage('other', reply);
       } else {
         appendMessage('סליחה, יש לי בעיה כרגע. נסי שוב בעוד רגע.', 'other');
       }
@@ -191,11 +208,16 @@ if (useSocketChat) {
   }
 
   messages.innerHTML = '';
-  fetchAIReply();
+  if (conversationHistory.length) {
+    conversationHistory.forEach((m) => appendMessage(m.content, m.role === 'user' ? 'user' : 'other'));
+  } else {
+    fetchAIReply();
+  }
 
   dispatchUserMessage = (text) => {
     appendMessage(text, 'user');
     conversationHistory.push({ role: 'user', content: text });
+    persistMessage('user', text);
     fetchAIReply();
   };
 }
