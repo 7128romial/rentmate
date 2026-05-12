@@ -4,6 +4,7 @@ import {
   setSubscription,
   remainingSwipesToday,
   FREE_DAILY_SWIPE_LIMIT,
+  syncSubscriptionFromBackend,
 } from './storage.js';
 
 function buildModal() {
@@ -38,9 +39,7 @@ function buildModal() {
   });
   overlay.querySelector('.sub-modal-close').addEventListener('click', closeLimitModal);
   overlay.querySelector('.sub-modal-upgrade').addEventListener('click', () => {
-    setSubscription('pro');
-    closeLimitModal();
-    window.location.reload();
+    window.location.href = '/checkout.html';
   });
   return overlay;
 }
@@ -55,6 +54,4 @@ export function closeLimitModal() {
   if (overlay) overlay.classList.remove('show');
 }
 
-// Returns true if the swipe is allowed (and increments). Returns false and
-// shows the upgrade modal otherwise. Pro users always pass.
-export { canSwipeToday, getSubscription, setSubscription, remainingSwipesToday, FREE_DAILY_SWIPE_LIMIT };
+export { canSwipeToday, getSubscription, setSubscription, remainingSwipesToday, FREE_DAILY_SWIPE_LIMIT, syncSubscriptionFromBackend };

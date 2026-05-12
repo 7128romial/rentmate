@@ -3,10 +3,11 @@ import { DEMO_ROOMMATE_PEOPLE } from './src/demo.js';
 import { addRoommateMatch, getRole, getSubrole, getProfile } from './src/storage.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
 import { notify, maybePromptOnce } from './src/notify.js';
-import { canSwipeToday, incrementDailySwipeCount } from './src/storage.js';
+import { canSwipeToday, incrementDailySwipeCount, syncSubscriptionFromBackend } from './src/storage.js';
 import { openLimitModal } from './src/subscription.js';
 
 maybePromptOnce();
+syncSubscriptionFromBackend();
 
 if (getRole() !== 'roommate' || getSubrole() !== 'seeker') {
   window.location.replace('/roommate_choice.html');

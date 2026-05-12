@@ -633,10 +633,109 @@ h1, h2, h3 {
   border: 1.5px solid rgba(0,0,0,0.08);
 }
 
+.checkout-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 110px;
+}
+.checkout-plan {
+  background: linear-gradient(135deg, #1F1F1F, #2D2D2D);
+  color: white;
+  border-radius: 20px;
+  padding: 22px 22px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+.checkout-plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.checkout-plan-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #FF385C, #E61E4D);
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(255,56,92,0.4);
+}
+.checkout-plan-price .amount {
+  font-size: 28px;
+  font-weight: 800;
+}
+.checkout-plan-price .period {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.7;
+  margin-inline-start: 4px;
+}
+.checkout-plan-perks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.checkout-plan-perks li {
+  font-size: 14px;
+  font-weight: 500;
+  padding-inline-start: 26px;
+  position: relative;
+  opacity: 0.95;
+}
+.checkout-plan-perks li::before {
+  content: '✓';
+  position: absolute;
+  inset-inline-start: 0;
+  color: #FF385C;
+  font-weight: 800;
+}
+.checkout-form {
+  background: var(--surface-color);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 20px;
+  padding: 20px;
+}
+.checkout-section-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.checkout-demo-banner {
+  background: #FFF6E0;
+  border: 1px solid #FFE5A8;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8A6300;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.checkout-form .profile-actions {
+  margin-top: 14px;
+}
+.checkout-disclaimer {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  text-align: center;
+  line-height: 1.5;
+}
+.checkout-btn-spinner {
+  font-weight: 600;
+}
+
 .landlord-card .card-edit-btn {
   position: absolute;
   top: 12px;
-  inset-inline-end: 12px;
+  right: 12px;
   width: 32px;
   height: 32px;
   border-radius: 10px;

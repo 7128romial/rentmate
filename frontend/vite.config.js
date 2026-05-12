@@ -23,6 +23,7 @@ export default defineConfig({
         roommate_matches: resolve(__dirname, 'roommate_matches.html'),
         roommate_listing_edit: resolve(__dirname, 'roommate_listing_edit.html'),
         settings: resolve(__dirname, 'settings.html'),
+        checkout: resolve(__dirname, 'checkout.html'),
       },
     },
   },

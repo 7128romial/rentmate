@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import os
@@ -142,12 +143,14 @@ def seed_demo_properties():
 
 with app.app_context():
     try:
-        # Check if the schema is compatible by running a query
+        # Check if the schema is compatible by running queries that touch
+        # newly-added columns. If any fail, fall back to drop_all.
         models.Property.query.first()
+        models.User.query.with_entities(models.User.subscription).first()
     except Exception as e:
         print(f"Schema mismatch detected ({e}), dropping tables to recreate.")
         db.drop_all()
-    
+
     db.create_all()
     try:
         seed_demo_properties()
@@ -618,6 +621,76 @@ def update_property(prop_id):
 
     db.session.commit()
     return jsonify({'success': True, 'id': prop.id})
+
+
+SUBSCRIPTION_PRICE_NIS = 29
+SUBSCRIPTION_PERIOD_DAYS = 30
+
+
+@app.route('/api/subscription', methods=['GET'])
+@require_auth
+def get_subscription():
+    user = db.session.get(models.User, g.user_id)
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    tier = user.subscription or 'free'
+    until = user.subscription_until.isoformat() if user.subscription_until else None
+    # Auto-downgrade expired pro subscriptions
+    if tier == 'pro' and user.subscription_until and user.subscription_until < datetime.datetime.utcnow():
+        user.subscription = 'free'
+        user.subscription_until = None
+        db.session.commit()
+        tier = 'free'
+        until = None
+    return jsonify({'tier': tier, 'until': until, 'price_nis': SUBSCRIPTION_PRICE_NIS})
+
+
+@app.route('/api/subscription/checkout', methods=['POST'])
+@require_auth
+def create_subscription_checkout():
+    # Returns a mock checkout intent. Real Stripe integration would create a
+    # Stripe PaymentIntent here and return its client_secret. The frontend
+    # collects payment details and calls /confirm with the intent id.
+    import secrets
+    intent = f"mock_pi_{secrets.token_urlsafe(12)}"
+    return jsonify({
+        'intent_id': intent,
+        'price_nis': SUBSCRIPTION_PRICE_NIS,
+        'period_days': SUBSCRIPTION_PERIOD_DAYS,
+        'provider': 'mock',
+    })
+
+
+@app.route('/api/subscription/confirm', methods=['POST'])
+@require_auth
+def confirm_subscription():
+    data = request.get_json(silent=True) or {}
+    intent_id = (data.get('intent_id') or '').strip()
+    if not intent_id.startswith('mock_pi_'):
+        # When real Stripe is wired in, look up the intent and verify it's paid.
+        return jsonify({'error': 'Invalid checkout intent'}), 400
+    user = db.session.get(models.User, g.user_id)
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user.subscription = 'pro'
+    user.subscription_until = datetime.datetime.utcnow() + datetime.timedelta(days=SUBSCRIPTION_PERIOD_DAYS)
+    db.session.commit()
+    return jsonify({
+        'tier': user.subscription,
+        'until': user.subscription_until.isoformat(),
+    })
+
+
+@app.route('/api/subscription/cancel', methods=['POST'])
+@require_auth
+def cancel_subscription():
+    user = db.session.get(models.User, g.user_id)
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user.subscription = 'free'
+    user.subscription_until = None
+    db.session.commit()
+    return jsonify({'tier': 'free', 'until': None})
 
 
 @app.route('/api/landlord/properties/<int:prop_id>/status', methods=['POST'])

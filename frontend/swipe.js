@@ -5,10 +5,11 @@ import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './s
 import { renderMap } from './src/maps.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
 import { notify, maybePromptOnce } from './src/notify.js';
-import { canSwipeToday, incrementDailySwipeCount } from './src/storage.js';
+import { canSwipeToday, incrementDailySwipeCount, syncSubscriptionFromBackend } from './src/storage.js';
 import { openLimitModal } from './src/subscription.js';
 
 maybePromptOnce();
+syncSubscriptionFromBackend();
 
 renderBottomNav('swipe');
 

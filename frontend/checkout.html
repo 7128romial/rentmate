@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>RentMate - שדרוג ל-PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="screen-header with-back">
+        <a class="back-btn" href="/profile.html" style="transform: scaleX(-1);">←</a>
+        <div>
+          <h1>שדרוג ל-PRO</h1>
+          <p>סוויפים ללא הגבלה וכל הפיצ׳רים המתקדמים.</p>
+        </div>
+      </header>
+
+      <div class="screen-body checkout-body">
+        <div class="checkout-plan">
+          <div class="checkout-plan-header">
+            <span class="checkout-plan-badge">PRO</span>
+            <div class="checkout-plan-price">
+              <span class="amount">₪<span id="checkout-price">29</span></span>
+              <span class="period">/חודש</span>
+            </div>
+          </div>
+          <ul class="checkout-plan-perks">
+            <li>סוויפים ללא הגבלה</li>
+            <li>סינון מתקדם וסידור לפי התאמה</li>
+            <li>צ'אט AI מורחב</li>
+            <li>גישה ראשונה לדירות חדשות</li>
+            <li>תמיכה מהירה</li>
+          </ul>
+        </div>
+
+        <form class="profile-form checkout-form" id="checkout-form" autocomplete="off">
+          <h3 class="checkout-section-title">פרטי תשלום</h3>
+          <div class="checkout-demo-banner">
+            <strong>מצב הדגמה:</strong> לא יבוצע חיוב אמיתי. הטופס הזה מוכן להתחברות ל-Stripe בייצור.
+          </div>
+          <div class="profile-field">
+            <label for="cc-name">שם בעל הכרטיס</label>
+            <input class="profile-input" id="cc-name" type="text" required placeholder="ישראל ישראלי" autocomplete="off">
+          </div>
+          <div class="profile-field">
+            <label for="cc-number">מספר כרטיס</label>
+            <input class="profile-input" id="cc-number" type="text" required inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242" autocomplete="off">
+          </div>
+          <div class="profile-field-row">
+            <div class="profile-field">
+              <label for="cc-exp">תוקף</label>
+              <input class="profile-input" id="cc-exp" type="text" required inputmode="numeric" maxlength="5" placeholder="MM/YY" autocomplete="off">
+            </div>
+            <div class="profile-field">
+              <label for="cc-cvv">CVV</label>
+              <input class="profile-input" id="cc-cvv" type="text" required inputmode="numeric" maxlength="4" placeholder="123" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button class="btn-primary" id="checkout-submit" type="submit">
+              <span class="checkout-btn-text">אשר תשלום של ₪<span id="checkout-btn-amount">29</span></span>
+              <span class="checkout-btn-spinner" hidden>מעבד…</span>
+            </button>
+            <a class="btn-ghost" href="/profile.html">ביטול</a>
+          </div>
+
+          <p class="checkout-disclaimer">
+            לחיצה על "אשר תשלום" תפעיל את מנוי ה-PRO שלך לחודש. ניתן לבטל בכל עת מעמוד הפרופיל.
+          </p>
+        </form>
+      </div>
+
+      <nav id="bottom-nav"></nav>
+    </div>
+    <script type="module" src="/checkout.js"></script>
+  </body>
+</html>

@@ -15,6 +15,8 @@ import {
   setSubscription,
   remainingSwipesToday,
   FREE_DAILY_SWIPE_LIMIT,
+  syncSubscriptionFromBackend,
+  cancelSubscriptionOnBackend,
 } from './src/storage.js';
 
 const role = getRole();
@@ -56,14 +58,19 @@ function renderSubscriptionSection() {
   meta.appendChild(h4);
   meta.appendChild(p);
 
-  const cta = document.createElement('button');
+  const cta = document.createElement(isPro ? 'button' : 'a');
   cta.type = 'button';
   cta.className = `sub-cta ${isPro ? 'downgrade' : ''}`;
   cta.textContent = isPro ? 'בטל PRO' : 'שדרג ל-PRO';
-  cta.addEventListener('click', () => {
-    setSubscription(isPro ? 'free' : 'pro');
-    renderSubscriptionSection();
-  });
+  if (isPro) {
+    cta.addEventListener('click', async () => {
+      if (!confirm('לבטל את המנוי? תאבדי את הסוויפים הבלתי-מוגבלים מיד.')) return;
+      await cancelSubscriptionOnBackend();
+      renderSubscriptionSection();
+    });
+  } else {
+    cta.href = '/checkout.html';
+  }
 
   section.appendChild(icon);
   section.appendChild(meta);
@@ -72,6 +79,7 @@ function renderSubscriptionSection() {
 }
 
 renderSubscriptionSection();
+syncSubscriptionFromBackend().then(() => renderSubscriptionSection());
 
 if (role === 'landlord') {
   titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב משכיר/ה 🔑</span>';

@@ -476,6 +476,36 @@ export function setSubscription(tier) {
   return getSubscription();
 }
 
+// Pull authoritative subscription state from the backend and mirror to
+// localStorage. Safe to fire-and-forget — getSubscription() stays sync.
+export async function syncSubscriptionFromBackend() {
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    const res = await fetch(`${API_BASE}/api/subscription`, { headers: authHeaders() });
+    if (!res.ok) return getSubscription();
+    const data = await res.json();
+    const tier = data && data.tier === 'pro' ? 'pro' : 'free';
+    try { localStorage.setItem(SUBSCRIPTION_KEY, tier); } catch (e) { /* ignore */ }
+    return tier;
+  } catch (e) {
+    return getSubscription();
+  }
+}
+
+export async function cancelSubscriptionOnBackend() {
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    await fetch(`${API_BASE}/api/subscription/cancel`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+  } catch (e) {
+    /* ignore */
+  }
+  try { localStorage.setItem(SUBSCRIPTION_KEY, 'free'); } catch (e) { /* ignore */ }
+  return 'free';
+}
+
 function todayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
