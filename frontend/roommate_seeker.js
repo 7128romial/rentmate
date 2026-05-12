@@ -3,6 +3,8 @@ import { DEMO_ROOMMATE_PEOPLE } from './src/demo.js';
 import { addRoommateMatch, getRole, getSubrole, getProfile } from './src/storage.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
 import { notify, maybePromptOnce } from './src/notify.js';
+import { canSwipeToday, incrementDailySwipeCount } from './src/storage.js';
+import { openLimitModal } from './src/subscription.js';
 
 maybePromptOnce();
 
@@ -177,6 +179,11 @@ function showInterestToast(text) {
 }
 
 function handleSwipe(person, direction) {
+  if (!canSwipeToday()) {
+    openLimitModal();
+    return;
+  }
+  incrementDailySwipeCount();
   if (direction === 'left') return;
   const isMatch = Math.random() < 0.4;
   if (isMatch) {

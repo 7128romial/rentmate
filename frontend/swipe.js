@@ -5,6 +5,8 @@ import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './s
 import { renderMap } from './src/maps.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
 import { notify, maybePromptOnce } from './src/notify.js';
+import { canSwipeToday, incrementDailySwipeCount } from './src/storage.js';
+import { openLimitModal } from './src/subscription.js';
 
 maybePromptOnce();
 
@@ -277,12 +279,37 @@ function showEmptyState() {
   swipeContainer.appendChild(empty);
 }
 
+function showLimitReachedState() {
+  swipeContainer.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.className = 'swipe-empty-state';
+  const h3 = document.createElement('h3');
+  h3.textContent = 'הגעת למכסה היומית';
+  const p = document.createElement('p');
+  p.textContent = 'במסלול חינמי אפשר 2 סוויפים ביום. שדרגי ל-PRO לסוויפים ללא הגבלה.';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-primary';
+  btn.textContent = 'שדרג ל-PRO';
+  btn.addEventListener('click', () => openLimitModal());
+  empty.appendChild(h3);
+  empty.appendChild(p);
+  empty.appendChild(btn);
+  swipeContainer.appendChild(empty);
+}
+
 async function initCards() {
   if (!DEMO_MODE && !getUserId()) {
     window.location.href = '/';
     return;
   }
   swipeContainer.innerHTML = '';
+
+  if (!canSwipeToday()) {
+    showLimitReachedState();
+    return;
+  }
+
   const all = await loadProperties();
   const prefs = getFilterPrefs();
   const filtered = applyFilters(all, prefs);
@@ -307,6 +334,11 @@ async function initCards() {
 }
 
 function handleSwipeCompletion(property_id, direction) {
+  if (!canSwipeToday()) {
+    openLimitModal();
+    return;
+  }
+  incrementDailySwipeCount();
   recordSwipe(property_id, direction).then((result) => {
     if (result.isMatch) {
       const prop = propertyById.get(String(property_id));
@@ -330,6 +362,9 @@ function handleSwipeCompletion(property_id, direction) {
       return;
     }
     if (result.interestSent) showInterestToast();
+    if (!canSwipeToday()) {
+      setTimeout(() => initCards(), 350);
+    }
   });
 }
 

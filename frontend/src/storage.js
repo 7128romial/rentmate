@@ -17,6 +17,10 @@ const USER_LISTING_KEY = 'rentmate_user_listing';
 const FILTER_PREFS_KEY = 'rentmate_filter_prefs';
 const CHAT_MESSAGES_PREFIX = 'rentmate_chat_';
 const SETTINGS_KEY = 'rentmate_settings';
+const SUBSCRIPTION_KEY = 'rentmate_subscription';
+const DAILY_SWIPES_KEY = 'rentmate_daily_swipes';
+
+export const FREE_DAILY_SWIPE_LIMIT = 2;
 
 const DEFAULT_PROFILE = {
   name: '',
@@ -450,6 +454,55 @@ export function clearChatMessages(chatId) {
   } catch (e) {
     /* ignore */
   }
+}
+
+// --- Subscription tier (free | pro) and daily swipe quota ---
+
+export function getSubscription() {
+  try {
+    const v = localStorage.getItem(SUBSCRIPTION_KEY);
+    return v === 'pro' ? 'pro' : 'free';
+  } catch (e) {
+    return 'free';
+  }
+}
+
+export function setSubscription(tier) {
+  try {
+    localStorage.setItem(SUBSCRIPTION_KEY, tier === 'pro' ? 'pro' : 'free');
+  } catch (e) {
+    /* ignore */
+  }
+  return getSubscription();
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function getDailySwipeCount() {
+  const data = readJSON(DAILY_SWIPES_KEY, null);
+  if (!data || data.date !== todayKey()) return 0;
+  return Number(data.count) || 0;
+}
+
+export function incrementDailySwipeCount() {
+  const date = todayKey();
+  const current = getDailySwipeCount();
+  const next = current + 1;
+  writeJSON(DAILY_SWIPES_KEY, { date, count: next });
+  return next;
+}
+
+export function canSwipeToday() {
+  if (getSubscription() === 'pro') return true;
+  return getDailySwipeCount() < FREE_DAILY_SWIPE_LIMIT;
+}
+
+export function remainingSwipesToday() {
+  if (getSubscription() === 'pro') return Infinity;
+  return Math.max(0, FREE_DAILY_SWIPE_LIMIT - getDailySwipeCount());
 }
 
 // --- App settings ---

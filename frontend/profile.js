@@ -11,6 +11,10 @@ import {
   getUserListing,
   setProfile,
   setUserListing,
+  getSubscription,
+  setSubscription,
+  remainingSwipesToday,
+  FREE_DAILY_SWIPE_LIMIT,
 } from './src/storage.js';
 
 const role = getRole();
@@ -21,6 +25,53 @@ renderBottomNav('profile');
 const titleEl = document.getElementById('profile-title');
 const subtitleEl = document.getElementById('profile-subtitle');
 const form = document.getElementById('profile-form');
+const subSectionHost = document.getElementById('subscription-section');
+
+function renderSubscriptionSection() {
+  if (!subSectionHost) return;
+  subSectionHost.innerHTML = '';
+  const tier = getSubscription();
+  const isPro = tier === 'pro';
+  const remaining = remainingSwipesToday();
+
+  const section = document.createElement('div');
+  section.className = 'sub-section';
+
+  const icon = document.createElement('div');
+  icon.className = `sub-icon ${isPro ? 'pro' : 'free'}`;
+  icon.textContent = isPro ? 'PRO' : 'FREE';
+
+  const meta = document.createElement('div');
+  meta.className = 'sub-meta';
+  const h4 = document.createElement('h4');
+  h4.textContent = isPro ? 'מנוי PRO' : 'מנוי חינמי';
+  const p = document.createElement('p');
+  if (isPro) {
+    p.textContent = 'סוויפים ללא הגבלה, סינון מתקדם, וגישה לכל הפיצ׳רים.';
+  } else if (remaining === 0) {
+    p.textContent = `הגעת למכסת ${FREE_DAILY_SWIPE_LIMIT} סוויפים להיום. שדרגי ל-PRO לסוויפים ללא הגבלה.`;
+  } else {
+    p.textContent = `${remaining} סוויפים נותרו להיום (מתוך ${FREE_DAILY_SWIPE_LIMIT}). שדרגי ל-PRO לסוויפים ללא הגבלה.`;
+  }
+  meta.appendChild(h4);
+  meta.appendChild(p);
+
+  const cta = document.createElement('button');
+  cta.type = 'button';
+  cta.className = `sub-cta ${isPro ? 'downgrade' : ''}`;
+  cta.textContent = isPro ? 'בטל PRO' : 'שדרג ל-PRO';
+  cta.addEventListener('click', () => {
+    setSubscription(isPro ? 'free' : 'pro');
+    renderSubscriptionSection();
+  });
+
+  section.appendChild(icon);
+  section.appendChild(meta);
+  section.appendChild(cta);
+  subSectionHost.appendChild(section);
+}
+
+renderSubscriptionSection();
 
 if (role === 'landlord') {
   titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב משכיר/ה 🔑</span>';

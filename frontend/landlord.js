@@ -160,6 +160,15 @@ async function render() {
       buildStatusMenu(property.id, status, badge);
     });
 
+    const editBtn = document.createElement('a');
+    editBtn.className = 'card-edit-btn';
+    editBtn.href = `/landlord_add.html?id=${encodeURIComponent(property.id)}`;
+    editBtn.title = 'ערוך דירה';
+    editBtn.textContent = '✏️';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
     body.appendChild(h3);
     body.appendChild(price);
     if (property.address) body.appendChild(addr);
@@ -168,6 +177,7 @@ async function render() {
     card.appendChild(thumb);
     card.appendChild(body);
     card.appendChild(badge);
+    card.appendChild(editBtn);
     list.appendChild(card);
   });
 

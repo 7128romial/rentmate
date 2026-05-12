@@ -468,6 +468,196 @@ h1, h2, h3 {
   line-height: 1.4;
 }
 
+.sub-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10000;
+  animation: fadeIn 0.18s ease;
+}
+.sub-modal-overlay.show { display: flex; }
+.sub-modal {
+  background: white;
+  border-radius: 22px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+  position: relative;
+  animation: scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sub-modal-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #FF385C, #E61E4D);
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 20px rgba(255,56,92,0.35);
+}
+.sub-modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+.sub-modal-body {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+.sub-modal-perks {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sub-modal-perks li {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  padding-inline-start: 26px;
+  position: relative;
+}
+.sub-modal-perks li::before {
+  content: '✓';
+  position: absolute;
+  inset-inline-start: 0;
+  color: #FF385C;
+  font-weight: 800;
+}
+.sub-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sub-modal-upgrade {
+  background: linear-gradient(135deg, #FF385C, #E61E4D);
+  color: white;
+  border: none;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 13px 20px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(255,56,92,0.3);
+  transition: transform 0.12s ease;
+}
+.sub-modal-upgrade:active { transform: scale(0.97); }
+.sub-modal-close {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.sub-section {
+  background: var(--surface-color);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 16px;
+}
+.sub-section .sub-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FF385C, #E61E4D);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  flex: 0 0 auto;
+}
+.sub-section .sub-icon.free {
+  background: #F2F2F2;
+  color: var(--text-muted);
+}
+.sub-section .sub-meta {
+  flex: 1;
+  min-width: 0;
+}
+.sub-section .sub-meta h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.sub-section .sub-meta p {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.sub-section .sub-cta {
+  background: linear-gradient(135deg, #FF385C, #E61E4D);
+  color: white;
+  border: none;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(255,56,92,0.25);
+}
+.sub-section .sub-cta.downgrade {
+  background: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+  border: 1.5px solid rgba(0,0,0,0.08);
+}
+
+.landlord-card .card-edit-btn {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-main);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  z-index: 2;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.landlord-card .card-edit-btn:hover {
+  background: white;
+  transform: scale(1.05);
+}
+
 .messages-area {
   flex: 1;
   overflow-y: auto;
