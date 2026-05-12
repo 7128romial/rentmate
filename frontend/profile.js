@@ -247,3 +247,43 @@ function renderLandlord() {
     showToast('נשמר ✓');
   });
 }
+
+// Auto-fill from backend if the local profile is empty
+import { API_BASE, authHeaders } from './src/config.js';
+
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch(`${API_BASE}/api/profile`, { headers: authHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.profile) {
+        const el = (id) => document.getElementById(id);
+        
+        // General mapping
+        const nameEl = el('field-name');
+        if (nameEl && !nameEl.value && data.profile.name) nameEl.value = data.profile.name;
+        
+        const cityEl = el('field-city');
+        if (cityEl && !cityEl.value && data.profile.city) cityEl.value = data.profile.city;
+        
+        const budgetEl = el('field-budget');
+        if (budgetEl && !budgetEl.value && data.profile.budget) budgetEl.value = data.profile.budget;
+        
+        const typeEl = el('field-type');
+        if (typeEl && !typeEl.value && data.profile.type) typeEl.value = data.profile.type;
+        
+        const extrasEl = el('field-extras');
+        if (extrasEl && !extrasEl.value && data.profile.extras) extrasEl.value = data.profile.extras;
+
+        // Landlord specific mapping
+        const bioEl = el('field-bio');
+        if (bioEl && !bioEl.value && data.profile.extras) bioEl.value = data.profile.extras;
+        
+        const priceRangeEl = el('field-price-range');
+        if (priceRangeEl && !priceRangeEl.value && data.profile.budget) priceRangeEl.value = `סביב ₪${data.profile.budget}`;
+      }
+    }
+  } catch(e) {
+    console.error("Failed to fetch profile", e);
+  }
+});

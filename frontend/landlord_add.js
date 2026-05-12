@@ -249,3 +249,37 @@ aiForm.addEventListener('submit', async (e) => {
     aiInput.focus();
   }
 });
+
+// Auto-fill from onboarding profile if available
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch(`${API_BASE}/api/profile`, {
+      headers: authHeaders()
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.profile) {
+        if (data.profile.city && !document.getElementById('p-address').value) {
+          setFieldValue('p-address', data.profile.city);
+        }
+        if (data.profile.budget && !document.getElementById('p-price-max').value) {
+          setFieldValue('p-price-max', String(data.profile.budget));
+          setFieldValue('p-price-min', String(Math.max(0, data.profile.budget - 500)));
+        }
+        if (data.profile.extras && !document.getElementById('p-amenities').value) {
+          setFieldValue('p-amenities', data.profile.extras.split(',').join('\n'));
+        }
+        
+        // Try to parse rooms from type if possible
+        if (data.profile.type) {
+          const roomsMatch = data.profile.type.match(/(\d+(\.\d+)?)/);
+          if (roomsMatch && !document.getElementById('p-rooms').value) {
+            setFieldValue('p-rooms', roomsMatch[1]);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch profile for auto-fill", e);
+  }
+});
