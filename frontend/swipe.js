@@ -4,6 +4,9 @@ import { renderBottomNav } from './src/nav.js';
 import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './src/storage.js';
 import { renderMap } from './src/maps.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
+import { notify, maybePromptOnce } from './src/notify.js';
+
+maybePromptOnce();
 
 renderBottomNav('swipe');
 
@@ -236,8 +239,7 @@ function applyFilters(items, prefs) {
 
 async function loadProperties() {
   if (DEMO_MODE) {
-    const userProps = await getUserProperties();
-    return [...userProps, ...DEMO_PROPERTIES, ...DEMO_SHARED_LISTINGS];
+    return [...DEMO_PROPERTIES, ...DEMO_SHARED_LISTINGS];
   }
   try {
     const res = await fetch(`${API_BASE}/api/properties`, { headers: authHeaders() });
@@ -309,6 +311,16 @@ function handleSwipeCompletion(property_id, direction) {
     if (result.isMatch) {
       const prop = propertyById.get(String(property_id));
       if (prop) addMatch(prop);
+      notify('התאמה חדשה! 🎉', {
+        body: prop ? `${prop.title} — ${prop.address || ''}` : 'יש לכם התאמה חדשה',
+        tag: `match-${property_id}`,
+        onclick: () => {
+          const url = prop
+            ? `/match.html?id=${encodeURIComponent(prop.id)}`
+            : '/match.html';
+          window.location.href = url;
+        },
+      });
       setTimeout(() => {
         const url = prop
           ? `/match.html?id=${encodeURIComponent(prop.id)}`

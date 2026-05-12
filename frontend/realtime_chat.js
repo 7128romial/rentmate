@@ -2,6 +2,9 @@ import { findDemoProperty, findRoommatePerson, findSharedListing } from './src/d
 import { renderMap } from './src/maps.js';
 import { getMatch, getMatches, getRole, getSubrole, getProfile, getChatMessages, addChatMessage } from './src/storage.js';
 import { API_BASE, getToken, getUserId } from './src/config.js';
+import { notify, maybePromptOnce } from './src/notify.js';
+
+maybePromptOnce();
 
 const myUserId = parseInt(getUserId(), 10);
 
@@ -197,6 +200,13 @@ if (useSocketChat) {
         appendMessage(reply, 'other');
         conversationHistory.push({ role: 'other', content: reply });
         persistMessage('other', reply);
+        if (document.hidden) {
+          notify(`הודעה חדשה מ${(ctx.title || '').split(',')[0].trim() || 'הצד השני'}`, {
+            body: reply,
+            tag: `chat-${chatId || 'demo'}`,
+            onclick: () => window.focus(),
+          });
+        }
       } else {
         appendMessage('סליחה, יש לי בעיה כרגע. נסי שוב בעוד רגע.', 'other');
       }

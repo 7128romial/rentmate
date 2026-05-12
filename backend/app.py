@@ -467,7 +467,10 @@ def get_properties():
     city = profile.city if profile and profile.city else None
     base_price = profile.max_budget if profile and profile.max_budget and profile.max_budget > 0 else 4500
 
-    query = models.Property.query.filter(models.Property.status == 'available')
+    query = models.Property.query.filter(
+        models.Property.status == 'available',
+        models.Property.owner_id != user_id,
+    )
     if city:
         in_city = query.filter_by(location=city).all()
         props = in_city if in_city else query.all()

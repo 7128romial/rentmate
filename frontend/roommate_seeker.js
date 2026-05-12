@@ -1,13 +1,23 @@
 import { renderBottomNav } from './src/nav.js';
 import { DEMO_ROOMMATE_PEOPLE } from './src/demo.js';
-import { addRoommateMatch, getRole, getSubrole } from './src/storage.js';
+import { addRoommateMatch, getRole, getSubrole, getProfile } from './src/storage.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
+import { notify, maybePromptOnce } from './src/notify.js';
+
+maybePromptOnce();
 
 if (getRole() !== 'roommate' || getSubrole() !== 'seeker') {
   window.location.replace('/roommate_choice.html');
 }
 
 renderBottomNav('roommate-seeker');
+
+const myProfile = getProfile() || {};
+const myName = (myProfile.name || '').trim().toLowerCase();
+const candidates = DEMO_ROOMMATE_PEOPLE.filter((p) => {
+  if (myName && (p.name || '').trim().toLowerCase() === myName) return false;
+  return true;
+});
 
 const swipeContainer = document.getElementById('swipe-container');
 
@@ -171,6 +181,13 @@ function handleSwipe(person, direction) {
   const isMatch = Math.random() < 0.4;
   if (isMatch) {
     addRoommateMatch(person);
+    notify('התאמה חדשה! 🎉', {
+      body: `${person.name}, ${person.age} — ${person.targetArea || ''}`,
+      tag: `roommate-${person.id}`,
+      onclick: () => {
+        window.location.href = `/match.html?person=${encodeURIComponent(person.id)}`;
+      },
+    });
     setTimeout(() => {
       window.location.href = `/match.html?person=${encodeURIComponent(person.id)}`;
     }, 400);
@@ -181,7 +198,7 @@ function handleSwipe(person, direction) {
 
 mountSwipeDeck({
   container: swipeContainer,
-  items: DEMO_ROOMMATE_PEOPLE,
+  items: candidates,
   renderCard: createPersonCard,
   onSwipe: handleSwipe,
   onEmpty: () => {
@@ -199,7 +216,7 @@ const onClickSwipe = (direction) =>
       alert('עברנו על כל המועמדים. נמצא עוד...');
       window.location.reload();
     },
-    DEMO_ROOMMATE_PEOPLE,
+    candidates,
   );
 document.getElementById('btn-nope').addEventListener('click', () => onClickSwipe('left'));
 document.getElementById('btn-like').addEventListener('click', () => onClickSwipe('right'));
