@@ -640,55 +640,74 @@ def landlord_reject():
         db.session.commit()
     return jsonify({'success': True})
 
-@app.route('/api/landlord/properties/<int:prop_id>/generate_lease', methods=['POST'])
+@app.route('/api/lease/generate', methods=['POST'])
 @require_auth
-def generate_lease(prop_id):
+def generate_lease():
     if not openai_client:
         return jsonify({'error': 'OpenAI API not configured'}), 503
-        
+
     data = request.get_json(silent=True) or {}
-    renter_id = data.get('renter_id')
-    user_id = g.user_id
-    
-    prop = db.session.get(models.Property, prop_id)
-    if not prop or prop.owner_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
-        
-    landlord_profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
-    renter_profile = models.PreferenceProfile.query.filter_by(user_id=renter_id).first()
-    
-    landlord_name = landlord_profile.name if landlord_profile and landlord_profile.name else "המשכיר"
-    renter_name = renter_profile.name if renter_profile and renter_profile.name else "השוכר"
-    
-    prompt = f"""
-    You are a legal assistant in Israel. Write a standard, concise apartment lease agreement (חוזה שכירות בלתי מוגנת) in Hebrew.
-    Format the output entirely in clean HTML. Do NOT use markdown code blocks (no ```html). Just return raw HTML.
-    Use tags like <h1>, <h2>, <p>, <ul>, <li>, and <strong>.
-    
-    Details to include:
-    - Landlord Name: {landlord_name}
-    - Renter Name: {renter_name}
-    - Property Address: {prop.address or prop.location or 'כתובת הנכס'}
-    - Monthly Rent: {prop.price_max or prop.price_min or '_____'} NIS
-    - Include standard clauses: Purpose of lease, Lease period (12 months), Rent payment, Maintenance, and Signatures section at the bottom.
-    
-    IMPORTANT: Make the agreement VERY short and concise (maximum 300 words). A 1-page summary contract is required to ensure fast generation.
-    """
-    
+    prop = data.get('property') or {}
+    lease_type = data.get('lease_type') or 'standard'
+    landlord_name = (data.get('landlord_name') or '').strip() or 'המשכיר'
+    renter_name = (data.get('renter_name') or '').strip() or 'השוכר'
+
+    address = prop.get('address') or prop.get('location') or 'כתובת הנכס'
+    if prop.get('price'):
+        rent = prop['price']
+    elif prop.get('price_max'):
+        rent = f"₪{prop['price_max']}/חודש"
+    else:
+        rent = '____'
+    rooms = prop.get('rooms') if prop.get('rooms') is not None else '___'
+
+    if lease_type == 'roommate':
+        prompt = f"""
+You are a legal assistant in Israel. Write a concise SHARED-APARTMENT roommate agreement (הסכם שותפות בדירה) in Hebrew.
+Format the output entirely in clean HTML. Do NOT use markdown code blocks. Return raw HTML only.
+Use tags <h1>, <h2>, <p>, <ul>, <li>, <strong>.
+
+Details:
+- Existing tenant (host): {landlord_name}
+- New roommate: {renter_name}
+- Apartment address: {address}
+- Monthly rent share: {rent}
+- Rooms in apartment: {rooms}
+
+Include short clauses for: rent split, shared bills (electricity/water/internet), shared spaces & private room, house rules, notice period (30 days), security deposit, dispute resolution, signatures.
+Use placeholders like __________ for ID numbers, dates, and signatures.
+Keep it short (max 300 words).
+"""
+    else:
+        prompt = f"""
+You are a legal assistant in Israel. Write a standard concise apartment lease agreement (חוזה שכירות בלתי מוגנת) in Hebrew.
+Format the output entirely in clean HTML. Do NOT use markdown code blocks. Return raw HTML only.
+Use tags <h1>, <h2>, <p>, <ul>, <li>, <strong>.
+
+Details:
+- Landlord: {landlord_name}
+- Tenant: {renter_name}
+- Property address: {address}
+- Monthly rent: {rent}
+- Rooms: {rooms}
+
+Include short clauses for: purpose of lease, lease period (12 months), rent payment, security deposit & guarantees, utilities/property tax, maintenance, signatures.
+Use placeholders like __________ for ID numbers, dates, and signatures.
+Keep it short (max 300 words).
+"""
+
     try:
-        response = openai_client.chat.completions.create(
+        response = openai_client.with_options(max_retries=1).chat.completions.create(
             model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'),
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=800,
+            timeout=_env_int('LEASE_TIMEOUT_SECONDS', 60),
         )
-        html_content = response.choices[0].message.content
+        html_content = response.choices[0].message.content or ''
         if html_content.startswith('```html'):
             html_content = html_content[7:]
         if html_content.endswith('```'):
             html_content = html_content[:-3]
-            
         return jsonify({'html': html_content.strip()})
     except Exception as e:
         log.exception('Lease generation failed: %s', e)

@@ -1,6 +1,6 @@
 import { findDemoProperty, findRoommatePerson, findSharedListing } from './src/demo.js';
 import { renderMap } from './src/maps.js';
-import { getMatch, getMatches } from './src/storage.js';
+import { getMatch, getMatches, getRole, getProfile } from './src/storage.js';
 import { API_BASE, getToken, getUserId } from './src/config.js';
 
 const myUserId = parseInt(getUserId(), 10);
@@ -140,69 +140,45 @@ if (ctx.isP2P && window.io) {
 
   btnGenerateLease.style.display = 'block';
 
-  const isNumericId = (v) => /^\d+$/.test(String(v ?? ''));
-
-  function buildTemplateLease(property) {
-    const today = new Date().toLocaleDateString('he-IL');
-    const address = property?.address || property?.location || '____________';
-    const price = property?.price || (property?.price_max ? `₪${property.price_max}/חודש` : '____________');
-    const rooms = property?.rooms ?? '___';
-    return `
-      <h1 style="text-align:center">חוזה שכירות בלתי מוגנת</h1>
-      <p style="text-align:center">נחתם ביום ${today}</p>
-      <h2>הצדדים</h2>
-      <p><strong>המשכיר:</strong> __________________ (ת.ז. __________)</p>
-      <p><strong>השוכר:</strong> __________________ (ת.ז. __________)</p>
-      <h2>1. הנכס</h2>
-      <p>הדירה הנמצאת בכתובת: <strong>${address}</strong>, בת ${rooms} חדרים.</p>
-      <h2>2. תקופת השכירות</h2>
-      <p>תקופת השכירות תהיה 12 חודשים, החל מ-__________ ועד __________.</p>
-      <h2>3. דמי שכירות</h2>
-      <p>השוכר ישלם למשכיר סך של <strong>${price}</strong>, ב-1 לכל חודש קלנדרי.</p>
-      <h2>4. פיקדון ובטחונות</h2>
-      <p>השוכר יפקיד בידי המשכיר ערבות בנקאית או צ'ק ביטחון בגובה דמי שכירות של 3 חודשים.</p>
-      <h2>5. תשלומי חובה</h2>
-      <p>השוכר יישא בתשלומי חשמל, מים, גז, ארנונה ועד בית.</p>
-      <h2>6. תחזוקה</h2>
-      <p>השוכר מתחייב לשמור על הנכס במצב תקין. תיקוני בלאי סביר על חשבון המשכיר; תיקונים שמקורם בנזק שגרם השוכר — על חשבונו.</p>
-      <h2>7. שימוש</h2>
-      <p>הנכס ישמש למגורים בלבד. אסור להשכיר בשכירות-משנה ללא אישור המשכיר בכתב.</p>
-      <h2>חתימות</h2>
-      <p>חתימת המשכיר: __________________</p>
-      <p>חתימת השוכר: __________________</p>
-      <p>תאריך: __________________</p>
-    `;
-  }
-
   btnGenerateLease.addEventListener('click', async () => {
     leaseModal.style.display = 'flex';
-
-    if (!isNumericId(ctx.propertyId)) {
-      leaseContent.innerHTML = buildTemplateLease(ctx.location);
-      return;
-    }
-
     leaseContent.innerHTML = 'טוען... ה-AI שלנו מכין את חוזה השכירות... 📄';
 
+    const role = getRole();
+    const leaseType = role === 'roommate' ? 'roommate' : 'standard';
+    const myProfile = getProfile() || {};
+    const myName = (myProfile.name || '').trim();
+    const otherName = (ctx.title || '').split(',')[0].trim();
+    const isLandlordSide = role === 'landlord' || role === 'roommate';
+    const landlordName = isLandlordSide ? myName : otherName;
+    const renterName = isLandlordSide ? otherName : myName;
+
     try {
-      const res = await fetch(`${API_BASE}/api/landlord/properties/${ctx.propertyId}/generate_lease`, {
+      const res = await fetch(`${API_BASE}/api/lease/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ renter_id: ctx.renterId })
+        body: JSON.stringify({
+          property: ctx.location || {},
+          lease_type: leaseType,
+          landlord_name: landlordName,
+          renter_name: renterName
+        })
       });
 
       if (res.ok) {
         const data = await res.json();
         leaseContent.innerHTML = data.html;
       } else {
-        leaseContent.innerHTML = buildTemplateLease(ctx.location);
+        const body = await res.text().catch(() => '');
+        console.error('Lease generation failed', res.status, body);
+        leaseContent.innerHTML = 'לא הצלחנו ליצור את החוזה כרגע. נסי שוב בעוד רגע.';
       }
     } catch (e) {
       console.error(e);
-      leaseContent.innerHTML = buildTemplateLease(ctx.location);
+      leaseContent.innerHTML = 'שגיאת תקשורת. בדקי שהשרת זמין ונסי שוב.';
     }
   });
 
