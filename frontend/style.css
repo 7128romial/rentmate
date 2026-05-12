@@ -261,6 +261,178 @@ h1, h2, h3 {
   color: var(--text-muted);
 }
 
+.chat-header-actions {
+  margin-right: auto;
+  display: flex;
+  gap: 6px;
+}
+.header-action-btn {
+  background: var(--surface-color);
+  color: var(--text-main);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  white-space: nowrap;
+}
+.header-action-btn:hover {
+  background: #FFF5F7;
+  border-color: rgba(255, 56, 92, 0.25);
+}
+.header-action-btn:active {
+  transform: scale(0.96);
+}
+
+.schedule-card {
+  background: white;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+}
+.schedule-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.schedule-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.schedule-header button {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.schedule-header button:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-main);
+}
+.schedule-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+.schedule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.schedule-field > span {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.schedule-field input,
+.schedule-field textarea {
+  background: var(--bg-color);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.18s, background 0.18s;
+}
+.schedule-field input:focus,
+.schedule-field textarea:focus {
+  border-color: var(--primary);
+  background: var(--surface-color);
+}
+.schedule-field textarea {
+  resize: vertical;
+  min-height: 56px;
+}
+.schedule-quick {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.schedule-quick button {
+  background: var(--bg-color);
+  color: var(--text-main);
+  border: 2px solid transparent;
+  padding: 7px 14px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.1s;
+}
+.schedule-quick button:hover {
+  border-color: rgba(0,0,0,0.08);
+}
+.schedule-quick button:active {
+  transform: scale(0.96);
+}
+.schedule-quick button.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}
+.schedule-footer {
+  padding: 14px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+.schedule-footer button {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 11px 22px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+}
+.schedule-footer .btn-secondary {
+  background: var(--bg-color);
+  color: var(--text-main);
+}
+.schedule-footer .btn-secondary:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.message-content.meeting {
+  background: linear-gradient(135deg, #FFE5EC, #FFD1DC) !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 56, 92, 0.22);
+  font-weight: 600;
+  white-space: pre-line;
+}
+.message.user .message-content.meeting {
+  background: linear-gradient(135deg, #FF6B85, #FF385C) !important;
+  color: white !important;
+  border-color: rgba(255,255,255,0.25);
+}
+
 .messages-area {
   flex: 1;
   overflow-y: auto;

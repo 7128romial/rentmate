@@ -16,7 +16,10 @@
           <h2 id="chat-title">דירה</h2>
           <p id="chat-subtitle">הותאם היום</p>
         </div>
-        <button id="btn-generate-lease" class="btn-primary" style="margin-right: auto; font-size: 14px; padding: 6px 12px; display: none;">📄 צור חוזה</button>
+        <div class="chat-header-actions">
+          <button id="btn-schedule-meeting" class="header-action-btn" style="display: none;" title="קביעת פגישה">📅 פגישה</button>
+          <button id="btn-generate-lease" class="header-action-btn" style="display: none;" title="חוזה">📄 חוזה</button>
+        </div>
       </header>
 
       <!-- Lease Modal -->
@@ -31,6 +34,40 @@
           </div>
           <div style="padding: 16px; display: flex; justify-content: flex-end;">
             <button id="print-lease" class="btn-primary">הדפס / שמור כ-PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Meeting Modal -->
+      <div id="schedule-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px;">
+        <div class="schedule-card">
+          <div class="schedule-header">
+            <h3>קביעת פגישה לצפייה</h3>
+            <button id="close-schedule-modal" type="button" aria-label="סגור">&times;</button>
+          </div>
+          <div class="schedule-body">
+            <label class="schedule-field">
+              <span>תאריך</span>
+              <input type="date" id="schedule-date">
+            </label>
+            <label class="schedule-field">
+              <span>שעה</span>
+              <input type="time" id="schedule-time" value="18:00">
+            </label>
+            <div class="schedule-quick">
+              <button type="button" data-shift="0">היום</button>
+              <button type="button" data-shift="1">מחר</button>
+              <button type="button" data-shift="2">מחרתיים</button>
+              <button type="button" data-shift="7">בעוד שבוע</button>
+            </div>
+            <label class="schedule-field">
+              <span>הערה (אופציונלי)</span>
+              <textarea id="schedule-notes" rows="2" placeholder="למשל: אפשר לראות גם את החניה?"></textarea>
+            </label>
+          </div>
+          <div class="schedule-footer">
+            <button id="cancel-schedule" type="button" class="btn-secondary">ביטול</button>
+            <button id="confirm-schedule" type="button" class="btn-primary">שלח הצעה</button>
           </div>
         </div>
       </div>

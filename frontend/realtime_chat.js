@@ -82,6 +82,9 @@ function appendMessage(text, role) {
   wrapper.className = `message ${role === 'user' ? 'user' : 'ai'}`;
   const content = document.createElement('div');
   content.className = 'message-content';
+  if (typeof text === 'string' && text.startsWith('📅 ')) {
+    content.classList.add('meeting');
+  }
   content.textContent = text;
   wrapper.appendChild(content);
   messages.appendChild(wrapper);
@@ -112,6 +115,8 @@ function appendTyping() {
   return wrapper;
 }
 
+let dispatchUserMessage = (_text) => {};
+
 if (useSocketChat) {
   const socket = io(API_BASE);
 
@@ -141,20 +146,15 @@ if (useSocketChat) {
     }
   });
 
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const value = input.value.trim();
-    if (!value) return;
-
-    appendMessage(value, 'user');
+  dispatchUserMessage = (text) => {
+    appendMessage(text, 'user');
     socket.emit('send_message', {
       token: getToken(),
       property_id: ctx.propertyId,
       renter_id: ctx.renterId,
-      content: value
+      content: text
     });
-    input.value = '';
-  });
+  };
 } else {
   const conversationHistory = [];
 
@@ -193,16 +193,20 @@ if (useSocketChat) {
   messages.innerHTML = '';
   fetchAIReply();
 
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const value = input.value.trim();
-    if (!value) return;
-    appendMessage(value, 'user');
-    conversationHistory.push({ role: 'user', content: value });
-    input.value = '';
+  dispatchUserMessage = (text) => {
+    appendMessage(text, 'user');
+    conversationHistory.push({ role: 'user', content: text });
     fetchAIReply();
-  });
+  };
 }
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const value = input.value.trim();
+  if (!value) return;
+  input.value = '';
+  dispatchUserMessage(value);
+});
 
 if (ctx.isP2P) {
   const btnGenerateLease = document.getElementById('btn-generate-lease');
@@ -269,5 +273,71 @@ if (ctx.isP2P) {
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
+  });
+
+  const btnScheduleMeeting = document.getElementById('btn-schedule-meeting');
+  const scheduleModal = document.getElementById('schedule-modal');
+  const closeScheduleModal = document.getElementById('close-schedule-modal');
+  const cancelScheduleBtn = document.getElementById('cancel-schedule');
+  const confirmScheduleBtn = document.getElementById('confirm-schedule');
+  const scheduleDate = document.getElementById('schedule-date');
+  const scheduleTime = document.getElementById('schedule-time');
+  const scheduleNotes = document.getElementById('schedule-notes');
+  const quickButtons = scheduleModal.querySelectorAll('.schedule-quick button');
+
+  btnScheduleMeeting.style.display = 'inline-flex';
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function toDateInputValue(date) {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+  function setQuickShift(days) {
+    const target = new Date();
+    target.setDate(target.getDate() + days);
+    scheduleDate.value = toDateInputValue(target);
+    quickButtons.forEach((b) => b.classList.toggle('active', Number(b.dataset.shift) === days));
+  }
+  function clearQuickActive() {
+    quickButtons.forEach((b) => b.classList.remove('active'));
+  }
+
+  function openScheduleModal() {
+    const today = new Date();
+    scheduleDate.min = toDateInputValue(today);
+    if (!scheduleDate.value) setQuickShift(1);
+    if (!scheduleTime.value) scheduleTime.value = '18:00';
+    scheduleNotes.value = '';
+    scheduleModal.style.display = 'flex';
+  }
+  function closeSchedule() {
+    scheduleModal.style.display = 'none';
+  }
+
+  btnScheduleMeeting.addEventListener('click', openScheduleModal);
+  closeScheduleModal.addEventListener('click', closeSchedule);
+  cancelScheduleBtn.addEventListener('click', closeSchedule);
+  scheduleModal.addEventListener('click', (event) => {
+    if (event.target === scheduleModal) closeSchedule();
+  });
+  quickButtons.forEach((btn) => {
+    btn.addEventListener('click', () => setQuickShift(Number(btn.dataset.shift)));
+  });
+  scheduleDate.addEventListener('input', clearQuickActive);
+
+  confirmScheduleBtn.addEventListener('click', () => {
+    if (!scheduleDate.value || !scheduleTime.value) {
+      alert('נא לבחור תאריך ושעה');
+      return;
+    }
+    const [y, m, d] = scheduleDate.value.split('-').map(Number);
+    const [hh, mm] = scheduleTime.value.split(':').map(Number);
+    const dt = new Date(y, m - 1, d, hh, mm);
+    const dayLabel = dt.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+    const timeLabel = `${pad(hh)}:${pad(mm)}`;
+    const notes = scheduleNotes.value.trim();
+    const note = notes ? ` — ${notes}` : '';
+    const text = `📅 אני מציע/ה להיפגש לצפייה בנכס ב${dayLabel} בשעה ${timeLabel}${note}`;
+    closeSchedule();
+    dispatchUserMessage(text);
   });
 }
