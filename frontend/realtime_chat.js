@@ -20,7 +20,9 @@ const chatId = (() => {
   if (!backBtn) return;
   const params = new URLSearchParams(window.location.search);
   if (params.get('person')) {
-    backBtn.href = '/roommate_matches.html';
+    backBtn.href = getSubrole() === 'host' ? '/roommate_host.html' : '/roommate_matches.html';
+  } else if (params.get('renter')) {
+    backBtn.href = `/landlord_property.html?id=${encodeURIComponent(params.get('id') || '')}`;
   } else {
     backBtn.href = '/matches.html';
   }
@@ -120,7 +122,11 @@ function getPersona() {
   const mySubrole = getSubrole();
   if (myRole === 'landlord') return 'tenant';
   if (myRole === 'renter') return 'landlord';
-  if (myRole === 'roommate') return mySubrole === 'host' ? 'roommate_seeker' : 'roommate_host';
+  if (myRole === 'roommate') {
+    // Host's chat partners are seekers interested in their listing.
+    // Seekers in this app match with fellow seekers to look for a place together.
+    return mySubrole === 'host' ? 'roommate_seeker' : 'roommate_peer';
+  }
   return 'landlord';
 }
 

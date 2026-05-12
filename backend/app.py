@@ -865,6 +865,7 @@ def chat_roleplay():
         'tenant': f"You are a tenant who matched with the user's apartment at {address}. You're considering renting it and are asking questions before committing.",
         'roommate_host': f"You currently live in an apartment at {address} and are looking for a roommate. The user is a potential roommate who matched with your post.",
         'roommate_seeker': f"You are looking for a place to share. The user has a room available at {address} that you matched with.",
+        'roommate_peer': "You are also looking for a shared apartment to rent. The user matched with you because you have similar preferences. You're chatting to see if you'd like to team up and look for an apartment together.",
     }
     persona_brief = persona_briefs.get(persona, persona_briefs['landlord'])
 
