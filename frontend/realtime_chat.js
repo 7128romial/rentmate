@@ -140,8 +140,48 @@ if (ctx.isP2P && window.io) {
 
   btnGenerateLease.style.display = 'block';
 
+  const isNumericId = (v) => /^\d+$/.test(String(v ?? ''));
+
+  function buildTemplateLease(property) {
+    const today = new Date().toLocaleDateString('he-IL');
+    const address = property?.address || property?.location || '____________';
+    const price = property?.price || (property?.price_max ? `₪${property.price_max}/חודש` : '____________');
+    const rooms = property?.rooms ?? '___';
+    return `
+      <h1 style="text-align:center">חוזה שכירות בלתי מוגנת</h1>
+      <p style="text-align:center">נחתם ביום ${today}</p>
+      <h2>הצדדים</h2>
+      <p><strong>המשכיר:</strong> __________________ (ת.ז. __________)</p>
+      <p><strong>השוכר:</strong> __________________ (ת.ז. __________)</p>
+      <h2>1. הנכס</h2>
+      <p>הדירה הנמצאת בכתובת: <strong>${address}</strong>, בת ${rooms} חדרים.</p>
+      <h2>2. תקופת השכירות</h2>
+      <p>תקופת השכירות תהיה 12 חודשים, החל מ-__________ ועד __________.</p>
+      <h2>3. דמי שכירות</h2>
+      <p>השוכר ישלם למשכיר סך של <strong>${price}</strong>, ב-1 לכל חודש קלנדרי.</p>
+      <h2>4. פיקדון ובטחונות</h2>
+      <p>השוכר יפקיד בידי המשכיר ערבות בנקאית או צ'ק ביטחון בגובה דמי שכירות של 3 חודשים.</p>
+      <h2>5. תשלומי חובה</h2>
+      <p>השוכר יישא בתשלומי חשמל, מים, גז, ארנונה ועד בית.</p>
+      <h2>6. תחזוקה</h2>
+      <p>השוכר מתחייב לשמור על הנכס במצב תקין. תיקוני בלאי סביר על חשבון המשכיר; תיקונים שמקורם בנזק שגרם השוכר — על חשבונו.</p>
+      <h2>7. שימוש</h2>
+      <p>הנכס ישמש למגורים בלבד. אסור להשכיר בשכירות-משנה ללא אישור המשכיר בכתב.</p>
+      <h2>חתימות</h2>
+      <p>חתימת המשכיר: __________________</p>
+      <p>חתימת השוכר: __________________</p>
+      <p>תאריך: __________________</p>
+    `;
+  }
+
   btnGenerateLease.addEventListener('click', async () => {
     leaseModal.style.display = 'flex';
+
+    if (!isNumericId(ctx.propertyId)) {
+      leaseContent.innerHTML = buildTemplateLease(ctx.location);
+      return;
+    }
+
     leaseContent.innerHTML = 'טוען... ה-AI שלנו מכין את חוזה השכירות... 📄';
 
     try {
@@ -158,11 +198,11 @@ if (ctx.isP2P && window.io) {
         const data = await res.json();
         leaseContent.innerHTML = data.html;
       } else {
-        leaseContent.innerHTML = 'שגיאה ביצירת החוזה. ייתכן שאין לך הרשאות (רק המשכיר יכול ליצור חוזה).';
+        leaseContent.innerHTML = buildTemplateLease(ctx.location);
       }
     } catch (e) {
       console.error(e);
-      leaseContent.innerHTML = 'שגיאת תקשורת.';
+      leaseContent.innerHTML = buildTemplateLease(ctx.location);
     }
   });
 
