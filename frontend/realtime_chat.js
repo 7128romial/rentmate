@@ -15,6 +15,17 @@ const chatId = (() => {
   return null;
 })();
 
+(() => {
+  const backBtn = document.getElementById('chat-back-btn');
+  if (!backBtn) return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('person')) {
+    backBtn.href = '/roommate_matches.html';
+  } else {
+    backBtn.href = '/matches.html';
+  }
+})();
+
 function resolveContext() {
   const params = new URLSearchParams(window.location.search);
   const personId = params.get('person');
