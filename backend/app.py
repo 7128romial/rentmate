@@ -913,6 +913,7 @@ def chat():
     profile_complete = False
     assigned_role = None
     assigned_subrole = None
+    saved_profile = None
 
     if 'PROFILE_JSON=' in ai_text:
         raw_json_str = ai_text.split('PROFILE_JSON=', 1)[1].strip()
@@ -954,7 +955,14 @@ def chat():
             profile.extras = str(profile_data.get('extras', ''))[:500]
             db.session.commit()
             profile_complete = True
-            
+            saved_profile = {
+                'name': profile.name,
+                'city': profile.city,
+                'budget': profile.max_budget,
+                'type': profile.type,
+                'extras': profile.extras,
+            }
+
             if assigned_role == 'landlord':
                 ai_text = "מעולה! אני פותח לך את ממשק ניהול הנכסים 🔑"
             elif assigned_role == 'roommate':
@@ -971,10 +979,11 @@ def chat():
     db.session.commit()
 
     return jsonify({
-        'response': ai_text, 
-        'profile_complete': profile_complete, 
+        'response': ai_text,
+        'profile_complete': profile_complete,
         'role': assigned_role,
-        'subrole': assigned_subrole
+        'subrole': assigned_subrole,
+        'profile': saved_profile,
     })
 
 

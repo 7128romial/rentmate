@@ -3,6 +3,7 @@ import {
   setProfile,
   setRole,
   setSubrole,
+  setFilterPrefs,
 } from './src/storage.js';
 
 const messagesContainer = document.getElementById('messages');
@@ -66,7 +67,18 @@ async function sendToAI(text) {
     if (data.profile_complete) {
       if (data.role) setRole(data.role);
       if (data.subrole) setSubrole(data.subrole);
-      
+
+      if (data.profile) {
+        setProfile(data.profile);
+        if (data.role !== 'landlord') {
+          const prefs = {};
+          if (data.profile.city) prefs.area = data.profile.city;
+          const budget = Number(data.profile.budget);
+          if (Number.isFinite(budget) && budget > 0) prefs.maxPrice = budget;
+          if (Object.keys(prefs).length) setFilterPrefs(prefs);
+        }
+      }
+
       setTimeout(() => {
         if (data.role === 'landlord') {
           window.location.href = '/landlord.html';
