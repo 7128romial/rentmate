@@ -141,9 +141,18 @@ def seed_demo_properties():
 
 
 with app.app_context():
+    try:
+        # Check if the schema is compatible by running a query
+        models.Property.query.first()
+    except Exception as e:
+        print(f"Schema mismatch detected ({e}), dropping tables to recreate.")
+        db.drop_all()
+    
     db.create_all()
-    seed_demo_properties()
-
+    try:
+        seed_demo_properties()
+    except Exception as e:
+        print(f"Seeding failed: {e}")
 signer = URLSafeTimedSerializer(SECRET_KEY, salt='rentmate-auth')
 
 openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY')) if os.environ.get('OPENAI_API_KEY') else None
