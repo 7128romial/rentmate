@@ -25,20 +25,7 @@ const STATUS_LABELS = {
   off_market: 'לא בשוק',
 };
 
-function countsFor(propertyId) {
-  const ids = [
-    ...getInterestedRenterIds(propertyId),
-    ...getUserPropertyInterests(propertyId),
-  ];
-  let pending = 0;
-  let approved = 0;
-  ids.forEach((rid) => {
-    const decision = getRenterDecision(propertyId, rid);
-    if (decision === 'approved') approved += 1;
-    else if (decision === 'pending') pending += 1;
-  });
-  return { pending, approved, total: ids.length };
-}
+// countsFor removed as we get counts from API
 
 let openMenu = null;
 
@@ -73,10 +60,10 @@ function buildStatusMenu(propertyId, currentStatus, anchor) {
 
     btn.appendChild(dot);
     btn.appendChild(label);
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      setUserPropertyStatus(propertyId, status);
+      await setUserPropertyStatus(propertyId, status);
       closeMenu();
       render();
     });
@@ -91,13 +78,13 @@ function buildStatusMenu(propertyId, currentStatus, anchor) {
   menu.style.left = `${rect.left + window.scrollX}px`;
 }
 
-function render() {
+async function render() {
   list.innerHTML = '';
   let totalPending = 0;
   let totalApproved = 0;
 
-  const all = getUserProperties();
-  if (all.length === 0) {
+  const all = await getUserProperties();
+  if (!all || all.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     const h = document.createElement('h3');
@@ -116,7 +103,8 @@ function render() {
   }
 
   all.forEach((property) => {
-    const { pending, approved } = countsFor(property.id);
+    const pending = property.pendingCount || 0;
+    const approved = property.approvedCount || 0;
     totalPending += pending;
     totalApproved += approved;
 

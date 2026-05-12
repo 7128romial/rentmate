@@ -146,7 +146,7 @@ function renderPeople(people, decision) {
     name.textContent = `${person.name}, ${person.age}`;
     const score = document.createElement('span');
     score.className = 'renter-score';
-    score.textContent = `${person.matchScore}%`;
+    score.textContent = `מחשב התאמה... 🔄`;
     nameRow.appendChild(name);
     nameRow.appendChild(score);
 
@@ -170,7 +170,33 @@ function renderPeople(people, decision) {
     lifestyle.className = 'renter-lifestyle';
     if (person.lifestyle) lifestyle.textContent = `🎯 ${person.lifestyle}`;
 
+    const aiExplanation = document.createElement('div');
+    aiExplanation.style.fontSize = '13px';
+    aiExplanation.style.lineHeight = '1.4';
+    aiExplanation.style.margin = '10px 0';
+    aiExplanation.style.color = 'var(--text-light)';
+    aiExplanation.style.fontStyle = 'italic';
+    aiExplanation.style.display = 'none';
+
+    // Fetch real compatibility score from AI
+    import('./src/config.js').then(({ API_BASE, getToken }) => {
+      const numericId = parseInt(person.id.replace(/\D/g, ''), 10) || Math.floor(Math.random() * 10) + 1;
+      fetch(`${API_BASE}/api/roommates/compatibility/${numericId}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        score.textContent = `${data.score}% התאמה`;
+        aiExplanation.textContent = '✨ ' + data.explanation;
+        aiExplanation.style.display = 'block';
+      })
+      .catch(() => {
+        score.textContent = `${person.matchScore || 85}% התאמה`;
+      });
+    });
+
     card.appendChild(header);
+    card.appendChild(aiExplanation);
     if (person.bio) card.appendChild(bio);
     if (person.lifestyle) card.appendChild(lifestyle);
     card.appendChild(actionsFor(person, decision));

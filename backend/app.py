@@ -3,14 +3,17 @@ import logging
 import os
 import re
 import time
+import base64
 from functools import wraps
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, jsonify, request, send_from_directory
+from werkzeug.utils import secure_filename
 
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from openai import OpenAI, OpenAIError
 
@@ -40,6 +43,7 @@ logging.basicConfig(
 log = logging.getLogger('rentmate')
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- Config ---
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -50,6 +54,10 @@ if database_url.startswith('postgres://'):
     database_url = 'postgresql://' + database_url[len('postgres://'):]
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
@@ -221,8 +229,75 @@ def _client_ip():
 
 # --- API ENDPOINTS ---
 
+@app.route('/uploads/<name>')
+def download_file(name):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], name)
 
+@app.route('/api/upload', methods=['POST'])
+@require_auth
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file:
+        filename = secure_filename(file.filename)
+        name, ext = os.path.splitext(filename)
+        filename = f"{name}_{int(time.time())}{ext}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        url = request.host_url.rstrip('/') + f'/uploads/{filename}'
+        return jsonify({'url': f'/uploads/{filename}'}) # Return relative URL to allow frontend to pass it back safely
 
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+@app.route('/api/analyze-property-image', methods=['POST'])
+@require_auth
+def analyze_property_image():
+    if not openai_client:
+        return jsonify({'error': 'OpenAI API not configured'}), 503
+        
+    data = request.get_json(silent=True) or {}
+    url = data.get('url')
+    if not url or not url.startswith('/uploads/'):
+        # Maybe absolute URL? Strip host if so
+        if '/uploads/' in str(url):
+            url = '/uploads/' + url.split('/uploads/')[-1]
+        else:
+            return jsonify({'error': 'Invalid image URL'}), 400
+            
+    filename = url.split('/')[-1]
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    if not os.path.exists(filepath):
+        return jsonify({'error': 'File not found'}), 404
+        
+    try:
+        base64_image = encode_image(filepath)
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "You are a real estate expert in Israel. Analyze this apartment image. Return a JSON object with 'description' (a short, attractive Hebrew marketing description of 2-3 sentences) and 'tags' (a list of 3-5 short Hebrew tags like 'מרווח', 'מואר', 'משופץ'). Only return valid JSON."},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                    ]
+                }
+            ],
+            response_format={ "type": "json_object" },
+            max_tokens=300
+        )
+        result_text = response.choices[0].message.content
+        result_json = json.loads(result_text)
+        return jsonify(result_json)
+    except Exception as e:
+        log.exception('Vision API failed: %s', e)
+        return jsonify({'error': 'Analysis failed'}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
@@ -376,13 +451,14 @@ def reset_account():
 @app.route('/api/properties', methods=['GET'])
 @require_auth
 def get_properties():
+    # Only return properties that are 'available'
     user_id = g.user_id
     profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
 
     city = profile.city if profile and profile.city else None
     base_price = profile.max_budget if profile and profile.max_budget and profile.max_budget > 0 else 4500
 
-    query = models.Property.query
+    query = models.Property.query.filter(models.Property.status == 'available')
     if city:
         in_city = query.filter_by(location=city).all()
         props = in_city if in_city else query.all()
@@ -394,14 +470,90 @@ def get_properties():
         result.append({
             'id': p.id,
             'title': p.title,
-            'price': f"₪{p.price:,}/חודש",
+            'price': p.price_label if p.price_label else f"₪{p.price_max or p.price_min or 0}/חודש",
             'image': p.image,
-            'matchScore': 98 if p.price <= base_price else 88,
+            'matchScore': 98 if (p.price_max or 0) <= base_price else 88,
             'tags': p.tags.split(',') if p.tags else [],
-            'address': p.location
+            'address': p.address or p.location,
+            'rooms': p.rooms,
+            'area': p.area,
+            'floor': p.floor,
+            'totalFloors': p.total_floors,
+            'available': p.available,
+            'description': p.description,
+            'amenities': json.loads(p.amenities) if p.amenities else []
         })
 
     return jsonify(result)
+
+@app.route('/api/landlord/properties', methods=['GET'])
+@require_auth
+def get_landlord_properties():
+    user_id = g.user_id
+    props = models.Property.query.filter_by(owner_id=user_id).order_by(models.Property.created_at.desc()).all()
+    result = []
+    for p in props:
+        pending = models.PropertyInterest.query.filter_by(property_id=p.id, status='pending').count()
+        approved = models.PropertyInterest.query.filter_by(property_id=p.id, status='approved').count()
+        result.append({
+            'id': p.id,
+            'title': p.title,
+            'price': p.price_label,
+            'priceMin': p.price_min,
+            'priceMax': p.price_max,
+            'address': p.address,
+            'image': p.image,
+            'status': p.status,
+            'tags': p.tags.split(',') if p.tags else [],
+            'pendingCount': pending,
+            'approvedCount': approved,
+        })
+    return jsonify(result)
+
+@app.route('/api/properties', methods=['POST'])
+@require_auth
+def create_property():
+    data = request.get_json(silent=True) or {}
+    user_id = g.user_id
+
+    prop = models.Property(
+        owner_id=user_id,
+        title=data.get('title'),
+        price_min=data.get('priceMin'),
+        price_max=data.get('priceMax'),
+        price_label=data.get('price'),
+        location=data.get('location') or data.get('address'),
+        address=data.get('address'),
+        image=data.get('image'),
+        tags=','.join(data.get('tags', [])),
+        rooms=data.get('rooms'),
+        area=data.get('area'),
+        floor=data.get('floor'),
+        total_floors=data.get('totalFloors'),
+        available=data.get('available'),
+        description=data.get('description'),
+        amenities=json.dumps(data.get('amenities', [])),
+        status=data.get('status', 'available')
+    )
+    db.session.add(prop)
+    db.session.commit()
+    return jsonify({'success': True, 'id': prop.id})
+
+@app.route('/api/landlord/properties/<int:prop_id>/status', methods=['POST'])
+@require_auth
+def update_property_status(prop_id):
+    data = request.get_json(silent=True) or {}
+    user_id = g.user_id
+    prop = db.session.get(models.Property, prop_id)
+    if not prop or prop.owner_id != user_id:
+        return jsonify({'error': 'Not found or unauthorized'}), 404
+    
+    status = data.get('status')
+    if status in ('available', 'rented', 'pending', 'off_market'):
+        prop.status = status
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'error': 'Invalid status'}), 400
 
 
 @app.route('/api/swipe', methods=['POST'])
@@ -422,10 +574,13 @@ def swipe():
     swipe = models.Swipe(user_id=user_id, property_id=property_id, direction=direction)
     db.session.add(swipe)
 
-    # A real match requires a signal from the property owner side, which this MVP does not model.
-    # We record the user's interest and let the UI confirm it without claiming a mutual match.
     is_match = False
     if direction in ('right', 'up'):
+        interest = models.PropertyInterest.query.filter_by(property_id=property_id, renter_id=user_id).first()
+        if not interest:
+            interest = models.PropertyInterest(property_id=property_id, renter_id=user_id, status='pending')
+            db.session.add(interest)
+            
         existing_match = (
             models.Match.query
             .filter_by(user_id=user_id, property_id=property_id)
@@ -436,6 +591,150 @@ def swipe():
     db.session.commit()
     return jsonify({'success': True, 'interestSent': direction in ('right', 'up'), 'isMatch': is_match})
 
+@app.route('/api/landlord/approve', methods=['POST'])
+@require_auth
+def landlord_approve():
+    data = request.get_json(silent=True) or {}
+    renter_id = data.get('renter_id')
+    property_id = data.get('property_id')
+    
+    prop = db.session.get(models.Property, property_id)
+    if not prop or prop.owner_id != g.user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    interest = models.PropertyInterest.query.filter_by(property_id=property_id, renter_id=renter_id).first()
+    if interest:
+        interest.status = 'approved'
+        
+    match = models.Match.query.filter_by(property_id=property_id, user_id=renter_id).first()
+    if not match:
+        match = models.Match(property_id=property_id, user_id=renter_id)
+        db.session.add(match)
+        
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/landlord/reject', methods=['POST'])
+@require_auth
+def landlord_reject():
+    data = request.get_json(silent=True) or {}
+    renter_id = data.get('renter_id')
+    property_id = data.get('property_id')
+    
+    prop = db.session.get(models.Property, property_id)
+    if not prop or prop.owner_id != g.user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    interest = models.PropertyInterest.query.filter_by(property_id=property_id, renter_id=renter_id).first()
+    if interest:
+        interest.status = 'rejected'
+        db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/landlord/properties/<int:prop_id>/generate_lease', methods=['POST'])
+@require_auth
+def generate_lease(prop_id):
+    if not openai_client:
+        return jsonify({'error': 'OpenAI API not configured'}), 503
+        
+    data = request.get_json(silent=True) or {}
+    renter_id = data.get('renter_id')
+    user_id = g.user_id
+    
+    prop = db.session.get(models.Property, prop_id)
+    if not prop or prop.owner_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    landlord_profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
+    renter_profile = models.PreferenceProfile.query.filter_by(user_id=renter_id).first()
+    
+    landlord_name = landlord_profile.name if landlord_profile and landlord_profile.name else "המשכיר"
+    renter_name = renter_profile.name if renter_profile and renter_profile.name else "השוכר"
+    
+    prompt = f"""
+    You are a legal assistant in Israel. Write a standard, concise apartment lease agreement (חוזה שכירות בלתי מוגנת) in Hebrew.
+    Format the output entirely in clean HTML. Do NOT use markdown code blocks (no ```html). Just return raw HTML.
+    Use tags like <h1>, <h2>, <p>, <ul>, <li>, and <strong>.
+    
+    Details to include:
+    - Landlord Name: {landlord_name}
+    - Renter Name: {renter_name}
+    - Property Address: {prop.address or prop.location or 'כתובת הנכס'}
+    - Monthly Rent: {prop.price_max or prop.price_min or '_____'} NIS
+    - Include standard clauses: Purpose of lease, Lease period (12 months), Rent payment, Maintenance, and Signatures section at the bottom.
+    """
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'),
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1500
+        )
+        html_content = response.choices[0].message.content
+        if html_content.startswith('```html'):
+            html_content = html_content[7:]
+        if html_content.endswith('```'):
+            html_content = html_content[:-3]
+            
+        return jsonify({'html': html_content.strip()})
+    except Exception as e:
+        log.exception('Lease generation failed: %s', e)
+        return jsonify({'error': 'Failed to generate lease'}), 500
+
+@app.route('/api/roommates/compatibility/<int:target_user_id>', methods=['GET'])
+@require_auth
+def roommate_compatibility(target_user_id):
+    if not openai_client:
+        return jsonify({'score': 85, 'explanation': 'מערכת ה-AI כרגע לא זמינה (מצב דמו). נראה שיש לכם תחומי עניין משותפים!'})
+        
+    user_id = g.user_id
+    if user_id == target_user_id:
+        return jsonify({'score': 100, 'explanation': 'זה הפרופיל שלך!'})
+        
+    my_profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
+    target_profile = models.PreferenceProfile.query.filter_by(user_id=target_user_id).first()
+    
+    if not my_profile or not target_profile:
+        return jsonify({'score': 80, 'explanation': 'חסרים פרטים לחישוב התאמה מדויקת, אבל כדאי לדבר!'})
+        
+    prompt = f"""
+    You are an expert roommate matchmaker in Israel.
+    Compare these two people and give a compatibility score out of 100, and a 1-sentence friendly explanation in Hebrew.
+    
+    Person A (Searching):
+    Name: {my_profile.name}
+    City: {my_profile.city}
+    Budget: {my_profile.max_budget}
+    Type: {my_profile.type}
+    Extras (Lifestyle): {my_profile.extras}
+    
+    Person B (Potential Roommate):
+    Name: {target_profile.name}
+    City: {target_profile.city}
+    Budget: {target_profile.max_budget}
+    Type: {target_profile.type}
+    Extras (Lifestyle): {target_profile.extras}
+    
+    Return a JSON object with 'score' (integer 0-100) and 'explanation' (string in Hebrew, max 15 words).
+    """
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'),
+            messages=[{"role": "user", "content": prompt}],
+            response_format={ "type": "json_object" },
+            max_tokens=300
+        )
+        result_json = json.loads(response.choices[0].message.content)
+        return jsonify({
+            'score': result_json.get('score', 85),
+            'explanation': result_json.get('explanation', 'נראה שיש ביניכם התאמה טובה!')
+        })
+    except Exception as e:
+        log.exception('Compatibility check failed: %s', e)
+        return jsonify({'score': 85, 'explanation': 'התאמה כללית, כדאי לשוחח ולהכיר!'})
 
 @app.route('/api/chat', methods=['POST'])
 @require_auth
@@ -695,7 +994,86 @@ def extract_property():
         'next_question': str(args.get('next_question') or '')[:500],
         'ready': bool(args.get('ready', False))
     })
+def verify_ws_token(data):
+    token = data.get('token')
+    if not token:
+        return None
+    uid, err = _load_token(token)
+    if err or uid is None:
+        return None
+    return uid
+
+@socketio.on('join_chat')
+def handle_join_chat(data):
+    user_id = verify_ws_token(data)
+    if not user_id:
+        emit('error', {'msg': 'Unauthorized'})
+        return
+
+    property_id = data.get('property_id')
+    renter_id = data.get('renter_id')
+    if not property_id or not renter_id:
+        return
+        
+    room = f"chat_{property_id}_{renter_id}"
+    join_room(room)
+    
+    messages = models.DirectMessage.query.filter(
+        models.DirectMessage.property_id == property_id,
+        db.or_(
+            models.DirectMessage.sender_id == renter_id,
+            models.DirectMessage.receiver_id == renter_id
+        )
+    ).order_by(models.DirectMessage.created_at).all()
+    
+    history = []
+    for m in messages:
+        history.append({
+            'id': m.id,
+            'sender_id': m.sender_id,
+            'content': m.content,
+            'ts': m.created_at.isoformat()
+        })
+        
+    emit('chat_history', {'messages': history})
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    user_id = verify_ws_token(data)
+    if not user_id:
+        emit('error', {'msg': 'Unauthorized'})
+        return
+
+    property_id = data.get('property_id')
+    renter_id = data.get('renter_id')
+    content = data.get('content')
+    
+    if not property_id or not renter_id or not content:
+        return
+        
+    prop = db.session.get(models.Property, property_id)
+    if not prop:
+        return
+        
+    receiver_id = prop.owner_id if user_id == int(renter_id) else int(renter_id)
+    
+    msg = models.DirectMessage(
+        sender_id=user_id,
+        receiver_id=receiver_id,
+        property_id=property_id,
+        content=content
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
+    room = f"chat_{property_id}_{renter_id}"
+    emit('new_message', {
+        'id': msg.id,
+        'sender_id': msg.sender_id,
+        'content': msg.content,
+        'ts': msg.created_at.isoformat()
+    }, to=room)
 
 
 if __name__ == '__main__':
-    app.run(debug=_env_bool('FLASK_DEBUG', False), port=_env_int('PORT', 5000))
+    socketio.run(app, debug=_env_bool('FLASK_DEBUG', False), port=_env_int('PORT', 5000))

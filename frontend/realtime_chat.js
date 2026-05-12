@@ -1,6 +1,9 @@
 import { findDemoProperty, findRoommatePerson, findSharedListing } from './src/demo.js';
 import { renderMap } from './src/maps.js';
-import { addChatMessage, getChatMessages, getMatch, getMatches } from './src/storage.js';
+import { getMatch, getMatches } from './src/storage.js';
+import { API_BASE, getToken, getUserId } from './src/config.js';
+
+const myUserId = parseInt(getUserId(), 10);
 
 function resolveContext() {
   const params = new URLSearchParams(window.location.search);
@@ -9,27 +12,29 @@ function resolveContext() {
     const person = findRoommatePerson(personId);
     if (person) {
       return {
-        chatId: `person:${person.id}`,
+        isP2P: false,
         title: `${person.name}, ${person.age}`,
         subtitle: person.targetArea ? `מחפש/ת באזור ${person.targetArea}` : person.occupation || 'הותאם היום',
         avatar: person.photo,
         location: null,
-        opener: 'היי! ראיתי שעשינו מאץ\'. עדיין מחפש/ת שותף?',
       };
     }
   }
   const propId = params.get('id');
+  const renterId = params.get('renter') || myUserId; // If landlord views, renter is in URL. If renter views, renter is self.
+
   if (propId) {
     const fromMatches = getMatch(propId);
     const property = fromMatches || findDemoProperty(propId) || findSharedListing(propId);
     if (property) {
       return {
-        chatId: `property:${property.id}`,
+        isP2P: true,
+        propertyId: propId,
+        renterId: renterId,
         title: property.title || 'דירה',
         subtitle: property.address || 'הותאם היום',
         avatar: property.image,
         location: property,
-        opener: 'היי! ראיתי שעשינו מאץ\'. עדיין רלוונטי?',
       };
     }
   }
@@ -37,22 +42,22 @@ function resolveContext() {
   if (matches.length) {
     const m = matches[0];
     return {
-      chatId: `property:${m.id}`,
+      isP2P: true,
+      propertyId: m.id,
+      renterId: myUserId,
       title: m.title || 'דירה',
       subtitle: m.address || 'הותאם היום',
       avatar: m.image,
       location: m,
-      opener: 'היי! ראיתי שעשינו מאץ\'. עדיין רלוונטי?',
     };
   }
   const fallback = findDemoProperty('demo-1');
   return {
-    chatId: `property:${fallback.id}`,
+    isP2P: false,
     title: fallback.title,
     subtitle: fallback.address,
     avatar: fallback.image,
     location: fallback,
-    opener: 'היי! ראיתי שעשינו מאץ\'. עדיין רלוונטי?',
   };
 }
 
@@ -83,64 +88,112 @@ function appendMessage(text, role) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-function renderHistory() {
+if (ctx.isP2P && window.io) {
+  const socket = io(API_BASE);
+
+  socket.on('connect', () => {
+    socket.emit('join_chat', {
+      token: getToken(),
+      property_id: ctx.propertyId,
+      renter_id: ctx.renterId
+    });
+  });
+
+  socket.on('chat_history', (data) => {
+    messages.innerHTML = '';
+    if (data.messages && data.messages.length > 0) {
+      data.messages.forEach((msg) => {
+        const role = msg.sender_id === myUserId ? 'user' : 'other';
+        appendMessage(msg.content, role);
+      });
+    } else {
+      appendMessage('היי! ראיתי שעשינו מאץ\'. עדיין רלוונטי?', 'other');
+    }
+  });
+
+  socket.on('new_message', (msg) => {
+    if (msg.sender_id !== myUserId) {
+      appendMessage(msg.content, 'other');
+    }
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = input.value.trim();
+    if (!value) return;
+    
+    appendMessage(value, 'user');
+    socket.emit('send_message', {
+      token: getToken(),
+      property_id: ctx.propertyId,
+      renter_id: ctx.renterId,
+      content: value
+    });
+    input.value = '';
+  });
+
+  const btnGenerateLease = document.getElementById('btn-generate-lease');
+  const leaseModal = document.getElementById('lease-modal');
+  const closeLeaseModal = document.getElementById('close-lease-modal');
+  const leaseContent = document.getElementById('lease-content');
+  const btnPrintLease = document.getElementById('print-lease');
+
+  btnGenerateLease.style.display = 'block';
+
+  btnGenerateLease.addEventListener('click', async () => {
+    leaseModal.style.display = 'flex';
+    leaseContent.innerHTML = 'טוען... ה-AI שלנו מכין את חוזה השכירות... 📄';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/landlord/properties/${ctx.propertyId}/generate_lease`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ renter_id: ctx.renterId })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        leaseContent.innerHTML = data.html;
+      } else {
+        leaseContent.innerHTML = 'שגיאה ביצירת החוזה. ייתכן שאין לך הרשאות (רק המשכיר יכול ליצור חוזה).';
+      }
+    } catch (e) {
+      console.error(e);
+      leaseContent.innerHTML = 'שגיאת תקשורת.';
+    }
+  });
+
+  closeLeaseModal.addEventListener('click', () => {
+    leaseModal.style.display = 'none';
+  });
+
+  btnPrintLease.addEventListener('click', () => {
+    const printWindow = window.open('', '', 'height=800,width=800');
+    printWindow.document.write('<html><head><title>חוזה שכירות</title>');
+    printWindow.document.write('<style>body { direction: rtl; text-align: right; font-family: serif; padding: 40px; line-height: 1.6; } h1, h2 { text-align: center; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(leaseContent.innerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  });
+
+} else {
+  // Fallback demo mode
   messages.innerHTML = '';
-  const history = getChatMessages(ctx.chatId);
-  if (history.length === 0) {
-    addChatMessage(ctx.chatId, { role: 'other', content: ctx.opener });
-  }
-  getChatMessages(ctx.chatId).forEach((msg) => appendMessage(msg.content, msg.role));
+  appendMessage('היי! ראיתי שעשינו מאץ\'. עדיין רלוונטי?', 'other');
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = input.value.trim();
+    if (!value) return;
+    appendMessage(value, 'user');
+    input.value = '';
+    setTimeout(() => {
+      appendMessage('אני במצב דמו, אבל תדמיין שעניתי לך!', 'other');
+    }, 1000);
+  });
 }
-
-const REPLIES = [
-  'נשמע מצוין! מתי נוח לך לבוא לראות?',
-  'אני זמין/ה הערב או מחר אחה״צ.',
-  'יש שאלות נוספות לפני שנתאם?',
-  'אגב, החזקת שיכלול את חשבונות החשמל והמים.',
-  'מה החלטת? אני רוצה לדעת אם להתקדם איתך.',
-];
-let replyIndex = 0;
-
-function showTyping() {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'message ai typing-message';
-  wrapper.id = 'typing-indicator';
-  const content = document.createElement('div');
-  content.className = 'message-content typing-indicator';
-  for (let i = 0; i < 3; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'typing-dot';
-    content.appendChild(dot);
-  }
-  wrapper.appendChild(content);
-  messages.appendChild(wrapper);
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function hideTyping() {
-  const t = document.getElementById('typing-indicator');
-  if (t) t.remove();
-}
-
-function autoReply() {
-  showTyping();
-  setTimeout(() => {
-    hideTyping();
-    const reply = REPLIES[replyIndex % REPLIES.length];
-    replyIndex += 1;
-    addChatMessage(ctx.chatId, { role: 'other', content: reply });
-    appendMessage(reply, 'other');
-  }, 900 + Math.random() * 700);
-}
-
-form.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const value = input.value.trim();
-  if (!value) return;
-  addChatMessage(ctx.chatId, { role: 'user', content: value });
-  appendMessage(value, 'user');
-  input.value = '';
-  autoReply();
-});
-
-renderHistory();

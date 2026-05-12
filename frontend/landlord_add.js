@@ -1,6 +1,6 @@
 import { renderBottomNav } from './src/nav.js';
 import { addUserProperty, getRole } from './src/storage.js';
-import { API_BASE, authHeaders } from './src/config.js';
+import { API_BASE, authHeaders, getToken } from './src/config.js';
 
 if (getRole() !== 'landlord') {
   window.location.replace('/swipe.html');
@@ -26,7 +26,7 @@ function listFromTextarea(value) {
     .filter(Boolean);
 }
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const priceMin = getInt('p-price-min', 0);
@@ -38,6 +38,30 @@ form.addEventListener('submit', (e) => {
     ? `₪${lo.toLocaleString('he-IL')}/חודש`
     : `₪${lo.toLocaleString('he-IL')}–${hi.toLocaleString('he-IL')}/חודש`;
 
+  const fileInput = document.getElementById('p-image');
+  let imageUrl = fileInput.dataset.uploadedUrl || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80';
+
+  if (!fileInput.dataset.uploadedUrl && fileInput.files && fileInput.files[0]) {
+    // Fallback if not uploaded yet during 'change' event
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    try {
+      const res = await fetch(`${API_BASE}/api/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        imageUrl = data.url || imageUrl;
+      }
+    } catch(e) {
+      console.error("Upload failed", e);
+      alert('Upload failed');
+      return;
+    }
+  }
+
   const property = {
     title: get('p-title'),
     priceMin: lo,
@@ -45,9 +69,7 @@ form.addEventListener('submit', (e) => {
     price: priceLabel,
     location: get('p-address'),
     address: get('p-address'),
-    image:
-      get('p-image') ||
-      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80',
+    image: imageUrl,
     matchScore: 95,
     tags: get('p-tags')
       .split(',')
@@ -70,8 +92,62 @@ form.addEventListener('submit', (e) => {
     return;
   }
 
-  addUserProperty(property);
+  await addUserProperty(property);
   window.location.href = '/landlord.html';
+});
+
+const fileInputEl = document.getElementById('p-image');
+fileInputEl.addEventListener('change', async (e) => {
+  if (!e.target.files || !e.target.files[0]) return;
+
+  // Show some loading indication on the description field
+  const descEl = document.getElementById('p-description');
+  const tagsEl = document.getElementById('p-tags');
+  const originalDesc = descEl.value;
+  descEl.value = 'ה-AI שלנו מנתח את התמונה... 🤖';
+
+  const formData = new FormData();
+  formData.append('file', e.target.files[0]);
+
+  try {
+    const uploadRes = await fetch(`${API_BASE}/api/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      body: formData
+    });
+    
+    if (uploadRes.ok) {
+      const uploadData = await uploadRes.json();
+      fileInputEl.dataset.uploadedUrl = uploadData.url;
+
+      // Call Vision API
+      const visionRes = await fetch(`${API_BASE}/api/analyze-property-image`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url: uploadData.url })
+      });
+
+      if (visionRes.ok) {
+        const visionData = await visionRes.json();
+        if (visionData.description) descEl.value = visionData.description;
+        else descEl.value = originalDesc;
+        
+        if (visionData.tags && Array.isArray(visionData.tags)) {
+          tagsEl.value = visionData.tags.join(', ');
+        }
+      } else {
+        descEl.value = originalDesc;
+      }
+    } else {
+      descEl.value = originalDesc;
+    }
+  } catch (err) {
+    console.error(err);
+    descEl.value = originalDesc;
+  }
 });
 
 // --- AI assist: chat that auto-fills the form via OpenAI function calling ---

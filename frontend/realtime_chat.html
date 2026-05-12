@@ -16,7 +16,24 @@
           <h2 id="chat-title">דירה</h2>
           <p id="chat-subtitle">הותאם היום</p>
         </div>
+        <button id="btn-generate-lease" class="btn-primary" style="margin-right: auto; font-size: 14px; padding: 6px 12px; display: none;">📄 צור חוזה</button>
       </header>
+
+      <!-- Lease Modal -->
+      <div id="lease-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: white; border-radius: 12px; width: 100%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column;">
+          <div style="padding: 16px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">חוזה שכירות</h3>
+            <button id="close-lease-modal" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+          </div>
+          <div id="lease-content" style="padding: 20px; overflow-y: auto; flex: 1; direction: rtl; text-align: right; background: #fafafa; font-family: serif; border-bottom: 1px solid #ddd;">
+            טוען...
+          </div>
+          <div style="padding: 16px; display: flex; justify-content: flex-end;">
+            <button id="print-lease" class="btn-primary">הדפס / שמור כ-PDF</button>
+          </div>
+        </div>
+      </div>
 
       <div id="chat-map-host" class="chat-map-host"></div>
 
@@ -31,6 +48,7 @@
         </button>
       </form>
     </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script type="module" src="/realtime_chat.js"></script>
   </body>
 </html>

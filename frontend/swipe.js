@@ -236,7 +236,8 @@ function applyFilters(items, prefs) {
 
 async function loadProperties() {
   if (DEMO_MODE) {
-    return [...getUserProperties(), ...DEMO_PROPERTIES, ...DEMO_SHARED_LISTINGS];
+    const userProps = await getUserProperties();
+    return [...userProps, ...DEMO_PROPERTIES, ...DEMO_SHARED_LISTINGS];
   }
   try {
     const res = await fetch(`${API_BASE}/api/properties`, { headers: authHeaders() });

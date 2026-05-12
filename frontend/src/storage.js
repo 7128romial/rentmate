@@ -139,6 +139,14 @@ export function approveRenter(propertyId, renterId) {
   rejected.delete(key);
   writeSet(LANDLORD_APPROVED_KEY, approved);
   writeSet(LANDLORD_REJECTED_KEY, rejected);
+
+  import('./config.js').then(({ API_BASE, authHeaders }) => {
+    fetch(`${API_BASE}/api/landlord/approve`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ property_id: propertyId, renter_id: renterId })
+    }).catch(console.error);
+  });
 }
 
 export function rejectRenter(propertyId, renterId) {
@@ -149,6 +157,14 @@ export function rejectRenter(propertyId, renterId) {
   approved.delete(key);
   writeSet(LANDLORD_APPROVED_KEY, approved);
   writeSet(LANDLORD_REJECTED_KEY, rejected);
+
+  import('./config.js').then(({ API_BASE, authHeaders }) => {
+    fetch(`${API_BASE}/api/landlord/reject`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ property_id: propertyId, renter_id: renterId })
+    }).catch(console.error);
+  });
 }
 
 export function undoRenterDecision(propertyId, renterId) {
@@ -255,9 +271,18 @@ export function getHostInterestDecision(personId) {
 
 // --- User-created properties (landlord adds one or more) ---
 
-export function getUserProperties() {
-  const list = readJSON(USER_PROPERTIES_KEY, []);
-  return Array.isArray(list) ? list : [];
+export async function getUserProperties() {
+  if (getRole() !== 'landlord') return [];
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    const res = await fetch(`${API_BASE}/api/landlord/properties`, { headers: authHeaders() });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch(e) {
+    console.error(e);
+  }
+  return [];
 }
 
 // Demo renter pool used when seeding interest on user-created properties.
@@ -280,15 +305,24 @@ export function getUserPropertyInterests(propertyId) {
 
 export const PROPERTY_STATUSES = ['available', 'rented', 'pending', 'off_market'];
 
-export function addUserProperty(property) {
-  if (!property) return getUserProperties();
-  const list = getUserProperties();
-  const id = property.id || `user-${Date.now()}`;
-  const status = PROPERTY_STATUSES.includes(property.status) ? property.status : 'available';
-  list.unshift({ ...property, id, status, createdAt: new Date().toISOString() });
-  writeJSON(USER_PROPERTIES_KEY, list);
-  seedInterestsFor(id);
-  return list;
+export async function addUserProperty(property) {
+  if (!property) return [];
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    const res = await fetch(`${API_BASE}/api/properties`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(property)
+    });
+    if (res.ok) {
+      // Seed demo interests if needed, but since we have a real backend, we probably don't need demo renter pool anymore.
+      // We return the updated list of properties
+      return await getUserProperties();
+    }
+  } catch(e) {
+    console.error(e);
+  }
+  return await getUserProperties();
 }
 
 export function updateUserProperty(id, patch) {
@@ -299,9 +333,18 @@ export function updateUserProperty(id, patch) {
   return list;
 }
 
-export function setUserPropertyStatus(id, status) {
-  if (!PROPERTY_STATUSES.includes(status)) return getUserProperties();
-  return updateUserProperty(id, { status });
+export async function setUserPropertyStatus(id, status) {
+  if (!PROPERTY_STATUSES.includes(status)) return;
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    await fetch(`${API_BASE}/api/landlord/properties/${id}/status`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ status })
+    });
+  } catch(e) {
+    console.error(e);
+  }
 }
 
 export function removeUserProperty(id) {
