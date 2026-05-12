@@ -141,17 +141,51 @@ def seed_demo_properties():
     db.session.commit()
 
 
+def _ensure_user_subscription_columns():
+    """Add subscription/subscription_until columns to the user table if they
+    are missing. Preserves existing rows instead of nuking the schema."""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(db.engine)
+        if 'user' not in inspector.get_table_names():
+            return
+        cols = {c['name'] for c in inspector.get_columns('user')}
+        statements = []
+        if 'subscription' not in cols:
+            statements.append("ALTER TABLE \"user\" ADD COLUMN subscription VARCHAR(20) NOT NULL DEFAULT 'free'")
+        if 'subscription_until' not in cols:
+            statements.append("ALTER TABLE \"user\" ADD COLUMN subscription_until TIMESTAMP NULL")
+        for sql in statements:
+            try:
+                with db.engine.begin() as conn:
+                    conn.execute(text(sql))
+                print(f"Schema migration applied: {sql}")
+            except Exception as e:
+                print(f"Schema migration step failed ({sql}): {e}")
+    except Exception as e:
+        print(f"Schema inspection failed: {e}")
+
+
 with app.app_context():
     try:
-        # Check if the schema is compatible by running queries that touch
-        # newly-added columns. If any fail, fall back to drop_all.
+        # First, just make sure base tables exist.
         models.Property.query.first()
-        models.User.query.with_entities(models.User.subscription).first()
     except Exception as e:
-        print(f"Schema mismatch detected ({e}), dropping tables to recreate.")
-        db.drop_all()
+        print(f"Schema mismatch detected on Property ({e}), recreating base tables.")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        try:
+            db.drop_all()
+        except Exception as drop_err:
+            print(f"drop_all skipped: {drop_err}")
 
     db.create_all()
+    # Idempotent migration for the newly-added subscription columns. Avoids
+    # the drop-everything path that would invalidate existing tokens.
+    _ensure_user_subscription_columns()
+
     try:
         seed_demo_properties()
     except Exception as e:
