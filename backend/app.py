@@ -671,6 +671,8 @@ def generate_lease(prop_id):
     - Property Address: {prop.address or prop.location or 'כתובת הנכס'}
     - Monthly Rent: {prop.price_max or prop.price_min or '_____'} NIS
     - Include standard clauses: Purpose of lease, Lease period (12 months), Rent payment, Maintenance, and Signatures section at the bottom.
+    
+    IMPORTANT: Make the agreement VERY short and concise (maximum 300 words). A 1-page summary contract is required to ensure fast generation.
     """
     
     try:
@@ -679,7 +681,7 @@ def generate_lease(prop_id):
             messages=[
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1500
+            max_tokens=800
         )
         html_content = response.choices[0].message.content
         if html_content.startswith('```html'):
