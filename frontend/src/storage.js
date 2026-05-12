@@ -310,27 +310,33 @@ export function getUserPropertyInterests(propertyId) {
 export const PROPERTY_STATUSES = ['available', 'rented', 'pending', 'off_market'];
 
 export async function addUserProperty(property) {
-  if (!property) return [];
+  if (!property) return { ok: false, error: 'No property data' };
   try {
     const { API_BASE, authHeaders } = await import('./config.js');
     const res = await fetch(`${API_BASE}/api/properties`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify(property)
+      body: JSON.stringify(property),
     });
     if (res.ok) {
-      // Seed demo interests if needed, but since we have a real backend, we probably don't need demo renter pool anymore.
-      // We return the updated list of properties
-      return await getUserProperties();
+      const data = await res.json().catch(() => ({}));
+      return { ok: true, id: data && data.id };
     }
-  } catch(e) {
+    if (res.status === 401) return { ok: false, status: 401, error: 'Unauthorized' };
+    let errMsg = `שגיאה ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body && body.error) errMsg = body.error;
+    } catch (e) { /* ignore */ }
+    return { ok: false, status: res.status, error: errMsg };
+  } catch (e) {
     console.error(e);
+    return { ok: false, error: 'שגיאת תקשורת' };
   }
-  return await getUserProperties();
 }
 
 export async function updateUserProperty(id, patch) {
-  if (!id || !patch) return [];
+  if (!id || !patch) return { ok: false, error: 'No data' };
   try {
     const { API_BASE, authHeaders } = await import('./config.js');
     const res = await fetch(`${API_BASE}/api/landlord/properties/${id}`, {
@@ -338,14 +344,18 @@ export async function updateUserProperty(id, patch) {
       headers: authHeaders(),
       body: JSON.stringify(patch),
     });
-    if (res.ok) {
-      return await getUserProperties();
-    }
-    console.error('Update failed', res.status);
+    if (res.ok) return { ok: true };
+    if (res.status === 401) return { ok: false, status: 401, error: 'Unauthorized' };
+    let errMsg = `שגיאה ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body && body.error) errMsg = body.error;
+    } catch (e) { /* ignore */ }
+    return { ok: false, status: res.status, error: errMsg };
   } catch (e) {
     console.error(e);
+    return { ok: false, error: 'שגיאת תקשורת' };
   }
-  return await getUserProperties();
 }
 
 export async function setUserPropertyStatus(id, status) {

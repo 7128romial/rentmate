@@ -194,6 +194,10 @@ def require_auth(func):
         uid, err = _load_token(token)
         if err or uid is None:
             return jsonify({'error': 'Invalid or expired token'}), 401
+        # Make sure the user still exists — the DB can be reset between
+        # deploys and a stale token would otherwise point at a missing FK.
+        if not db.session.get(models.User, uid):
+            return jsonify({'error': 'User no longer exists, please log in again'}), 401
         g.user_id = uid
         return func(*args, **kwargs)
     return wrapper
@@ -531,28 +535,38 @@ def create_property():
     data = request.get_json(silent=True) or {}
     user_id = g.user_id
 
-    prop = models.Property(
-        owner_id=user_id,
-        title=data.get('title'),
-        price_min=data.get('priceMin'),
-        price_max=data.get('priceMax'),
-        price_label=data.get('price'),
-        location=data.get('location') or data.get('address'),
-        address=data.get('address'),
-        image=data.get('image'),
-        tags=','.join(data.get('tags', [])),
-        rooms=data.get('rooms'),
-        area=data.get('area'),
-        floor=data.get('floor'),
-        total_floors=data.get('totalFloors'),
-        available=data.get('available'),
-        description=data.get('description'),
-        amenities=json.dumps(data.get('amenities', [])),
-        status=data.get('status', 'available')
-    )
-    db.session.add(prop)
-    db.session.commit()
-    return jsonify({'success': True, 'id': prop.id})
+    if not data.get('title'):
+        return jsonify({'error': 'כותרת חסרה'}), 400
+    if not data.get('address'):
+        return jsonify({'error': 'כתובת חסרה'}), 400
+
+    try:
+        prop = models.Property(
+            owner_id=user_id,
+            title=data.get('title'),
+            price_min=data.get('priceMin'),
+            price_max=data.get('priceMax'),
+            price_label=data.get('price'),
+            location=data.get('location') or data.get('address'),
+            address=data.get('address'),
+            image=data.get('image'),
+            tags=','.join(data.get('tags', [])),
+            rooms=data.get('rooms'),
+            area=data.get('area'),
+            floor=data.get('floor'),
+            total_floors=data.get('totalFloors'),
+            available=data.get('available'),
+            description=data.get('description'),
+            amenities=json.dumps(data.get('amenities', [])),
+            status=data.get('status', 'available')
+        )
+        db.session.add(prop)
+        db.session.commit()
+        return jsonify({'success': True, 'id': prop.id})
+    except Exception as e:
+        db.session.rollback()
+        log.exception('Property creation failed: %s', e)
+        return jsonify({'error': 'יצירת הדירה נכשלה. ייתכן שצריך להתחבר מחדש.'}), 500
 
 @app.route('/api/landlord/properties/<int:prop_id>', methods=['GET'])
 @require_auth

@@ -101,12 +101,31 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  if (isEdit) {
-    await updateUserProperty(editId, property);
-    window.location.href = `/landlord_property.html?id=${encodeURIComponent(editId)}`;
-  } else {
-    await addUserProperty(property);
-    window.location.href = '/landlord.html';
+  const submitBtn = document.querySelector('#property-form button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const result = isEdit
+      ? await updateUserProperty(editId, property)
+      : await addUserProperty(property);
+
+    if (!result.ok) {
+      if (result.status === 401) {
+        alert('פג תוקף ההתחברות. נא להתחבר מחדש.');
+        window.location.href = '/';
+        return;
+      }
+      alert(`לא הצלחנו לפרסם את הדירה: ${result.error || 'שגיאה לא ידועה'}`);
+      return;
+    }
+
+    if (isEdit) {
+      window.location.href = `/landlord_property.html?id=${encodeURIComponent(editId)}`;
+    } else {
+      window.location.href = '/landlord.html';
+    }
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 });
 
