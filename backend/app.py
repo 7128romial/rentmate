@@ -520,11 +520,16 @@ def get_properties():
 
     result = []
     for p in props:
+        image_url = p.image
+        if image_url and 'picsum.photos' in image_url:
+            keyword = p.location.replace(' ', '') if p.location else 'apartment'
+            image_url = f"https://loremflickr.com/640/480/apartment,{keyword}/all?lock={p.id}"
+
         result.append({
             'id': p.id,
             'title': p.title,
             'price': p.price_label if p.price_label else f"₪{p.price_max or p.price_min or 0}/חודש",
-            'image': p.image,
+            'image': image_url,
             'matchScore': 98 if (p.price_max or 0) <= base_price else 88,
             'tags': p.tags.split(',') if p.tags else [],
             'address': p.address or p.location,
