@@ -1,4 +1,4 @@
-import { API_BASE, authHeaders, getToken, getUserId } from './src/config.js';
+import { API_BASE, authHeaders, getUserId } from './src/config.js';
 import { renderBottomNav } from './src/nav.js';
 import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './src/storage.js';
 import { renderMap } from './src/maps.js';
@@ -36,29 +36,6 @@ function buildHero(property) {
   const info = document.createElement('div');
   info.classList.add('card-info');
 
-  const matchBadgeContainer = document.createElement('div');
-  matchBadgeContainer.style.display = 'flex';
-  matchBadgeContainer.style.flexDirection = 'column';
-  matchBadgeContainer.style.alignItems = 'flex-start';
-  matchBadgeContainer.style.gap = '4px';
-
-  const matchBadge = document.createElement('div');
-  matchBadge.classList.add('match-badge');
-  matchBadge.textContent = `התאמה של ${property.matchScore}%`;
-
-  matchBadgeContainer.appendChild(matchBadge);
-
-  if (property.matchReason) {
-    const reasonEl = document.createElement('div');
-    reasonEl.style.fontSize = '12px';
-    reasonEl.style.background = 'rgba(0,0,0,0.5)';
-    reasonEl.style.color = '#fff';
-    reasonEl.style.padding = '3px 8px';
-    reasonEl.style.borderRadius = '12px';
-    reasonEl.textContent = property.matchReason;
-    matchBadgeContainer.appendChild(reasonEl);
-  }
-
   const title = document.createElement('h3');
   title.textContent = property.title;
 
@@ -78,7 +55,6 @@ function buildHero(property) {
     tagsContainer.appendChild(span);
   });
 
-  info.appendChild(matchBadgeContainer);
   info.appendChild(title);
   info.appendChild(price);
   if (property.address) info.appendChild(addr);
@@ -112,46 +88,6 @@ function buildFactRow(label, value) {
 function buildDetails(property) {
   const details = document.createElement('div');
   details.classList.add('card-details');
-
-  const vibeSec = document.createElement('section');
-  vibeSec.style.marginBottom = '20px';
-  const vibeBtn = document.createElement('button');
-  vibeBtn.className = 'btn-secondary';
-  vibeBtn.style.width = '100%';
-  vibeBtn.innerHTML = '🌍 בדוק וייב שכונתי (AI)';
-  
-  const vibeResult = document.createElement('div');
-  vibeResult.style.display = 'none';
-  vibeResult.style.marginTop = '10px';
-  vibeResult.style.padding = '12px';
-  vibeResult.style.backgroundColor = 'rgba(100, 100, 255, 0.1)';
-  vibeResult.style.borderRadius = '12px';
-  vibeResult.style.fontSize = '14px';
-  vibeResult.style.lineHeight = '1.5';
-  
-  vibeBtn.addEventListener('click', async () => {
-    vibeBtn.disabled = true;
-    vibeBtn.innerHTML = 'סורק את השכונה... ⏳';
-    vibeResult.style.display = 'none';
-    try {
-      const res = await fetch(`${API_BASE}/api/properties/${property.id}/vibe`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-      });
-      const data = await res.json();
-      vibeResult.textContent = data.vibe || data.error || 'שגיאה כלשהי אירעה.';
-      vibeResult.style.display = 'block';
-    } catch (e) {
-      vibeResult.textContent = 'שגיאה בתקשורת עם השרת.';
-      vibeResult.style.display = 'block';
-    } finally {
-      vibeBtn.innerHTML = '🌍 בדוק וייב שכונתי (AI)';
-      vibeBtn.disabled = false;
-    }
-  });
-
-  vibeSec.appendChild(vibeBtn);
-  vibeSec.appendChild(vibeResult);
-  details.appendChild(vibeSec);
 
   if (property.description) {
     const sec = document.createElement('section');
