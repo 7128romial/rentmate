@@ -4,8 +4,8 @@ from app import app, db
 from models import User, Property
 
 def run_import():
-    users_path = '../DATA/1_users_1000.xlsx'
-    apartments_path = '../DATA/4_apartments_1000.xlsx'
+    users_path = '../data/1_users_1000.xlsx'
+    apartments_path = '../data/4_apartments_1000.xlsx'
     
     print("Reading Excel files...")
     df_users = pd.read_excel(users_path)
