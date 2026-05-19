@@ -521,9 +521,18 @@ def get_properties():
     result = []
     for p in props:
         image_url = p.image
-        if image_url and 'picsum.photos' in image_url:
-            keyword = p.location.replace(' ', '') if p.location else 'apartment'
-            image_url = f"https://loremflickr.com/640/480/apartment,{keyword}/all?lock={p.id}"
+        if image_url and ('picsum.photos' in image_url or 'loremflickr.com' in image_url):
+            loc = p.location.lower() if p.location else ''
+            if 'tel aviv' in loc:
+                image_url = "/images/tel_aviv.png"
+            elif 'jerusalem' in loc:
+                image_url = "/images/jerusalem.png"
+            elif 'haifa' in loc:
+                image_url = "/images/haifa.png"
+            elif 'beer sheva' in loc:
+                image_url = "/images/beer_sheva.png"
+            else:
+                image_url = "/images/generic.png"
 
         result.append({
             'id': p.id,
