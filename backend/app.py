@@ -488,20 +488,22 @@ def get_properties():
     if swiped_property_ids:
         query = query.filter(models.Property.id.notin_(swiped_property_ids))
 
-    # Filter by the apartment's STARTING price (price_min). The apartment's
-    # entry price must fall inside the user's budget range — apartments
-    # priced below the user's minimum should not show, and apartments
-    # priced above the user's maximum should not show either.
-    # COALESCE falls back to price_max when price_min is missing.
+    # Strict containment: the apartment's full price range must fit
+    # inside the user's budget range. The apt's lower bound must be at
+    # least the user's minimum, and the apt's upper bound must not
+    # exceed the user's maximum. An apt 4000-8000 is excluded when the
+    # user budget is 4000-5000 because 8000 crosses the 5000 ceiling.
+    # COALESCE handles properties that only populate one of the columns.
     from sqlalchemy import func
     apt_bottom = func.coalesce(models.Property.price_min, models.Property.price_max)
+    apt_top = func.coalesce(models.Property.price_max, models.Property.price_min)
 
     if min_price_arg:
         query = query.filter(apt_bottom >= min_price_arg)
 
     effective_max_price = max_price_arg if max_price_arg and max_price_arg < 10000 else (profile.max_budget if profile else None)
     if effective_max_price:
-        query = query.filter(apt_bottom <= effective_max_price)
+        query = query.filter(apt_top <= effective_max_price)
 
     if min_rooms_arg:
         query = query.filter(models.Property.rooms >= min_rooms_arg)
