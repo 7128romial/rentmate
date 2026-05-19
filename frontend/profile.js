@@ -171,6 +171,20 @@ function showToast(text) {
   setTimeout(() => toast.remove(), 1400);
 }
 
+// Persist profile edits to the backend so the DB stays the source of truth
+// (swipe results and the AI both read the profile from the DB, not localStorage).
+async function syncProfileToBackend(data) {
+  try {
+    await fetch(`${API_BASE}/api/profile`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    });
+  } catch (err) {
+    console.error('Failed to sync profile to backend', err);
+  }
+}
+
 // --- per-role rendering ---
 
 const profile = getProfile();
@@ -190,16 +204,18 @@ function renderRenter() {
     extras: field('field-extras', 'דרישות נוספות', { placeholder: 'מרפסת, חניה, חיות...', multiline: true, value: profile.extras }),
   };
   actions();
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const budget = parseInt(f.budget.value, 10);
-    setProfile({
+    const data = {
       name: f.name.value.trim(),
       city: f.city.value.trim(),
       budget: Number.isFinite(budget) ? budget : 0,
       type: f.type.value,
       extras: f.extras.value.trim(),
-    });
+    };
+    setProfile(data);
+    await syncProfileToBackend(data);
     showToast('נשמר ✓');
   });
 }
@@ -215,15 +231,18 @@ function renderLandlord() {
     bio: field('field-bio', 'קצת עליך', { placeholder: 'משכיר/ה דירות באזור מרכז כבר 5 שנים...', multiline: true, value: profile.bio }),
   };
   actions();
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    setProfile({
+    const data = {
       name: f.name.value.trim(),
       city: f.city.value.trim(),
       priceRange: f.priceRange.value.trim(),
       numProperties: f.numProperties.value,
       bio: f.bio.value.trim(),
-    });
+    };
+    setProfile(data);
+    // The backend profile stores name/city/extras; the landlord bio maps to extras.
+    await syncProfileToBackend({ name: data.name, city: data.city, extras: data.bio });
     showToast('נשמר ✓');
   });
 }
