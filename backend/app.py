@@ -456,7 +456,19 @@ def get_properties():
     user_id = g.user_id
     profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
 
+    CITY_MAPPING = {
+        'תל אביב': 'Tel Aviv',
+        'תל-אביב': 'Tel Aviv',
+        'תל אביב - יפו': 'Tel Aviv',
+        'ירושלים': 'Jerusalem',
+        'חיפה': 'Haifa',
+        'באר שבע': 'Beer Sheva',
+        'באר-שבע': 'Beer Sheva'
+    }
+
     city = profile.city if profile and profile.city else None
+    english_city = CITY_MAPPING.get(city, city) if city else None
+    
     base_price = profile.max_budget if profile and profile.max_budget and profile.max_budget > 0 else 4500
 
     min_price_arg = request.args.get('minPrice', type=int)
@@ -494,14 +506,15 @@ def get_properties():
         query = query.filter(models.Property.tags.ilike('%מרוהטת%'))
 
     if area_arg:
-        search_pattern = f"%{area_arg}%"
+        search_city = CITY_MAPPING.get(area_arg, area_arg)
+        search_pattern = f"%{search_city}%"
         query = query.filter(db.or_(
             models.Property.location.ilike(search_pattern),
             models.Property.address.ilike(search_pattern),
             models.Property.title.ilike(search_pattern)
         ))
-    elif city:
-        query = query.filter_by(location=city)
+    elif english_city:
+        query = query.filter_by(location=english_city)
 
     props = query.limit(20).all()
 
