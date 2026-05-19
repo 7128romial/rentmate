@@ -461,3 +461,24 @@ document.getElementById('filter-apply').addEventListener('click', () => {
 
 refreshSubtitle();
 initCards();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const agentBtn = document.querySelector('a[href="/realtime_chat.html"]');
+  if (agentBtn) {
+    agentBtn.addEventListener('click', () => {
+      const cards = swipeContainer.querySelectorAll('.swipe-card:not(.removed)');
+      if (cards.length) {
+        const topCard = cards[cards.length - 1];
+        const propId = topCard.dataset.id;
+        const prop = propertyById.get(String(propId));
+        if (prop) {
+          sessionStorage.setItem('currentSwipeProperty', JSON.stringify(prop));
+        } else {
+          sessionStorage.removeItem('currentSwipeProperty');
+        }
+      } else {
+        sessionStorage.removeItem('currentSwipeProperty');
+      }
+    });
+  }
+});

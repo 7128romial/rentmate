@@ -1067,6 +1067,13 @@ def chat_roleplay():
         extra_details.append(f"Rooms: {rooms}")
     if available:
         extra_details.append(f"Available from: {available}")
+    if prop.get('amenities'):
+        extra_details.append(f"Amenities: {', '.join(prop['amenities'])}")
+    if prop.get('tags'):
+        extra_details.append(f"Tags: {', '.join(prop['tags'])}")
+    if prop.get('description'):
+        extra_details.append(f"Description: {prop['description']}")
+        
     details_block = ('\n'.join(f'- {d}' for d in extra_details)) if extra_details else '(no extra details)'
 
     name_line = "Your name is RentMate AI."

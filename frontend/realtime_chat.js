@@ -55,6 +55,22 @@ function resolveContext() {
       location: null,
     };
   }
+  const swipePropStr = sessionStorage.getItem('currentSwipeProperty');
+  if (swipePropStr) {
+    try {
+      const sp = JSON.parse(swipePropStr);
+      return {
+        isP2P: false,
+        propertyId: sp.id,
+        renterId: myUserId,
+        title: sp.title || 'דירה',
+        subtitle: sp.address || 'בחיפוש',
+        avatar: sp.image,
+        location: sp,
+      };
+    } catch (e) {}
+  }
+
   const matches = getMatches();
   if (matches.length) {
     const m = matches[0];
@@ -244,7 +260,7 @@ form.addEventListener('submit', (event) => {
   dispatchUserMessage(value);
 });
 
-if (ctx.isP2P) {
+if (ctx.isP2P || ctx.location) {
   const btnGenerateLease = document.getElementById('btn-generate-lease');
   const leaseModal = document.getElementById('lease-modal');
   const closeLeaseModal = document.getElementById('close-lease-modal');
