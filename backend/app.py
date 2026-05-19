@@ -1,3 +1,4 @@
+import ast
 import datetime
 import json
 import logging
@@ -1086,10 +1087,11 @@ def chat():
                 "When echoing back the user's name, city, or any proper noun, copy the exact characters they typed — do NOT transliterate to a different script. "
                 f"\n\n{props_text}\n"
                 "If the user is a renter and you know their preferences, mention 1-2 real properties from the list above that match their criteria to get them excited. "
-                "When you have enough info to create their profile, output a JSON object starting with 'PROFILE_JSON=' "
-                "followed by the JSON string containing: {'role': 'renter'|'landlord', "
-                "'name', 'city', 'budget', 'type', 'extras'}. "
-                "Do NOT output the JSON until you have the core info."
+                "When you have at least the role, name, city and budget, create their profile by "
+                "outputting a line starting with 'PROFILE_JSON=' followed by a VALID JSON object. "
+                "Use double quotes for every key and string value. budget must be a plain number. "
+                'Example: PROFILE_JSON={"role":"renter","name":"דנה","city":"תל אביב","budget":5000,"type":"לבד","extras":"מרפסת"} '
+                "Do NOT output PROFILE_JSON until you actually have the role, name, city and budget."
             ),
         }
     ]
@@ -1127,8 +1129,18 @@ def chat():
         else:
             json_str = raw_json_str
             
+        # Parse the payload tolerantly: models sometimes emit a JS-style
+        # object (single quotes, trailing commas) instead of strict JSON.
+        profile_data = None
         try:
             profile_data = json.loads(json_str)
+        except (ValueError, TypeError):
+            try:
+                profile_data = ast.literal_eval(json_str)
+            except (ValueError, TypeError, SyntaxError):
+                profile_data = None
+
+        try:
             if not isinstance(profile_data, dict):
                 raise ValueError('profile payload is not an object')
             profile = models.PreferenceProfile.query.filter_by(user_id=user_id).first()
@@ -1170,7 +1182,8 @@ def chat():
                 
         except (ValueError, TypeError) as e:
             log.warning('Failed to parse PROFILE_JSON payload: %s', e)
-            ai_text = "הייתה בעיה בשמירת הפרופיל, בוא ננסה שוב."
+            db.session.rollback()
+            ai_text = "כמעט סיימנו! תוכל/י לחזור על העיר והתקציב שלך כדי שאוכל לבנות את הפרופיל?"
 
     ai_msg = models.ChatMessage(user_id=user_id, role='assistant', content=ai_text)
     db.session.add(ai_msg)
