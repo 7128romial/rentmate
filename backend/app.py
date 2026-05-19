@@ -536,12 +536,50 @@ def get_properties():
             else:
                 image_url = "/images/generic.png"
 
+        # Calculate match score
+        score = 75
+        reasons = []
+        
+        # Budget check
+        p_price = p.price_max or p.price_min or 0
+        if base_price and p_price > 0:
+            if p_price <= base_price:
+                score += 10
+                reasons.append("בול בתקציב שלך")
+            elif p_price <= base_price * 1.1:
+                score += 5
+                reasons.append("קצת מעל התקציב")
+        
+        # Rooms check
+        req_rooms = min_rooms_arg if min_rooms_arg else (profile.min_rooms if profile else 0)
+        if req_rooms and p.rooms:
+            if p.rooms >= req_rooms:
+                score += 5
+                
+        # Tag matches
+        p_tags = p.tags.split(',') if p.tags else []
+        p_tags_lower = [t.lower().strip() for t in p_tags]
+        
+        if request.args.get('parking') == 'true' and any('חניה' in t for t in p_tags_lower):
+            score += 5
+            reasons.append("יש חניה")
+            
+        if request.args.get('pets') == 'true' and any('חיות' in t for t in p_tags_lower):
+            score += 5
+            reasons.append("ידידותי לחיות מחמד")
+
+        if len(reasons) == 0:
+            reasons.append("מתאימה להעדפות הבסיסיות")
+            
+        match_reason = f"{min(score, 99)}% התאמה! {', '.join(reasons)}."
+
         result.append({
             'id': p.id,
             'title': p.title,
             'price': p.price_label if p.price_label else f"₪{p.price_max or p.price_min or 0}/חודש",
             'image': image_url,
-            'matchScore': 98 if (p.price_max or 0) <= base_price else 88,
+            'matchScore': min(score, 99),
+            'matchReason': match_reason,
             'tags': p.tags.split(',') if p.tags else [],
             'address': p.address or p.location,
             'rooms': p.rooms,
@@ -554,6 +592,33 @@ def get_properties():
         })
 
     return jsonify(result)
+
+@app.route('/api/properties/<int:prop_id>/vibe', methods=['GET'])
+@require_auth
+def check_vibe(prop_id):
+    if not openai_client:
+        return jsonify({'error': 'OpenAI API not configured'}), 503
+
+    p = db.session.get(models.Property, prop_id)
+    if not p:
+        return jsonify({'error': 'Property not found'}), 404
+
+    address = p.address or p.location or 'ישראל'
+    
+    prompt = f"Summarize the neighborhood vibe and lifestyle for a young person living in or around {address}. Write exactly 2-3 fun and engaging sentences in Hebrew. Mention things like cafes, noise, transport, students, etc. Do not mention that you are an AI."
+    
+    try:
+        response = openai_client.with_options(max_retries=1).chat.completions.create(
+            model=os.environ.get('OPENAI_MODEL', 'gpt-4o-mini'),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=150,
+            timeout=15,
+        )
+        vibe = response.choices[0].message.content.strip()
+        return jsonify({'vibe': vibe})
+    except Exception as e:
+        log.exception('Vibe check failed: %s', e)
+        return jsonify({'vibe': 'האזור נראה מבטיח, אבל כרגע יש לי בעיה לגשת לנתונים. כדאי לבדוק שוב מאוחר יותר!'})
 
 @app.route('/api/landlord/properties', methods=['GET'])
 @require_auth
@@ -1086,7 +1151,8 @@ def chat_roleplay():
         "CRITICAL: write replies in Hebrew script ONLY. Never use Arabic script. "
         "Echo names, places, and proper nouns exactly as the user wrote them — never transliterate.\n"
         "Stay in character as the user's personal agent. You represent the user, not the property owner.\n"
-        "If the user wants to schedule a viewing, offer to set it up for them. If they ask about price, refer to the rent above."
+        "If the user asks you to generate a lease/contract, tell them to click the '📄 חוזה' (Contract) button at the top of the screen.\n"
+        "If the user asks you to schedule a meeting/viewing, tell them to click the '📅 פגישה' (Meeting) button at the top of the screen."
     )
 
     messages = [{"role": "system", "content": system}]
