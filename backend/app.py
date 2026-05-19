@@ -463,11 +463,16 @@ def get_properties():
         models.Property.status == 'available',
         models.Property.owner_id != user_id,
     )
+    swiped_property_ids = [s.property_id for s in models.Swipe.query.filter_by(user_id=user_id).all()]
+    if swiped_property_ids:
+        query = query.filter(models.Property.id.notin_(swiped_property_ids))
+
+    props = []
     if city:
-        in_city = query.filter_by(location=city).all()
-        props = in_city if in_city else query.all()
-    else:
-        props = query.all()
+        props = query.filter_by(location=city).limit(20).all()
+    
+    if not props:
+        props = query.limit(20).all()
 
     result = []
     for p in props:
