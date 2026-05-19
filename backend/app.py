@@ -523,14 +523,15 @@ def get_properties():
         image_url = p.image
         if image_url and ('picsum.photos' in image_url or 'loremflickr.com' in image_url):
             loc = p.location.lower() if p.location else ''
+            idx = (p.id % 3) + 1
             if 'tel aviv' in loc:
-                image_url = "/images/tel_aviv.png"
+                image_url = f"/images/tel_aviv_{idx}.png"
             elif 'jerusalem' in loc:
-                image_url = "/images/jerusalem.png"
+                image_url = f"/images/jerusalem_{idx}.png"
             elif 'haifa' in loc:
-                image_url = "/images/haifa.png"
+                image_url = f"/images/haifa_{idx}.png"
             elif 'beer sheva' in loc:
-                image_url = "/images/beer_sheva.png"
+                image_url = f"/images/beer_sheva_{idx}.png"
             else:
                 image_url = "/images/generic.png"
 
