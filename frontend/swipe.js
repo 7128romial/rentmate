@@ -40,13 +40,6 @@ function buildHero(property) {
   matchBadge.classList.add('match-badge');
   matchBadge.textContent = `התאמה של ${property.matchScore}%`;
 
-  if (property.kind === 'shared') {
-    const sharedBadge = document.createElement('div');
-    sharedBadge.classList.add('shared-badge');
-    sharedBadge.textContent = '🛏 חדר בדירת שותפים';
-    info.appendChild(sharedBadge);
-  }
-
   const title = document.createElement('h3');
   title.textContent = property.title;
 
@@ -221,7 +214,6 @@ function priceToNumber(value) {
 
 function applyFilters(items, prefs) {
   return items.filter((item) => {
-    if (item.kind === 'shared' && prefs.includeShared === false) return false;
     if (prefs.area) {
       const hay = `${item.title || ''} ${item.address || ''} ${item.location || ''}`.toLowerCase();
       if (!hay.includes(prefs.area.toLowerCase())) return false;
@@ -261,7 +253,7 @@ function showEmptyState() {
   btn.className = 'btn-primary';
   btn.textContent = 'איפוס סינון';
   btn.addEventListener('click', () => {
-    setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true });
+    setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0 });
     refreshSubtitle();
     initCards();
   });
@@ -382,16 +374,14 @@ const filterArea = document.getElementById('filter-area');
 const filterMin = document.getElementById('filter-min-price');
 const filterMax = document.getElementById('filter-max-price');
 const filterRooms = document.getElementById('filter-rooms');
-const filterShared = document.getElementById('filter-include-shared');
 
 function isFilterActive(prefs) {
-  const def = { area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true };
+  const def = { area: '', minPrice: 0, maxPrice: 10000, minRooms: 0 };
   return (
     prefs.area !== def.area ||
     prefs.minPrice !== def.minPrice ||
     prefs.maxPrice !== def.maxPrice ||
-    prefs.minRooms !== def.minRooms ||
-    prefs.includeShared !== def.includeShared
+    prefs.minRooms !== def.minRooms
   );
 }
 
@@ -406,7 +396,6 @@ function refreshSubtitle() {
   if (prefs.area) parts.push(prefs.area);
   if (prefs.minPrice || prefs.maxPrice) parts.push(`₪${prefs.minPrice || 0}-${prefs.maxPrice || '∞'}`);
   if (prefs.minRooms) parts.push(`${prefs.minRooms}+ חד׳`);
-  if (!prefs.includeShared) parts.push('בלי שותפים');
   subtitle.textContent = parts.join(' · ');
 }
 
@@ -416,7 +405,6 @@ function loadFilterIntoForm() {
   filterMin.value = prefs.minPrice || '';
   filterMax.value = prefs.maxPrice && prefs.maxPrice !== 10000 ? prefs.maxPrice : '';
   filterRooms.value = String(prefs.minRooms || 0);
-  filterShared.checked = prefs.includeShared !== false;
 }
 
 function openSheet() {
@@ -437,7 +425,7 @@ filterSheet.addEventListener('click', (e) => {
 });
 
 document.getElementById('filter-reset').addEventListener('click', () => {
-  setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, includeShared: true });
+  setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0 });
   refreshSubtitle();
   closeSheet();
   initCards();
@@ -451,7 +439,6 @@ document.getElementById('filter-apply').addEventListener('click', () => {
     minPrice: Number.isFinite(minPrice) ? minPrice : 0,
     maxPrice: Number.isFinite(maxPrice) && maxPrice > 0 ? maxPrice : 10000,
     minRooms: parseInt(filterRooms.value, 10) || 0,
-    includeShared: !!filterShared.checked,
   });
   refreshSubtitle();
   closeSheet();

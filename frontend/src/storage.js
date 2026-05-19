@@ -253,7 +253,6 @@ const DEFAULT_FILTERS = {
   minPrice: 0,
   maxPrice: 10000,
   minRooms: 0,
-  includeShared: true,
 };
 
 export function getFilterPrefs() {
