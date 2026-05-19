@@ -95,66 +95,6 @@ db.init_app(app)
 # Import models after db is defined
 import models  # noqa: E402
 
-DEMO_SEED_CITIES = [
-    {
-        'city': 'תל אביב',
-        'base_price': 5500,
-        'images': [
-            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1502672260266-1c1de2d93688?auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80',
-        ],
-    },
-    {
-        'city': 'ירושלים',
-        'base_price': 4200,
-        'images': [
-            'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=600&q=80',
-            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80',
-        ],
-    },
-]
-
-
-def seed_demo_properties():
-    """Idempotent seed of a small demo catalogue. Runs once on startup."""
-    if models.Property.query.first() is not None:
-        return
-        
-    demo_owner = models.User.query.filter_by(email='system@rentmate.local').first()
-    if not demo_owner:
-        demo_owner = models.User(
-            email='system@rentmate.local',
-            password_hash='not_usable',
-            role='landlord'
-        )
-        db.session.add(demo_owner)
-        db.session.commit()
-        
-    for spec in DEMO_SEED_CITIES:
-        city = spec['city']
-        base = spec['base_price']
-        for i, image in enumerate(spec['images']):
-            db.session.add(
-                models.Property(
-                    owner_id=demo_owner.id,
-                    title=(
-                        f'סטודיו מואר ב{city}' if i == 0
-                        else f'דירה מהממת ב{city}' if i == 1
-                        else f'לופט יוקרתי ב{city}'
-                    ),
-                    price_min=base + i * 600,
-                    price_max=base + i * 600 + 500,
-                    price_label=f"₪{base + i * 600}/חודש",
-                    location=city,
-                    image=image,
-                    tags='שקט,משופצת' if i == 0 else 'מרווחת,זוגות' if i == 1 else 'פרימיום,מרפסת',
-                )
-            )
-    db.session.commit()
-
-
 def _ensure_user_subscription_columns():
     """Add subscription/subscription_until columns to the user table if they
     are missing. Preserves existing rows instead of nuking the schema."""
@@ -200,10 +140,6 @@ with app.app_context():
     # the drop-everything path that would invalidate existing tokens.
     _ensure_user_subscription_columns()
 
-    try:
-        seed_demo_properties()
-    except Exception as e:
-        print(f"Seeding failed: {e}")
 signer = URLSafeTimedSerializer(SECRET_KEY, salt='rentmate-auth')
 
 openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY')) if os.environ.get('OPENAI_API_KEY') else None
@@ -846,6 +782,60 @@ def landlord_reject():
         interest.status = 'rejected'
         db.session.commit()
     return jsonify({'success': True})
+
+@app.route('/api/landlord/reopen', methods=['POST'])
+@require_auth
+def landlord_reopen():
+    """Revert a renter's interest back to 'pending' and drop the match."""
+    data = request.get_json(silent=True) or {}
+    renter_id = data.get('renter_id')
+    property_id = data.get('property_id')
+
+    prop = db.session.get(models.Property, property_id)
+    if not prop or prop.owner_id != g.user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    interest = models.PropertyInterest.query.filter_by(property_id=property_id, renter_id=renter_id).first()
+    if interest:
+        interest.status = 'pending'
+
+    match = models.Match.query.filter_by(property_id=property_id, user_id=renter_id).first()
+    if match:
+        db.session.delete(match)
+
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/landlord/properties/<int:prop_id>/interests', methods=['GET'])
+@require_auth
+def get_property_interests(prop_id):
+    """List the renters who showed interest in a property, grouped by status."""
+    prop = db.session.get(models.Property, prop_id)
+    if not prop or prop.owner_id != g.user_id:
+        return jsonify({'error': 'Not found or unauthorized'}), 404
+
+    grouped = {'pending': [], 'approved': [], 'rejected': []}
+    interests = (
+        models.PropertyInterest.query
+        .filter_by(property_id=prop_id)
+        .order_by(models.PropertyInterest.created_at.desc())
+        .all()
+    )
+    for interest in interests:
+        renter = db.session.get(models.User, interest.renter_id)
+        if not renter:
+            continue
+        profile = models.PreferenceProfile.query.filter_by(user_id=renter.id).first()
+        status = interest.status if interest.status in grouped else 'pending'
+        grouped[status].append({
+            'id': renter.id,
+            'name': (profile.name if profile and profile.name else 'מתעניין/ת'),
+            'city': (profile.city if profile else None),
+            'budget': (profile.max_budget if profile else None),
+            'type': (profile.type if profile else None),
+            'bio': (profile.extras if profile else None),
+        })
+    return jsonify(grouped)
 
 @app.route('/api/lease/generate', methods=['POST'])
 @require_auth

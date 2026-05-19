@@ -1,12 +1,11 @@
-// localStorage helpers for the user profile and saved matches.
-// In demo mode this is the source of truth; when wired to a real backend,
-// these helpers can be swapped for fetch calls without touching the screens.
+// localStorage helpers for the client-side profile, saved matches and
+// settings. Backend-backed data (properties, interests, subscription) is
+// fetched through the async helpers further down this file.
 
 const PROFILE_KEY = 'rentmate_profile';
 const MATCHES_KEY = 'rentmate_matches';
 const ROLE_KEY = 'rentmate_role';
 const USER_PROPERTIES_KEY = 'rentmate_user_properties';
-const USER_PROPERTY_INTERESTS_KEY = 'rentmate_user_property_interests';
 const FILTER_PREFS_KEY = 'rentmate_filter_prefs';
 const CHAT_MESSAGES_PREFIX = 'rentmate_chat_';
 const SETTINGS_KEY = 'rentmate_settings';
@@ -113,74 +112,49 @@ export function clearRole() {
   }
 }
 
-// --- Landlord-side decisions on interested renters ---
+// --- Landlord-side decisions on interested renters (backend-driven) ---
 
-function readSet(key) {
-  const arr = readJSON(key, []);
-  return new Set(Array.isArray(arr) ? arr.map(String) : []);
-}
-
-function writeSet(key, set) {
-  writeJSON(key, Array.from(set));
-}
-
-function decisionKey(propertyId, renterId) {
-  return `${propertyId}::${renterId}`;
+async function postDecision(path, propertyId, renterId) {
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ property_id: propertyId, renter_id: renterId }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
 }
 
 export function approveRenter(propertyId, renterId) {
-  const approved = readSet(LANDLORD_APPROVED_KEY);
-  const rejected = readSet(LANDLORD_REJECTED_KEY);
-  const key = decisionKey(propertyId, renterId);
-  approved.add(key);
-  rejected.delete(key);
-  writeSet(LANDLORD_APPROVED_KEY, approved);
-  writeSet(LANDLORD_REJECTED_KEY, rejected);
-
-  import('./config.js').then(({ API_BASE, authHeaders }) => {
-    fetch(`${API_BASE}/api/landlord/approve`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ property_id: propertyId, renter_id: renterId })
-    }).catch(console.error);
-  });
+  return postDecision('/api/landlord/approve', propertyId, renterId);
 }
 
 export function rejectRenter(propertyId, renterId) {
-  const approved = readSet(LANDLORD_APPROVED_KEY);
-  const rejected = readSet(LANDLORD_REJECTED_KEY);
-  const key = decisionKey(propertyId, renterId);
-  rejected.add(key);
-  approved.delete(key);
-  writeSet(LANDLORD_APPROVED_KEY, approved);
-  writeSet(LANDLORD_REJECTED_KEY, rejected);
-
-  import('./config.js').then(({ API_BASE, authHeaders }) => {
-    fetch(`${API_BASE}/api/landlord/reject`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ property_id: propertyId, renter_id: renterId })
-    }).catch(console.error);
-  });
+  return postDecision('/api/landlord/reject', propertyId, renterId);
 }
 
 export function undoRenterDecision(propertyId, renterId) {
-  const approved = readSet(LANDLORD_APPROVED_KEY);
-  const rejected = readSet(LANDLORD_REJECTED_KEY);
-  const key = decisionKey(propertyId, renterId);
-  approved.delete(key);
-  rejected.delete(key);
-  writeSet(LANDLORD_APPROVED_KEY, approved);
-  writeSet(LANDLORD_REJECTED_KEY, rejected);
+  return postDecision('/api/landlord/reopen', propertyId, renterId);
 }
 
-export function getRenterDecision(propertyId, renterId) {
-  const key = decisionKey(propertyId, renterId);
-  if (readSet(LANDLORD_APPROVED_KEY).has(key)) return 'approved';
-  if (readSet(LANDLORD_REJECTED_KEY).has(key)) return 'rejected';
-  return 'pending';
+// Renters who showed interest in a property, grouped by status.
+export async function getPropertyInterests(propertyId) {
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    const res = await fetch(
+      `${API_BASE}/api/landlord/properties/${propertyId}/interests`,
+      { headers: authHeaders() },
+    );
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.error(e);
+  }
+  return { pending: [], approved: [], rejected: [] };
 }
-
 
 
 // --- User-created properties (landlord adds one or more) ---
@@ -197,24 +171,6 @@ export async function getUserProperties() {
     console.error(e);
   }
   return [];
-}
-
-// Demo renter pool used when seeding interest on user-created properties.
-const DEMO_RENTER_POOL = ['renter-1', 'renter-2', 'renter-3', 'renter-4', 'renter-5', 'renter-6'];
-
-function seedInterestsFor(propertyId) {
-  const all = readJSON(USER_PROPERTY_INTERESTS_KEY, {}) || {};
-  if (all[propertyId]) return; // already seeded
-  // Pick 2-3 random demo renters as "interested" so the dashboard demos well.
-  const shuffled = DEMO_RENTER_POOL.slice().sort(() => Math.random() - 0.5);
-  const count = 2 + Math.floor(Math.random() * 2); // 2 or 3
-  all[propertyId] = shuffled.slice(0, count);
-  writeJSON(USER_PROPERTY_INTERESTS_KEY, all);
-}
-
-export function getUserPropertyInterests(propertyId) {
-  const all = readJSON(USER_PROPERTY_INTERESTS_KEY, {}) || {};
-  return Array.isArray(all[propertyId]) ? all[propertyId] : [];
 }
 
 export const PROPERTY_STATUSES = ['available', 'rented', 'pending', 'off_market'];
@@ -318,7 +274,7 @@ export function clearFilterPrefs() {
   }
 }
 
-// --- Chat messages (per chat-id, e.g. property:demo-1 or person:renter-2) ---
+// --- Chat messages (per chat-id, e.g. property:42) ---
 
 function chatKey(chatId) {
   return `${CHAT_MESSAGES_PREFIX}${chatId}`;

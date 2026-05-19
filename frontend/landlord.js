@@ -1,10 +1,7 @@
 import { renderBottomNav } from './src/nav.js';
-import { getInterestedRenterIds } from './src/demo.js';
 import {
-  getRenterDecision,
   getRole,
   getUserProperties,
-  getUserPropertyInterests,
   setUserPropertyStatus,
   PROPERTY_STATUSES,
 } from './src/storage.js';

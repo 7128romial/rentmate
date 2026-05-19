@@ -1,4 +1,3 @@
-import { findDemoProperty, findRoommatePerson, findSharedListing } from './src/demo.js';
 import { renderMap } from './src/maps.js';
 import { getMatch, getMatches, getRole, getProfile, getChatMessages, addChatMessage } from './src/storage.js';
 import { API_BASE, getToken, getUserId } from './src/config.js';
@@ -7,6 +6,7 @@ import { notify, maybePromptOnce } from './src/notify.js';
 maybePromptOnce();
 
 const myUserId = parseInt(getUserId(), 10);
+const params = new URLSearchParams(window.location.search);
 
 const chatId = (() => {
   const params = new URLSearchParams(window.location.search);
@@ -31,8 +31,7 @@ function resolveContext() {
   const renterId = params.get('renter') || myUserId;
 
   if (propId) {
-    const fromMatches = getMatch(propId);
-    const property = fromMatches || findDemoProperty(propId) || findSharedListing(propId);
+    const property = getMatch(propId);
     if (property) {
       return {
         isP2P: true,
@@ -44,6 +43,17 @@ function resolveContext() {
         location: property,
       };
     }
+    // Property not in the local matches (e.g. the landlord side of the chat).
+    // The socket chat only needs the property id to work.
+    return {
+      isP2P: true,
+      propertyId: propId,
+      renterId: renterId,
+      title: 'שיחה',
+      subtitle: 'הותאם היום',
+      avatar: null,
+      location: null,
+    };
   }
   const matches = getMatches();
   if (matches.length) {
@@ -58,13 +68,12 @@ function resolveContext() {
       location: m,
     };
   }
-  const fallback = findDemoProperty('demo-1');
   return {
     isP2P: false,
-    title: fallback.title,
-    subtitle: fallback.address,
-    avatar: fallback.image,
-    location: fallback,
+    title: 'שיחה',
+    subtitle: '',
+    avatar: null,
+    location: null,
   };
 }
 
@@ -198,7 +207,7 @@ if (useSocketChat) {
         if (document.hidden) {
           notify(`הודעה חדשה מ${(ctx.title || '').split(',')[0].trim() || 'הצד השני'}`, {
             body: reply,
-            tag: `chat-${chatId || 'demo'}`,
+            tag: `chat-${chatId || 'general'}`,
             onclick: () => window.focus(),
           });
         }

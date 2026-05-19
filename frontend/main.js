@@ -2,7 +2,6 @@ import { API_BASE, authHeaders, getToken } from './src/config.js';
 import {
   setProfile,
   setRole,
-  setSubrole,
   setFilterPrefs,
 } from './src/storage.js';
 
@@ -66,7 +65,6 @@ async function sendToAI(text) {
     
     if (data.profile_complete) {
       if (data.role) setRole(data.role);
-      if (data.subrole) setSubrole(data.subrole);
 
       if (data.profile) {
         setProfile(data.profile);

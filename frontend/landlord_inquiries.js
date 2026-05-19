@@ -1,14 +1,9 @@
 import { renderBottomNav } from './src/nav.js';
 import {
-  findDemoRenter,
-  getInterestedRenterIds,
-} from './src/demo.js';
-import {
   approveRenter,
-  getRenterDecision,
+  getPropertyInterests,
   getRole,
   getUserProperties,
-  getUserPropertyInterests,
   rejectRenter,
 } from './src/storage.js';
 
@@ -21,21 +16,24 @@ renderBottomNav('inquiries');
 const list = document.getElementById('inquiries-list');
 const subtitle = document.getElementById('inquiries-subtitle');
 
-function collectPending() {
+// Gather every renter still pending a decision, across all of the
+// landlord's properties.
+async function collectPending() {
   const items = [];
-  getUserProperties().forEach((property) => {
-    const ids = [
-      ...getInterestedRenterIds(property.id),
-      ...getUserPropertyInterests(property.id),
-    ];
-    ids.forEach((rid) => {
-      if (getRenterDecision(property.id, rid) !== 'pending') return;
-      const renter = findDemoRenter(rid);
-      if (renter) items.push({ property, renter });
-    });
-  });
-  items.sort((a, b) => (b.renter.matchScore || 0) - (a.renter.matchScore || 0));
+  const properties = await getUserProperties();
+  for (const property of properties) {
+    const interests = await getPropertyInterests(property.id);
+    interests.pending.forEach((renter) => items.push({ property, renter }));
+  }
   return items;
+}
+
+function renterMeta(renter) {
+  const parts = [];
+  if (renter.type) parts.push(renter.type);
+  if (renter.city) parts.push(renter.city);
+  if (renter.budget) parts.push(`תקציב ₪${Number(renter.budget).toLocaleString('he-IL')}`);
+  return parts.join(' · ');
 }
 
 function renderEmpty() {
@@ -56,8 +54,9 @@ function renderEmpty() {
   subtitle.textContent = 'אין כרגע פניות פתוחות.';
 }
 
-function render() {
-  const items = collectPending();
+async function render() {
+  subtitle.textContent = 'טוען פניות…';
+  const items = await collectPending();
   if (items.length === 0) {
     renderEmpty();
     return;
@@ -73,25 +72,18 @@ function render() {
     header.className = 'renter-header';
     const avatar = document.createElement('div');
     avatar.className = 'renter-avatar';
-    if (renter.photo) {
-      avatar.style.backgroundImage = `url(${JSON.stringify(String(renter.photo))})`;
-    }
     const head = document.createElement('div');
     head.className = 'renter-head';
 
     const nameRow = document.createElement('div');
     nameRow.className = 'renter-name-row';
     const name = document.createElement('h3');
-    name.textContent = `${renter.name}, ${renter.age}`;
-    const score = document.createElement('span');
-    score.className = 'renter-score';
-    score.textContent = `${renter.matchScore}%`;
+    name.textContent = renter.name;
     nameRow.appendChild(name);
-    nameRow.appendChild(score);
 
     const meta = document.createElement('div');
     meta.className = 'renter-meta';
-    meta.textContent = `${renter.occupation} · תקציב ₪${(renter.budget || 0).toLocaleString('he-IL')}`;
+    meta.textContent = renterMeta(renter);
 
     head.appendChild(nameRow);
     head.appendChild(meta);
@@ -115,8 +107,9 @@ function render() {
     reject.className = 'icon-btn reject';
     reject.title = 'דחה';
     reject.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-    reject.addEventListener('click', () => {
-      rejectRenter(property.id, renter.id);
+    reject.addEventListener('click', async () => {
+      reject.disabled = true;
+      await rejectRenter(property.id, renter.id);
       render();
     });
     const approve = document.createElement('button');
@@ -124,8 +117,9 @@ function render() {
     approve.className = 'icon-btn approve';
     approve.title = 'אשר';
     approve.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-    approve.addEventListener('click', () => {
-      approveRenter(property.id, renter.id);
+    approve.addEventListener('click', async () => {
+      approve.disabled = true;
+      await approveRenter(property.id, renter.id);
       render();
     });
     actions.appendChild(reject);

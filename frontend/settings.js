@@ -1,5 +1,5 @@
 import { renderBottomNav } from './src/nav.js';
-import { getRole, getSubrole, setRole, setSubrole, getSettings, setSettings } from './src/storage.js';
+import { getRole, setRole, getSettings, setSettings } from './src/storage.js';
 import { clearSession, API_BASE, authHeaders } from './src/config.js';
 
 renderBottomNav('profile');
@@ -18,13 +18,7 @@ function load() {
     r.checked = r.value === (s.privacy || 'matches-only');
   });
   
-  const currentRole = getRole() || 'renter';
-  const currentSubrole = getSubrole();
-  if (currentRole === 'roommate') {
-     accountMode.value = currentSubrole === 'host' ? 'roommate_host' : 'roommate_seeker';
-  } else {
-     accountMode.value = currentRole;
-  }
+  accountMode.value = getRole() || 'renter';
 }
 
 function showToast(text) {
@@ -38,22 +32,10 @@ function showToast(text) {
 }
 
 accountMode.addEventListener('change', async () => {
-  const val = accountMode.value;
-  let newRole = val;
-  let newSubrole = null;
-  if (val === 'roommate_host') {
-    newRole = 'roommate';
-    newSubrole = 'host';
-  } else if (val === 'roommate_seeker') {
-    newRole = 'roommate';
-    newSubrole = 'seeker';
-  }
-  
+  const newRole = accountMode.value;
+
   setRole(newRole);
-  if (newSubrole) {
-    setSubrole(newSubrole);
-  }
-  
+
   try {
     await fetch(`${API_BASE}/api/profile`, {
       method: 'POST',
@@ -67,7 +49,6 @@ accountMode.addEventListener('change', async () => {
   showToast('מצב החשבון עודכן 🔄');
   setTimeout(() => {
      if (newRole === 'landlord') window.location.href = '/landlord.html';
-     else if (newRole === 'roommate') window.location.href = newSubrole === 'host' ? '/roommate_host.html' : '/roommate_seeker.html';
      else window.location.href = '/swipe.html';
   }, 1000);
 });

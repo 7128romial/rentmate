@@ -1,5 +1,4 @@
-import { API_BASE, DEMO_MODE, authHeaders, getUserId } from './src/config.js';
-import { DEMO_PROPERTIES, DEMO_SHARED_LISTINGS } from './src/demo.js';
+import { API_BASE, authHeaders, getUserId } from './src/config.js';
 import { renderBottomNav } from './src/nav.js';
 import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './src/storage.js';
 import { renderMap } from './src/maps.js';
@@ -194,11 +193,6 @@ function showInterestToast() {
 }
 
 async function recordSwipe(property_id, direction) {
-  if (DEMO_MODE) {
-    // For the demo, every 3rd right-swipe "matches"; the rest just send interest.
-    const isMatch = direction !== 'left' && Math.random() < 0.33;
-    return { isMatch, interestSent: direction !== 'left' };
-  }
   if (!getUserId()) return { isMatch: false, interestSent: direction === 'right' || direction === 'up' };
   try {
     const res = await fetch(`${API_BASE}/api/swipe`, {
@@ -241,9 +235,6 @@ function applyFilters(items, prefs) {
 }
 
 async function loadProperties() {
-  if (DEMO_MODE) {
-    return [...DEMO_PROPERTIES, ...DEMO_SHARED_LISTINGS];
-  }
   try {
     const res = await fetch(`${API_BASE}/api/properties`, { headers: authHeaders() });
     if (res.status === 401) {
@@ -253,7 +244,7 @@ async function loadProperties() {
     return await res.json();
   } catch (err) {
     console.error('API Error', err);
-    return DEMO_PROPERTIES;
+    return [];
   }
 }
 
@@ -300,7 +291,7 @@ function showLimitReachedState() {
 }
 
 async function initCards() {
-  if (!DEMO_MODE && !getUserId()) {
+  if (!getUserId()) {
     window.location.href = '/';
     return;
   }
