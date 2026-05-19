@@ -1071,6 +1071,18 @@ def chat():
         .limit(40)
         .all()
     )
+
+    # Cities that actually have available apartments — so the agent can tell
+    # the user right away when their requested city has no listings.
+    city_rows = (
+        db.session.query(models.Property.location)
+        .filter(models.Property.status == 'available')
+        .distinct()
+        .all()
+    )
+    available_cities = sorted({row[0] for row in city_rows if row[0]})
+    cities_text = ', '.join(available_cities) if available_cities else '(אין כרגע דירות זמינות באף עיר)'
+
     messages = [
         {
             "role": "system",
@@ -1083,6 +1095,11 @@ def chat():
                 "Do NOT suggest, list, name or describe specific apartments. Your only job here is to "
                 "collect the user's preferences — they will browse all matching apartments themselves "
                 "on the swipe screen once their profile is ready. "
+                f"Apartments are currently listed only in these cities: {cities_text}. "
+                "If a renter asks to rent in a city that is NOT in that list, tell them immediately, "
+                "kindly and clearly, that there are no apartments in that city yet, and offer the "
+                "available cities instead. Match cities loosely (ignore spelling/spacing differences). "
+                "Never invent apartments or cities. "
                 "When you have at least the role, name, city and budget, create their profile by "
                 "outputting a line starting with 'PROFILE_JSON=' followed by a VALID JSON object. "
                 "Use double quotes for every key and string value. budget must be a plain number. "
