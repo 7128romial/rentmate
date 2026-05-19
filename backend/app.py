@@ -1036,11 +1036,11 @@ def chat_roleplay():
     available = prop.get('available')
 
     persona_briefs = {
-        'landlord': f"You are the landlord of an apartment at {address}. The user just matched with your listing and is a potential tenant. You want to find a serious, respectful tenant.",
-        'tenant': f"You are a tenant who matched with the user's apartment at {address}. You're considering renting it and are asking questions before committing.",
-        'roommate_host': f"You currently live in an apartment at {address} and are looking for a roommate. The user is a potential roommate who matched with your post.",
-        'roommate_seeker': f"You are looking for a place to share. The user has a room available at {address} that you matched with.",
-        'roommate_peer': "You are also looking for a shared apartment to rent. The user matched with you because you have similar preferences. You're chatting to see if you'd like to team up and look for an apartment together.",
+        'landlord': f"You are RentMate AI, the user's personal smart agent. The user just liked an apartment at {address}. You are NOT the landlord. Your job is to assist the user, answer questions about the apartment based on its details, and help them take the next step (like scheduling a viewing or contacting the real landlord).",
+        'tenant': f"You are RentMate AI. You are assisting the user who is renting out their apartment at {address}. A potential tenant liked it.",
+        'roommate_host': f"You are RentMate AI. You are assisting the user who is looking for a roommate at {address}.",
+        'roommate_seeker': f"You are RentMate AI. You are assisting the user who is looking for a room, and they liked a room at {address}.",
+        'roommate_peer': "You are RentMate AI. You are assisting the user in finding a roommate to team up with.",
     }
     persona_brief = persona_briefs.get(persona, persona_briefs['landlord'])
 
@@ -1053,18 +1053,17 @@ def chat_roleplay():
         extra_details.append(f"Available from: {available}")
     details_block = ('\n'.join(f'- {d}' for d in extra_details)) if extra_details else '(no extra details)'
 
-    name_line = f"Your first name is {other_name}." if other_name else "Pick a realistic Israeli first name and stick with it."
+    name_line = "Your name is RentMate AI."
 
     system = (
         f"{persona_brief}\n"
         f"{name_line}\n"
         f"Apartment details you can reference if asked:\n{details_block}\n\n"
-        "Respond in Hebrew like a real WhatsApp message — casual, friendly, 1-2 short sentences.\n"
+        "Respond in Hebrew like a helpful AI assistant — professional but friendly, 1-2 short sentences.\n"
         "CRITICAL: write replies in Hebrew script ONLY. Never use Arabic script. "
         "Echo names, places, and proper nouns exactly as the user wrote them — never transliterate.\n"
-        "Stay in character. Ask one relevant question or share one relevant detail at a time.\n"
-        "Don't reveal you're an AI. Don't use emoji-heavy or overly formal language.\n"
-        "If the user wants to schedule a viewing, suggest concrete times. If they ask about price, refer to the rent above."
+        "Stay in character as the user's personal agent. You represent the user, not the property owner.\n"
+        "If the user wants to schedule a viewing, offer to set it up for them. If they ask about price, refer to the rent above."
     )
 
     messages = [{"role": "system", "content": system}]
