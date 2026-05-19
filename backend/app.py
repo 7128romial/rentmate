@@ -145,7 +145,11 @@ signer = URLSafeTimedSerializer(SECRET_KEY, salt='rentmate-auth')
 
 openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY')) if os.environ.get('OPENAI_API_KEY') else None
 
-
+IMAGE_POOL = []
+images_db_path = os.path.join(basedir, 'images_db.json')
+if os.path.exists(images_db_path):
+    with open(images_db_path, 'r') as f:
+        IMAGE_POOL = json.load(f)
 
 
 # --- Auth helpers ---
@@ -522,16 +526,8 @@ def get_properties():
     for p in props:
         image_url = p.image
         if image_url and ('picsum.photos' in image_url or 'loremflickr.com' in image_url):
-            loc = p.location.lower() if p.location else ''
-            idx = (p.id % 3) + 1
-            if 'tel aviv' in loc:
-                image_url = f"/images/tel_aviv_{idx}.png"
-            elif 'jerusalem' in loc:
-                image_url = f"/images/jerusalem_{idx}.png"
-            elif 'haifa' in loc:
-                image_url = f"/images/haifa_{idx}.png"
-            elif 'beer sheva' in loc:
-                image_url = f"/images/beer_sheva_{idx}.png"
+            if IMAGE_POOL:
+                image_url = IMAGE_POOL[p.id % len(IMAGE_POOL)]
             else:
                 image_url = "/images/generic.png"
 
