@@ -1,7 +1,6 @@
 const fallback = 'https://rentmate-backend-0l8z.onrender.com';
 export const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || fallback;
-export const DEMO_MODE =
-  (import.meta.env && String(import.meta.env.VITE_DEMO_MODE).toLowerCase() === 'true') || false;
+export const DEMO_MODE = false;
 export const DEMO_OTP = '1234';
 
 const TOKEN_KEY = 'rentmate_token';

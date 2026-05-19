@@ -74,7 +74,7 @@ CHAT_MAX_CHARS = _env_int('CHAT_MAX_CHARS', 2000)
 CHAT_MIN_INTERVAL_SECONDS = _env_int('CHAT_MIN_INTERVAL_SECONDS', 2)
 CHAT_MAX_PER_HOUR = _env_int('CHAT_MAX_PER_HOUR', 60)
 LOGIN_MAX_PER_15_MIN = _env_int('LOGIN_MAX_PER_15_MIN', 10)
-VALID_ROLES = {'renter', 'roommate', 'landlord'}
+VALID_ROLES = {'renter', 'landlord'}
 
 allowed_origin_raw = os.environ.get('ALLOWED_ORIGIN', '*')
 if allowed_origin_raw.strip() == '*':
@@ -121,18 +121,32 @@ def seed_demo_properties():
     """Idempotent seed of a small demo catalogue. Runs once on startup."""
     if models.Property.query.first() is not None:
         return
+        
+    demo_owner = models.User.query.filter_by(email='system@rentmate.local').first()
+    if not demo_owner:
+        demo_owner = models.User(
+            email='system@rentmate.local',
+            password_hash='not_usable',
+            role='landlord'
+        )
+        db.session.add(demo_owner)
+        db.session.commit()
+        
     for spec in DEMO_SEED_CITIES:
         city = spec['city']
         base = spec['base_price']
         for i, image in enumerate(spec['images']):
             db.session.add(
                 models.Property(
+                    owner_id=demo_owner.id,
                     title=(
                         f'סטודיו מואר ב{city}' if i == 0
                         else f'דירה מהממת ב{city}' if i == 1
                         else f'לופט יוקרתי ב{city}'
                     ),
-                    price=base + i * 600,
+                    price_min=base + i * 600,
+                    price_max=base + i * 600 + 500,
+                    price_label=f"₪{base + i * 600}/חודש",
                     location=city,
                     image=image,
                     tags='שקט,משופצת' if i == 0 else 'מרווחת,זוגות' if i == 1 else 'פרימיום,מרפסת',
@@ -1066,20 +1080,25 @@ def chat():
         .limit(40)
         .all()
     )
+    available_props = models.Property.query.filter_by(status='available').limit(10).all()
+    props_text = "Here are the top 10 available apartments in our DB right now:\n"
+    for p in available_props:
+        props_text += f"- ID {p.id}: {p.title} at {p.address or p.location}, {p.price_label}, {p.rooms} rooms. {p.description}\n"
+
     messages = [
         {
             "role": "system",
             "content": (
-                "You are RentMate AI. You assist users in Hebrew. Discover their goal first, there are 4 paths: "
-                "1) renter (wants to rent an apartment) 2) landlord (wants to rent out their apartment) "
-                "3) roommate_seeker (looking for a roommate) 4) roommate_host (has an apartment, needs a roommate). "
+                "You are RentMate AI. You assist users in Hebrew. Discover their goal first, there are 2 paths: "
+                "1) renter (wants to rent an apartment) 2) landlord (wants to rent out their apartment). "
                 "Ask relevant follow-ups (city, budget/price, name, extras/lifestyle). Be friendly, short, and conversational. "
                 "CRITICAL: Always write your replies in Hebrew script ONLY. Never use Arabic script. "
                 "When echoing back the user's name, city, or any proper noun, copy the exact characters they typed — do NOT transliterate to a different script. "
-                "If the user typed a name in Hebrew letters, repeat it in Hebrew letters. "
+                f"\n\n{props_text}\n"
+                "If the user is a renter and you know their preferences, mention 1-2 real properties from the list above that match their criteria to get them excited. "
                 "When you have enough info to create their profile, output a JSON object starting with 'PROFILE_JSON=' "
-                "followed by the JSON string containing: {'role': 'renter'|'landlord'|'roommate', "
-                "'subrole': 'seeker'|'host' (if roommate), 'name', 'city', 'budget', 'type', 'extras'}. "
+                "followed by the JSON string containing: {'role': 'renter'|'landlord', "
+                "'name', 'city', 'budget', 'type', 'extras'}. "
                 "Do NOT output the JSON until you have the core info."
             ),
         }
@@ -1134,8 +1153,6 @@ def chat():
             else:
                 assigned_role = user.role
 
-            assigned_subrole = profile_data.get('subrole')
-
             profile.name = str(profile_data.get('name', 'משתמש'))[:100]
             profile.city = str(profile_data.get('city', 'תל אביב'))[:100]
             try:
@@ -1143,9 +1160,8 @@ def chat():
             except (TypeError, ValueError):
                 profile.max_budget = 4500
             
-            subr = str(profile_data.get('subrole', ''))
             ptyp = str(profile_data.get('type', ''))
-            profile.type = f"{ptyp} {subr}".strip()[:50]
+            profile.type = f"{ptyp}".strip()[:50]
             profile.extras = str(profile_data.get('extras', ''))[:500]
             db.session.commit()
             profile_complete = True
@@ -1159,8 +1175,6 @@ def chat():
 
             if assigned_role == 'landlord':
                 ai_text = "מעולה! אני פותח לך את ממשק ניהול הנכסים 🔑"
-            elif assigned_role == 'roommate':
-                ai_text = "מצוין! בונה לך פרופיל שותפים ומעביר אותך לחיפוש 🤝"
             else:
                 ai_text = "מעולה! בניתי לך פרופיל אישי. מעביר אותך לדירות ✨"
                 
@@ -1176,7 +1190,6 @@ def chat():
         'response': ai_text,
         'profile_complete': profile_complete,
         'role': assigned_role,
-        'subrole': assigned_subrole,
         'profile': saved_profile,
     })
 

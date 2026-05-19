@@ -20,7 +20,6 @@ import {
 } from './src/storage.js';
 
 const role = getRole();
-const subrole = getSubrole();
 
 renderBottomNav('profile');
 
@@ -84,12 +83,6 @@ syncSubscriptionFromBackend().then(() => renderSubscriptionSection());
 if (role === 'landlord') {
   titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב משכיר/ה 🔑</span>';
   subtitleEl.textContent = 'פרטי המשכיר/ה — מופיעים לשוכרים שמתעניינים בדירות שלך.';
-} else if (role === 'roommate' && subrole === 'host') {
-  titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב שותף מארח 🛏</span>';
-  subtitleEl.textContent = 'הפרטים שאחרים יראו עליך ועל החדר.';
-} else if (role === 'roommate' && subrole === 'seeker') {
-  titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב מחפש/ת שותפים 🤝</span>';
-  subtitleEl.textContent = 'הפרטים שמופיעים לשותפים פוטנציאליים.';
 } else {
   titleEl.innerHTML = 'הפרופיל שלי <span class="role-badge">מצב שוכר/ת דירה 🏡</span>';
   subtitleEl.textContent = 'הפרטים האלה משמשים להתאמת דירות מדויקת יותר.';
@@ -166,8 +159,6 @@ function actions({ extraButton = null } = {}) {
     clearSession();
     clearProfile();
     clearRole();
-    clearSubrole();
-    clearUserListing();
     window.location.href = '/';
   });
   wrap.appendChild(logout);
@@ -191,10 +182,6 @@ const profile = getProfile();
 
 if (role === 'landlord') {
   renderLandlord();
-} else if (role === 'roommate' && subrole === 'host') {
-  renderHost();
-} else if (role === 'roommate' && subrole === 'seeker') {
-  renderSeeker();
 } else {
   renderRenter();
 }
@@ -222,68 +209,7 @@ function renderRenter() {
   });
 }
 
-function renderSeeker() {
-  const f = {
-    name: field('field-name', 'שם', { placeholder: 'איך לקרוא לך?', value: profile.name }),
-    city: field('field-city', 'עיר/אזור מועדף', { placeholder: 'תל אביב מרכז', value: profile.city }),
-    budget: field('field-budget', 'תקציב לחדר (₪)', { type: 'number', placeholder: '2500', value: profile.budget }),
-    moveIn: field('field-move-in', 'מועד מעבר', { placeholder: 'מיידית / 1 ביולי', value: profile.moveIn }),
-    extras: field('field-extras', 'אורח חיים', { placeholder: 'שקט/חברתי/עובד מהבית/יוצא הרבה', multiline: true, value: profile.extras }),
-  };
-  actions();
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const budget = parseInt(f.budget.value, 10);
-    setProfile({
-      name: f.name.value.trim(),
-      city: f.city.value.trim(),
-      budget: Number.isFinite(budget) ? budget : 0,
-      moveIn: f.moveIn.value.trim(),
-      extras: f.extras.value.trim(),
-    });
-    showToast('נשמר ✓');
-  });
-}
 
-function renderHost() {
-  const listing = getUserListing() || {};
-  const host = listing.host || {};
-
-  sectionTitle('עליי');
-  const f = {
-    name: field('field-name', 'שם', { placeholder: 'איך לקרוא לך?', value: host.name && host.name !== 'אני' ? host.name : profile.name || '' }),
-    age: field('field-age', 'גיל', { type: 'number', placeholder: '28', value: host.age != null ? host.age : '' }),
-    occupation: field('field-occupation', 'עיסוק', { placeholder: 'מעצבת UI', value: host.occupation }),
-    lifestyle: field('field-lifestyle', 'אורח חיים', { placeholder: 'שעות עבודה, חיות, הרגלים...', multiline: true, value: host.lifestyle }),
-    photo: field('field-photo', 'קישור לתמונה', { type: 'url', placeholder: 'https://...', value: host.photo }),
-  };
-
-  sectionTitle('הליסטינג');
-  const editLink = document.createElement('a');
-  editLink.className = 'btn-ghost';
-  editLink.href = '/roommate_listing_edit.html';
-  editLink.textContent = 'ערוך פרטי דירה וחדר';
-  editLink.style.alignSelf = 'flex-start';
-  form.appendChild(editLink);
-
-  actions();
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const ageRaw = parseInt(f.age.value, 10);
-    setProfile({ name: f.name.value.trim() });
-    setUserListing({
-      ...(getUserListing() || {}),
-      host: {
-        name: f.name.value.trim() || 'אני',
-        age: Number.isFinite(ageRaw) ? ageRaw : null,
-        occupation: f.occupation.value.trim(),
-        lifestyle: f.lifestyle.value.trim(),
-        photo: f.photo.value.trim(),
-      },
-    });
-    showToast('נשמר ✓');
-  });
-}
 
 function renderLandlord() {
   const f = {

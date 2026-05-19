@@ -82,12 +82,6 @@ async function sendToAI(text) {
       setTimeout(() => {
         if (data.role === 'landlord') {
           window.location.href = '/landlord.html';
-        } else if (data.role === 'roommate') {
-          if (data.subrole === 'host') {
-             window.location.href = '/roommate_host.html';
-          } else {
-             window.location.href = '/roommate_seeker.html';
-          }
         } else {
           window.location.href = '/swipe.html';
         }

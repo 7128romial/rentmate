@@ -1,6 +1,6 @@
 import { findDemoProperty, findRoommatePerson, findSharedListing } from './src/demo.js';
 import { renderMap } from './src/maps.js';
-import { getMatch, getMatches, getRole, getSubrole, getProfile, getChatMessages, addChatMessage } from './src/storage.js';
+import { getMatch, getMatches, getRole, getProfile, getChatMessages, addChatMessage } from './src/storage.js';
 import { API_BASE, getToken, getUserId } from './src/config.js';
 import { notify, maybePromptOnce } from './src/notify.js';
 
@@ -19,9 +19,7 @@ const chatId = (() => {
   const backBtn = document.getElementById('chat-back-btn');
   if (!backBtn) return;
   const params = new URLSearchParams(window.location.search);
-  if (params.get('person')) {
-    backBtn.href = getSubrole() === 'host' ? '/roommate_host.html' : '/roommate_matches.html';
-  } else if (params.get('renter')) {
+  if (params.get('renter')) {
     backBtn.href = `/landlord_property.html?id=${encodeURIComponent(params.get('id') || '')}`;
   } else {
     backBtn.href = '/matches.html';
@@ -29,22 +27,8 @@ const chatId = (() => {
 })();
 
 function resolveContext() {
-  const params = new URLSearchParams(window.location.search);
-  const personId = params.get('person');
-  if (personId) {
-    const person = findRoommatePerson(personId);
-    if (person) {
-      return {
-        isP2P: false,
-        title: `${person.name}, ${person.age}`,
-        subtitle: person.targetArea ? `מחפש/ת באזור ${person.targetArea}` : person.occupation || 'הותאם היום',
-        avatar: person.photo,
-        location: null,
-      };
-    }
-  }
   const propId = params.get('id');
-  const renterId = params.get('renter') || myUserId; // If landlord views, renter is in URL. If renter views, renter is self.
+  const renterId = params.get('renter') || myUserId;
 
   if (propId) {
     const fromMatches = getMatch(propId);
@@ -119,14 +103,8 @@ const useSocketChat = ctx.isP2P && window.io && isNumericId(ctx.propertyId);
 
 function getPersona() {
   const myRole = getRole();
-  const mySubrole = getSubrole();
   if (myRole === 'landlord') return 'tenant';
   if (myRole === 'renter') return 'landlord';
-  if (myRole === 'roommate') {
-    // Host's chat partners are seekers interested in their listing.
-    // Seekers in this app match with fellow seekers to look for a place together.
-    return mySubrole === 'host' ? 'roommate_seeker' : 'roommate_peer';
-  }
   return 'landlord';
 }
 
@@ -271,11 +249,11 @@ if (ctx.isP2P) {
     leaseContent.innerHTML = 'טוען... ה-AI שלנו מכין את חוזה השכירות... 📄';
 
     const role = getRole();
-    const leaseType = role === 'roommate' ? 'roommate' : 'standard';
+    const leaseType = 'standard';
     const myProfile = getProfile() || {};
     const myName = (myProfile.name || '').trim();
     const otherName = (ctx.title || '').split(',')[0].trim();
-    const isLandlordSide = role === 'landlord' || role === 'roommate';
+    const isLandlordSide = role === 'landlord';
     const landlordName = isLandlordSide ? myName : otherName;
     const renterName = isLandlordSide ? otherName : myName;
 
