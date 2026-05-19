@@ -1071,11 +1071,6 @@ def chat():
         .limit(40)
         .all()
     )
-    available_props = models.Property.query.filter_by(status='available').limit(10).all()
-    props_text = "Here are the top 10 available apartments in our DB right now:\n"
-    for p in available_props:
-        props_text += f"- ID {p.id}: {p.title} at {p.address or p.location}, {p.price_label}, {p.rooms} rooms. {p.description}\n"
-
     messages = [
         {
             "role": "system",
@@ -1085,8 +1080,9 @@ def chat():
                 "Ask relevant follow-ups (city, budget/price, name, extras/lifestyle). Be friendly, short, and conversational. "
                 "CRITICAL: Always write your replies in Hebrew script ONLY. Never use Arabic script. "
                 "When echoing back the user's name, city, or any proper noun, copy the exact characters they typed — do NOT transliterate to a different script. "
-                f"\n\n{props_text}\n"
-                "If the user is a renter and you know their preferences, mention 1-2 real properties from the list above that match their criteria to get them excited. "
+                "Do NOT suggest, list, name or describe specific apartments. Your only job here is to "
+                "collect the user's preferences — they will browse all matching apartments themselves "
+                "on the swipe screen once their profile is ready. "
                 "When you have at least the role, name, city and budget, create their profile by "
                 "outputting a line starting with 'PROFILE_JSON=' followed by a VALID JSON object. "
                 "Use double quotes for every key and string value. budget must be a plain number. "
