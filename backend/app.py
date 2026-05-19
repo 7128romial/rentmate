@@ -488,19 +488,16 @@ def get_properties():
     if swiped_property_ids:
         query = query.filter(models.Property.id.notin_(swiped_property_ids))
 
-    # Range-overlap pricing: show every apartment whose price range
-    # intersects the user's budget range.
-    #   apt range = [price_min, price_max] (either may be NULL)
-    #   user range = [min_price_arg, effective_max_price]
-    # Overlap iff apt_top >= user_min  AND  apt_bottom <= user_max,
-    # where apt_top/apt_bottom fall back to the other column when one
-    # side of the apt range is missing.
+    # Filter by the apartment's STARTING price (price_min). The apartment's
+    # entry price must fall inside the user's budget range — apartments
+    # priced below the user's minimum should not show, and apartments
+    # priced above the user's maximum should not show either.
+    # COALESCE falls back to price_max when price_min is missing.
     from sqlalchemy import func
-    apt_top = func.coalesce(models.Property.price_max, models.Property.price_min)
     apt_bottom = func.coalesce(models.Property.price_min, models.Property.price_max)
 
     if min_price_arg:
-        query = query.filter(apt_top >= min_price_arg)
+        query = query.filter(apt_bottom >= min_price_arg)
 
     effective_max_price = max_price_arg if max_price_arg and max_price_arg < 10000 else (profile.max_budget if profile else None)
     if effective_max_price:
