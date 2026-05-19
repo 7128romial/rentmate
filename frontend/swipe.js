@@ -1,4 +1,4 @@
-import { API_BASE, authHeaders, getUserId } from './src/config.js';
+import { API_BASE, authHeaders, getToken, getUserId } from './src/config.js';
 import { renderBottomNav } from './src/nav.js';
 import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './src/storage.js';
 import { renderMap } from './src/maps.js';
@@ -134,8 +134,7 @@ function buildDetails(property) {
     vibeBtn.innerHTML = 'סורק את השכונה... ⏳';
     vibeResult.style.display = 'none';
     try {
-      const { getToken } = await import('./src/storage.js');
-      const res = await fetch(`/api/properties/${property.id}/vibe`, {
+      const res = await fetch(`${API_BASE}/api/properties/${property.id}/vibe`, {
         headers: { 'Authorization': `Bearer ${getToken()}` }
       });
       const data = await res.json();

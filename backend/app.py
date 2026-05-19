@@ -550,8 +550,9 @@ def get_properties():
                 score += 5
                 reasons.append("קצת מעל התקציב")
         
-        # Rooms check
-        req_rooms = min_rooms_arg if min_rooms_arg else (profile.min_rooms if profile else 0)
+        # Rooms check. PreferenceProfile has no min_rooms column — only the
+        # query string supplies one.
+        req_rooms = min_rooms_arg or 0
         if req_rooms and p.rooms:
             if p.rooms >= req_rooms:
                 score += 5
