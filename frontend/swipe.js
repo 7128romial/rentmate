@@ -205,30 +205,20 @@ async function recordSwipe(property_id, direction) {
   }
 }
 
-function priceToNumber(value) {
-  if (typeof value === 'number') return value;
-  const digits = String(value || '').replace(/[^\d]/g, '');
-  const n = parseInt(digits, 10);
-  return Number.isFinite(n) ? n : 0;
-}
 
-function applyFilters(items, prefs) {
-  return items.filter((item) => {
-    if (prefs.area) {
-      const hay = `${item.title || ''} ${item.address || ''} ${item.location || ''}`.toLowerCase();
-      if (!hay.includes(prefs.area.toLowerCase())) return false;
-    }
-    const price = priceToNumber(item.price);
-    if (price && prefs.minPrice && price < prefs.minPrice) return false;
-    if (price && prefs.maxPrice && price > prefs.maxPrice) return false;
-    if (prefs.minRooms && item.rooms != null && Number(item.rooms) < prefs.minRooms) return false;
-    return true;
-  });
-}
 
 async function loadProperties() {
   try {
-    const res = await fetch(`${API_BASE}/api/properties`, { headers: authHeaders() });
+    const prefs = getFilterPrefs();
+    const params = new URLSearchParams();
+    if (prefs.area) params.append('area', prefs.area);
+    if (prefs.minPrice) params.append('minPrice', prefs.minPrice);
+    if (prefs.maxPrice && prefs.maxPrice !== 10000) params.append('maxPrice', prefs.maxPrice);
+    if (prefs.minRooms) params.append('minRooms', prefs.minRooms);
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE}/api/properties${qs}`, { headers: authHeaders() });
+    
     if (res.status === 401) {
       window.location.href = '/';
       return [];
@@ -294,9 +284,7 @@ async function initCards() {
     return;
   }
 
-  const all = await loadProperties();
-  const prefs = getFilterPrefs();
-  const filtered = applyFilters(all, prefs);
+  const filtered = await loadProperties();
   activeProperties = filtered;
   filtered.forEach((p) => propertyById.set(String(p.id), p));
 

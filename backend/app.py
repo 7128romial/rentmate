@@ -459,6 +459,11 @@ def get_properties():
     city = profile.city if profile and profile.city else None
     base_price = profile.max_budget if profile and profile.max_budget and profile.max_budget > 0 else 4500
 
+    min_price_arg = request.args.get('minPrice', type=int)
+    max_price_arg = request.args.get('maxPrice', type=int)
+    min_rooms_arg = request.args.get('minRooms', type=int)
+    area_arg = request.args.get('area', type=str, default='').strip()
+
     query = models.Property.query.filter(
         models.Property.status == 'available',
         models.Property.owner_id != user_id,
@@ -467,12 +472,27 @@ def get_properties():
     if swiped_property_ids:
         query = query.filter(models.Property.id.notin_(swiped_property_ids))
 
-    props = []
-    if city:
-        props = query.filter_by(location=city).limit(20).all()
-    
-    if not props:
-        props = query.limit(20).all()
+    if min_price_arg:
+        query = query.filter(models.Property.price_min >= min_price_arg)
+        
+    effective_max_price = max_price_arg if max_price_arg and max_price_arg < 10000 else (profile.max_budget if profile else None)
+    if effective_max_price:
+        query = query.filter(models.Property.price_min <= effective_max_price)
+
+    if min_rooms_arg:
+        query = query.filter(models.Property.rooms >= min_rooms_arg)
+
+    if area_arg:
+        search_pattern = f"%{area_arg}%"
+        query = query.filter(db.or_(
+            models.Property.location.ilike(search_pattern),
+            models.Property.address.ilike(search_pattern),
+            models.Property.title.ilike(search_pattern)
+        ))
+    elif city:
+        query = query.filter_by(location=city)
+
+    props = query.limit(20).all()
 
     result = []
     for p in props:
