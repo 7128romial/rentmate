@@ -482,6 +482,17 @@ def get_properties():
     if min_rooms_arg:
         query = query.filter(models.Property.rooms >= min_rooms_arg)
 
+    if request.args.get('parking') == 'true':
+        query = query.filter(models.Property.tags.ilike('%חניה%'))
+    if request.args.get('elevator') == 'true':
+        query = query.filter(models.Property.tags.ilike('%מעלית%'))
+    if request.args.get('mamad') == 'true':
+        query = query.filter(models.Property.tags.ilike('%ממ"ד%'))
+    if request.args.get('pets') == 'true':
+        query = query.filter(models.Property.tags.ilike('%חיות מחמד%'))
+    if request.args.get('furnished') == 'true':
+        query = query.filter(models.Property.tags.ilike('%מרוהטת%'))
+
     if area_arg:
         search_pattern = f"%{area_arg}%"
         query = query.filter(db.or_(

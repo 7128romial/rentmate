@@ -47,6 +47,26 @@
               <option value="3">3 ומעלה</option>
             </select>
           </div>
+          <div class="filter-field">
+            <label>מאפיינים נוספים</label>
+            <div class="filter-checkbox-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.95rem; cursor: pointer;">
+                <input type="checkbox" id="filter-parking"> חניה
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.95rem; cursor: pointer;">
+                <input type="checkbox" id="filter-elevator"> מעלית
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.95rem; cursor: pointer;">
+                <input type="checkbox" id="filter-mamad"> ממ"ד
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.95rem; cursor: pointer;">
+                <input type="checkbox" id="filter-pets"> חיות מחמד
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.95rem; cursor: pointer;">
+                <input type="checkbox" id="filter-furnished"> מרוהטת
+              </label>
+            </div>
+          </div>
           <div class="filter-actions">
             <button type="button" class="btn-ghost" id="filter-reset">איפוס</button>
             <button type="button" class="btn-primary" id="filter-apply">הצג דירות</button>

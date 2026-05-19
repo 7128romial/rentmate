@@ -215,6 +215,12 @@ async function loadProperties() {
     if (prefs.minPrice) params.append('minPrice', prefs.minPrice);
     if (prefs.maxPrice && prefs.maxPrice !== 10000) params.append('maxPrice', prefs.maxPrice);
     if (prefs.minRooms) params.append('minRooms', prefs.minRooms);
+    
+    if (prefs.parking) params.append('parking', 'true');
+    if (prefs.elevator) params.append('elevator', 'true');
+    if (prefs.mamad) params.append('mamad', 'true');
+    if (prefs.pets) params.append('pets', 'true');
+    if (prefs.furnished) params.append('furnished', 'true');
 
     const qs = params.toString() ? `?${params.toString()}` : '';
     const res = await fetch(`${API_BASE}/api/properties${qs}`, { headers: authHeaders() });
@@ -362,14 +368,24 @@ const filterArea = document.getElementById('filter-area');
 const filterMin = document.getElementById('filter-min-price');
 const filterMax = document.getElementById('filter-max-price');
 const filterRooms = document.getElementById('filter-rooms');
+const filterParking = document.getElementById('filter-parking');
+const filterElevator = document.getElementById('filter-elevator');
+const filterMamad = document.getElementById('filter-mamad');
+const filterPets = document.getElementById('filter-pets');
+const filterFurnished = document.getElementById('filter-furnished');
 
 function isFilterActive(prefs) {
-  const def = { area: '', minPrice: 0, maxPrice: 10000, minRooms: 0 };
+  const def = { area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, parking: false, elevator: false, mamad: false, pets: false, furnished: false };
   return (
     prefs.area !== def.area ||
     prefs.minPrice !== def.minPrice ||
     prefs.maxPrice !== def.maxPrice ||
-    prefs.minRooms !== def.minRooms
+    prefs.minRooms !== def.minRooms ||
+    prefs.parking ||
+    prefs.elevator ||
+    prefs.mamad ||
+    prefs.pets ||
+    prefs.furnished
   );
 }
 
@@ -393,6 +409,11 @@ function loadFilterIntoForm() {
   filterMin.value = prefs.minPrice || '';
   filterMax.value = prefs.maxPrice && prefs.maxPrice !== 10000 ? prefs.maxPrice : '';
   filterRooms.value = String(prefs.minRooms || 0);
+  filterParking.checked = !!prefs.parking;
+  filterElevator.checked = !!prefs.elevator;
+  filterMamad.checked = !!prefs.mamad;
+  filterPets.checked = !!prefs.pets;
+  filterFurnished.checked = !!prefs.furnished;
 }
 
 function openSheet() {
@@ -413,7 +434,7 @@ filterSheet.addEventListener('click', (e) => {
 });
 
 document.getElementById('filter-reset').addEventListener('click', () => {
-  setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0 });
+  setFilterPrefs({ area: '', minPrice: 0, maxPrice: 10000, minRooms: 0, parking: false, elevator: false, mamad: false, pets: false, furnished: false });
   refreshSubtitle();
   closeSheet();
   initCards();
@@ -427,6 +448,11 @@ document.getElementById('filter-apply').addEventListener('click', () => {
     minPrice: Number.isFinite(minPrice) ? minPrice : 0,
     maxPrice: Number.isFinite(maxPrice) && maxPrice > 0 ? maxPrice : 10000,
     minRooms: parseInt(filterRooms.value, 10) || 0,
+    parking: filterParking.checked,
+    elevator: filterElevator.checked,
+    mamad: filterMamad.checked,
+    pets: filterPets.checked,
+    furnished: filterFurnished.checked,
   });
   refreshSubtitle();
   closeSheet();
