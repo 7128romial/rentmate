@@ -510,13 +510,18 @@ def get_properties():
         query = query.filter(models.Property.tags.ilike('%מרוהטת%'))
 
     if area_arg:
-        search_city = CITY_MAPPING.get(area_arg, area_arg)
-        search_pattern = f"%{search_city}%"
-        query = query.filter(db.or_(
-            models.Property.location.ilike(search_pattern),
-            models.Property.address.ilike(search_pattern),
-            models.Property.title.ilike(search_pattern)
-        ))
+        raw_areas = [a.strip() for a in area_arg.split(',') if a.strip()]
+        if raw_areas:
+            area_conditions = []
+            for a in raw_areas:
+                search_city = CITY_MAPPING.get(a, a)
+                search_pattern = f"%{search_city}%"
+                area_conditions.append(db.or_(
+                    models.Property.location.ilike(search_pattern),
+                    models.Property.address.ilike(search_pattern),
+                    models.Property.title.ilike(search_pattern)
+                ))
+            query = query.filter(db.or_(*area_conditions))
     elif english_city:
         query = query.filter_by(location=english_city)
 
