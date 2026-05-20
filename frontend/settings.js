@@ -6,6 +6,7 @@ renderBottomNav('profile');
 
 const accountMode = document.getElementById('setting-account-mode');
 const notifications = document.getElementById('setting-notifications');
+const demoMode = document.getElementById('setting-demo-mode');
 const language = document.getElementById('setting-language');
 const privacyRadios = document.querySelectorAll('input[name="privacy"]');
 const resetBtn = document.getElementById('reset-demo');
@@ -13,6 +14,7 @@ const resetBtn = document.getElementById('reset-demo');
 function load() {
   const s = getSettings();
   notifications.checked = !!s.notifications;
+  if (demoMode) demoMode.checked = !!s.demoMode;
   language.value = s.language || 'he';
   privacyRadios.forEach((r) => {
     r.checked = r.value === (s.privacy || 'matches-only');
@@ -57,6 +59,13 @@ notifications.addEventListener('change', () => {
   setSettings({ notifications: notifications.checked });
   showToast('נשמר ✓');
 });
+
+if (demoMode) {
+  demoMode.addEventListener('change', () => {
+    setSettings({ demoMode: demoMode.checked });
+    showToast('נשמר ✓');
+  });
+}
 
 language.addEventListener('change', () => {
   setSettings({ language: language.value });

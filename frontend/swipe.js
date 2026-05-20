@@ -1,10 +1,9 @@
 import { API_BASE, authHeaders, getUserId } from './src/config.js';
 import { renderBottomNav } from './src/nav.js';
-import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs } from './src/storage.js';
+import { addMatch, getFilterPrefs, getUserProperties, setFilterPrefs, getSettings, canSwipeToday, incrementDailySwipeCount, syncSubscriptionFromBackend } from './src/storage.js';
 import { renderMap } from './src/maps.js';
 import { mountSwipeDeck, programmaticSwipe } from './src/swipe-deck.js';
 import { notify, maybePromptOnce } from './src/notify.js';
-import { canSwipeToday, incrementDailySwipeCount, syncSubscriptionFromBackend } from './src/storage.js';
 import { openLimitModal } from './src/subscription.js';
 
 maybePromptOnce();
@@ -183,10 +182,11 @@ function showInterestToast() {
 async function recordSwipe(property_id, direction) {
   if (!getUserId()) return { isMatch: false, interestSent: direction === 'right' || direction === 'up' };
   try {
+    const s = getSettings();
     const res = await fetch(`${API_BASE}/api/swipe`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ property_id, direction }),
+      body: JSON.stringify({ property_id, direction, demoMode: !!s.demoMode }),
     });
     if (res.status === 401) {
       window.location.href = '/';
