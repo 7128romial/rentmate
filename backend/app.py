@@ -1020,6 +1020,59 @@ def get_property_interests(prop_id):
         })
     return jsonify(grouped)
 
+@app.route('/api/matches', methods=['GET'])
+@require_auth
+def get_user_matches():
+    """Matches the current user (renter side) has — landlord-approved
+    swipes that need to surface in their inbox even though the renter
+    never gets a websocket push when approval happens."""
+    user_id = g.user_id
+    matches = (
+        models.Match.query
+        .filter_by(user_id=user_id)
+        .order_by(models.Match.created_at.desc())
+        .all()
+    )
+
+    result = []
+    for m in matches:
+        p = db.session.get(models.Property, m.property_id)
+        if not p:
+            continue
+
+        unread = (
+            models.DirectMessage.query
+            .filter_by(receiver_id=user_id, property_id=m.property_id, read_at=None)
+            .count()
+        )
+        last_msg = (
+            models.DirectMessage.query
+            .filter_by(property_id=m.property_id)
+            .filter(db.or_(
+                models.DirectMessage.sender_id == user_id,
+                models.DirectMessage.receiver_id == user_id,
+            ))
+            .order_by(models.DirectMessage.created_at.desc())
+            .first()
+        )
+
+        result.append({
+            'id': p.id,
+            'title': p.title,
+            'price': p.price_label or f"₪{p.price_max or p.price_min or 0}/חודש",
+            'image': p.image,
+            'address': p.address or p.location,
+            'tags': p.tags.split(',') if p.tags else [],
+            'rooms': p.rooms,
+            'area': p.area,
+            'matchedAt': m.created_at.isoformat() if m.created_at else None,
+            'unreadCount': unread,
+            'lastMessage': last_msg.content if last_msg else None,
+            'lastMessageAt': last_msg.created_at.isoformat() if last_msg else None,
+        })
+    return jsonify(result)
+
+
 @app.route('/api/lease/generate', methods=['POST'])
 @require_auth
 def generate_lease():
@@ -1559,7 +1612,16 @@ def handle_join_chat(data):
             models.DirectMessage.receiver_id == renter_id
         )
     ).order_by(models.DirectMessage.created_at).all()
-    
+
+    # Mark every unread message addressed to the viewer as read now that
+    # they've opened the chat. Bulk update via the ORM session.
+    now = datetime.datetime.utcnow()
+    unread_for_viewer = [m for m in messages if m.receiver_id == user_id and m.read_at is None]
+    for m in unread_for_viewer:
+        m.read_at = now
+    if unread_for_viewer:
+        db.session.commit()
+
     history = []
     for m in messages:
         history.append({
@@ -1568,7 +1630,7 @@ def handle_join_chat(data):
             'content': m.content,
             'ts': m.created_at.isoformat()
         })
-        
+
     emit('chat_history', {'messages': history})
 
 @socketio.on('send_message')

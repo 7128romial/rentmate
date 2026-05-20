@@ -2439,6 +2439,40 @@ h1, h2, h3 {
 .match-card:active {
   transform: translateY(0);
 }
+.match-card.has-unread {
+  border-color: var(--accent-color, #ff6b6b);
+  box-shadow: 0 0 0 1px var(--accent-color, #ff6b6b), var(--shadow-sm);
+}
+.match-card .unread-badge {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: var(--accent-color, #ff6b6b);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.match-card .msg-preview {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted, #777);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.match-card.has-unread .msg-preview {
+  color: var(--text-main);
+  font-weight: 600;
+}
 .match-card .thumb {
   flex: 0 0 92px;
   width: 92px;

@@ -84,6 +84,47 @@ export function getMatch(id) {
   return getMatches().find((m) => String(m.id) === String(id)) || null;
 }
 
+// Pulls the canonical match list from the backend (landlord-approved
+// matches live there, not in localStorage) and merges into local cache.
+// Server fields win on conflict; local-only matches are kept so demo
+// mode and any in-flight state aren't lost.
+export async function syncMatchesFromBackend() {
+  const { API_BASE, getToken } = await import('./config.js');
+  const token = getToken();
+  if (!token) return getMatches();
+
+  try {
+    const res = await fetch(`${API_BASE}/api/matches`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return getMatches();
+    const serverMatches = await res.json();
+    if (!Array.isArray(serverMatches)) return getMatches();
+
+    const local = getMatches();
+    const byId = new Map();
+    local.forEach((m) => {
+      if (m && m.id != null) byId.set(String(m.id), m);
+    });
+    serverMatches.forEach((m) => {
+      if (!m || m.id == null) return;
+      const key = String(m.id);
+      const existing = byId.get(key) || {};
+      byId.set(key, {
+        ...existing,
+        ...m,
+        matchedAt: m.matchedAt || existing.matchedAt || new Date().toISOString(),
+      });
+    });
+    const merged = Array.from(byId.values());
+    writeJSON(MATCHES_KEY, merged);
+    return merged;
+  } catch (e) {
+    console.error('syncMatchesFromBackend failed', e);
+    return getMatches();
+  }
+}
+
 // --- Role ---
 
 export function getRole() {

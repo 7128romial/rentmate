@@ -1,5 +1,5 @@
 import { renderBottomNav } from './src/nav.js';
-import { getMatches, removeMatch } from './src/storage.js';
+import { getMatches, removeMatch, syncMatchesFromBackend } from './src/storage.js';
 
 renderBottomNav('matches');
 
@@ -169,6 +169,24 @@ function renderRows(matches) {
     body.appendChild(price);
     body.appendChild(meta);
 
+    const lastMsg = property.lastMessage;
+    if (lastMsg) {
+      const preview = document.createElement('div');
+      preview.className = 'msg-preview';
+      preview.textContent = lastMsg.length > 60 ? lastMsg.slice(0, 60) + '…' : lastMsg;
+      body.appendChild(preview);
+    }
+
+    const unread = Number(property.unreadCount) || 0;
+    if (unread > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'unread-badge';
+      badge.textContent = unread > 99 ? '99+' : String(unread);
+      badge.title = `${unread} הודעות חדשות`;
+      card.appendChild(badge);
+      card.classList.add('has-unread');
+    }
+
     const remove = document.createElement('button');
     remove.className = 'remove';
     remove.type = 'button';
@@ -240,3 +258,10 @@ sortSelect.addEventListener('change', () => {
 });
 
 render();
+
+// Background sync from the server: landlord-approved matches and any
+// unread messages aren't in localStorage until we fetch them.
+(async () => {
+  await syncMatchesFromBackend();
+  render();
+})();
