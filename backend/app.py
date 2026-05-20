@@ -1,14 +1,3 @@
-# eventlet must monkey-patch the stdlib before anything else loads so
-# that DB queries and socket I/O cooperate inside the same event loop.
-# gunicorn -k eventlet already does this at startup, but local runs
-# (`python app.py`) need to trigger it explicitly here. Silently no-op
-# if eventlet is missing — production has it pinned in requirements.
-try:
-    import eventlet  # noqa: E402
-    eventlet.monkey_patch()
-except ImportError:
-    pass
-
 import ast
 import datetime
 import json
