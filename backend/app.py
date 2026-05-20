@@ -881,6 +881,13 @@ def swipe():
             .first()
         )
         is_match = existing_match is not None
+        
+        # DEMO MODE: Auto-approve matches so the user can test the UI!
+        if not is_match:
+            is_match = True
+            match = models.Match(property_id=property_id, user_id=user_id)
+            db.session.add(match)
+            interest.status = 'approved'
 
     db.session.commit()
     return jsonify({'success': True, 'interestSent': direction in ('right', 'up'), 'isMatch': is_match})
