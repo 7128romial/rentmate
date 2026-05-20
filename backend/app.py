@@ -121,6 +121,26 @@ def _ensure_user_subscription_columns():
         print(f"Schema inspection failed: {e}")
 
 
+def _ensure_direct_message_read_at_column():
+    """Add direct_message.read_at if missing. Without this, the
+    matches endpoint blows up on Render where the older schema is
+    still in place after a deploy."""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(db.engine)
+        if 'direct_message' not in inspector.get_table_names():
+            return
+        cols = {c['name'] for c in inspector.get_columns('direct_message')}
+        if 'read_at' in cols:
+            return
+        sql = "ALTER TABLE direct_message ADD COLUMN read_at TIMESTAMP NULL"
+        with db.engine.begin() as conn:
+            conn.execute(text(sql))
+        print(f"Schema migration applied: {sql}")
+    except Exception as e:
+        print(f"direct_message.read_at migration failed: {e}")
+
+
 with app.app_context():
     try:
         # First, just make sure base tables exist.
@@ -140,6 +160,7 @@ with app.app_context():
     # Idempotent migration for the newly-added subscription columns. Avoids
     # the drop-everything path that would invalidate existing tokens.
     _ensure_user_subscription_columns()
+    _ensure_direct_message_read_at_column()
 
 signer = URLSafeTimedSerializer(SECRET_KEY, salt='rentmate-auth')
 
