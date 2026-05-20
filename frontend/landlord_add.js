@@ -240,6 +240,29 @@ function appendMessage(role, text, opts = {}) {
   return div;
 }
 
+let publishCtaShown = false;
+function showPublishCta() {
+  if (publishCtaShown) return;
+  publishCtaShown = true;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'ai-msg assistant ai-publish-cta';
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-primary';
+  btn.textContent = 'פרסמי עכשיו';
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    btn.textContent = 'מפרסמת…';
+    form.requestSubmit();
+  });
+
+  wrap.appendChild(btn);
+  aiLog.appendChild(wrap);
+  aiLog.scrollTop = aiLog.scrollHeight;
+}
+
 aiForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = aiInput.value.trim();
@@ -270,10 +293,14 @@ aiForm.addEventListener('submit', async (e) => {
     applyExtracted(data.extracted);
 
     const reply = data.next_question
-      || (data.ready ? 'מצוין, הטופס מוכן! אפשר ללחוץ "פרסם דירה".' : 'תוכלי להוסיף עוד פרטים?');
+      || (data.ready ? 'מצוין, הטופס מוכן! לחצי על הכפתור למטה כדי לפרסם.' : 'תוכלי להוסיף עוד פרטים?');
     thinking.classList.remove('thinking');
     thinking.textContent = reply;
     aiHistory.push({ role: 'assistant', content: reply });
+
+    if (data.ready) {
+      showPublishCta();
+    }
   } catch (err) {
     thinking.classList.remove('thinking');
     thinking.textContent = 'אין חיבור לשרת כרגע. תוכלי למלא ידנית או לנסות שוב.';

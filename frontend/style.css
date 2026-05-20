@@ -2816,6 +2816,21 @@ h1, h2, h3 {
   color: var(--text-muted);
   font-style: italic;
 }
+.ai-msg.ai-publish-cta {
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+}
+.ai-msg.ai-publish-cta .btn-primary {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ai-msg.ai-publish-cta .btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
 .ai-assist-input-row {
   display: flex;
   gap: 8px;
