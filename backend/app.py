@@ -567,7 +567,7 @@ def get_properties():
         if city_conditions:
             query = query.filter(db.or_(*city_conditions))
 
-    props = query.limit(20).all()
+    props = query.order_by(models.Property.created_at.desc()).limit(20).all()
 
     result = []
     for p in props:
