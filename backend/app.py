@@ -470,6 +470,24 @@ def get_properties():
         'באר-שבע': 'Beer Sheva'
     }
 
+    # Reverse map: English city -> list of Hebrew variants. Lets the
+    # search match listings whose location/address is stored in Hebrew
+    # (typical for landlord-added listings) when the query is English,
+    # and vice versa.
+    REVERSE_CITY_MAPPING = {}
+    for he, en in CITY_MAPPING.items():
+        REVERSE_CITY_MAPPING.setdefault(en, []).append(he)
+
+    def city_search_variants(name):
+        """All spellings to search for, given a user-typed/profile city."""
+        if not name:
+            return []
+        variants = {name}
+        english = CITY_MAPPING.get(name, name)
+        variants.add(english)
+        variants.update(REVERSE_CITY_MAPPING.get(english, []))
+        return [v for v in variants if v]
+
     city = profile.city if profile and profile.city else None
     english_city = CITY_MAPPING.get(city, city) if city else None
     
@@ -524,16 +542,30 @@ def get_properties():
         if raw_areas:
             area_conditions = []
             for a in raw_areas:
-                search_city = CITY_MAPPING.get(a, a)
-                search_pattern = f"%{search_city}%"
-                area_conditions.append(db.or_(
-                    models.Property.location.ilike(search_pattern),
-                    models.Property.address.ilike(search_pattern),
-                    models.Property.title.ilike(search_pattern)
-                ))
-            query = query.filter(db.or_(*area_conditions))
+                for variant in city_search_variants(a):
+                    search_pattern = f"%{variant}%"
+                    area_conditions.append(db.or_(
+                        models.Property.location.ilike(search_pattern),
+                        models.Property.address.ilike(search_pattern),
+                        models.Property.title.ilike(search_pattern)
+                    ))
+            if area_conditions:
+                query = query.filter(db.or_(*area_conditions))
     elif english_city:
-        query = query.filter_by(location=english_city)
+        # Match either the English city or its Hebrew variants across
+        # location/address/title — landlord-added listings often store
+        # the full Hebrew address in `location`, so exact equality on
+        # the English city name silently drops them.
+        city_conditions = []
+        for variant in city_search_variants(city):
+            search_pattern = f"%{variant}%"
+            city_conditions.append(db.or_(
+                models.Property.location.ilike(search_pattern),
+                models.Property.address.ilike(search_pattern),
+                models.Property.title.ilike(search_pattern)
+            ))
+        if city_conditions:
+            query = query.filter(db.or_(*city_conditions))
 
     props = query.limit(20).all()
 
