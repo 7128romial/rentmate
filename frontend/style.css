@@ -290,6 +290,14 @@ h1, h2, h3 {
 .header-action-btn:active {
   transform: scale(0.96);
 }
+.header-action-btn.danger {
+  color: #FD5068;
+  border-color: rgba(253, 80, 104, 0.25);
+}
+.header-action-btn.danger:hover {
+  background: rgba(253, 80, 104, 0.08);
+  border-color: rgba(253, 80, 104, 0.45);
+}
 
 .schedule-card {
   background: white;

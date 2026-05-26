@@ -5,6 +5,7 @@ import {
   getRole,
   getUserProperties,
   rejectRenter,
+  removeUserProperty,
   undoRenterDecision,
 } from './src/storage.js';
 
@@ -36,6 +37,33 @@ function initPage(property) {
   if (editBtn && /^\d+$/.test(String(propertyId))) {
     editBtn.href = `/landlord_add.html?id=${encodeURIComponent(propertyId)}`;
     editBtn.style.display = 'inline-flex';
+  }
+
+  const deleteBtn = document.getElementById('delete-property-btn');
+  if (deleteBtn && /^\d+$/.test(String(propertyId))) {
+    deleteBtn.style.display = 'inline-flex';
+    deleteBtn.addEventListener('click', async () => {
+      const confirmed = window.confirm(
+        `למחוק את הדירה "${property.title}"? פעולה זו תמחק גם את כל המתעניינים וההודעות הקשורות אליה, ולא ניתן לשחזר.`
+      );
+      if (!confirmed) return;
+      deleteBtn.disabled = true;
+      const originalText = deleteBtn.textContent;
+      deleteBtn.textContent = 'מוחק…';
+      const result = await removeUserProperty(propertyId);
+      if (!result.ok) {
+        if (result.status === 401) {
+          alert('פג תוקף ההתחברות. נא להתחבר מחדש.');
+          window.location.href = '/';
+          return;
+        }
+        alert(`לא הצלחנו למחוק את הדירה: ${result.error || 'שגיאה לא ידועה'}`);
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = originalText;
+        return;
+      }
+      window.location.href = '/landlord.html';
+    });
   }
 
   const list = document.getElementById('renter-list');

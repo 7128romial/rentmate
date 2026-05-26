@@ -816,6 +816,24 @@ def update_property(prop_id):
     return jsonify({'success': True, 'id': prop.id})
 
 
+@app.route('/api/landlord/properties/<int:prop_id>', methods=['DELETE'])
+@require_auth
+def delete_property(prop_id):
+    user_id = g.user_id
+    prop = db.session.get(models.Property, prop_id)
+    if not prop or prop.owner_id != user_id:
+        return jsonify({'error': 'Not found or unauthorized'}), 404
+
+    models.DirectMessage.query.filter_by(property_id=prop_id).delete(synchronize_session=False)
+    models.PropertyInterest.query.filter_by(property_id=prop_id).delete(synchronize_session=False)
+    models.Match.query.filter_by(property_id=prop_id).delete(synchronize_session=False)
+    models.Swipe.query.filter_by(property_id=prop_id).delete(synchronize_session=False)
+
+    db.session.delete(prop)
+    db.session.commit()
+    return jsonify({'success': True, 'id': prop_id})
+
+
 SUBSCRIPTION_PRICE_NIS = 29
 SUBSCRIPTION_PERIOD_DAYS = 30
 

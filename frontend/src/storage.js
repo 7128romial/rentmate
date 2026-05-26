@@ -279,10 +279,26 @@ export async function setUserPropertyStatus(id, status) {
   }
 }
 
-export function removeUserProperty(id) {
-  const list = getUserProperties().filter((p) => String(p.id) !== String(id));
-  writeJSON(USER_PROPERTIES_KEY, list);
-  return list;
+export async function removeUserProperty(id) {
+  if (!id) return { ok: false, error: 'No id' };
+  try {
+    const { API_BASE, authHeaders } = await import('./config.js');
+    const res = await fetch(`${API_BASE}/api/landlord/properties/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (res.ok) return { ok: true };
+    if (res.status === 401) return { ok: false, status: 401, error: 'Unauthorized' };
+    let errMsg = `שגיאה ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body && body.error) errMsg = body.error;
+    } catch (e) { /* ignore */ }
+    return { ok: false, status: res.status, error: errMsg };
+  } catch (e) {
+    console.error(e);
+    return { ok: false, error: 'שגיאת תקשורת' };
+  }
 }
 
 
