@@ -2127,7 +2127,7 @@ h1, h2, h3 {
   box-shadow: var(--shadow-sm);
 }
 .settings-section h2 {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--text-muted);
   letter-spacing: 0.04em;
@@ -2143,12 +2143,12 @@ h1, h2, h3 {
 }
 .settings-text { display: flex; flex-direction: column; gap: 2px; }
 .settings-text strong {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-main);
 }
 .settings-text span {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--text-muted);
   line-height: 1.4;
@@ -2171,7 +2171,7 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-main);
   padding: 10px 14px;
