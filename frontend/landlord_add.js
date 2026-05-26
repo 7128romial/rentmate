@@ -38,14 +38,11 @@ function listFromTextarea(value) {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const priceMin = getInt('p-price-min', 0);
-  const priceMax = getInt('p-price-max', 0);
-  const lo = Math.min(priceMin, priceMax);
-  const hi = Math.max(priceMin, priceMax);
+  const price = getInt('p-price', 0);
+  const lo = price;
+  const hi = price;
 
-  const priceLabel = lo === hi
-    ? `₪${lo.toLocaleString('he-IL')}/חודש`
-    : `₪${lo.toLocaleString('he-IL')}–${hi.toLocaleString('he-IL')}/חודש`;
+  const priceLabel = `₪${price.toLocaleString('he-IL')}/חודש`;
 
   const fileInput = document.getElementById('p-image');
   let imageUrl = fileInput.dataset.uploadedUrl || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80';
@@ -96,8 +93,8 @@ form.addEventListener('submit', async (e) => {
     status: 'available',
   };
 
-  if (!property.title || !lo || !hi || !property.address) {
-    alert('יש למלא כותרת, טווח מחיר וכתובת.');
+  if (!property.title || !price || !property.address) {
+    alert('יש למלא כותרת, מחיר וכתובת.');
     return;
   }
 
@@ -187,8 +184,7 @@ fileInputEl.addEventListener('change', async (e) => {
 
 const FIELD_MAP = {
   title: 'p-title',
-  price_min: 'p-price-min',
-  price_max: 'p-price-max',
+  price: 'p-price',
   address: 'p-address',
   rooms: 'p-rooms',
   area: 'p-area',
@@ -263,6 +259,16 @@ function showPublishCta() {
   aiLog.scrollTop = aiLog.scrollHeight;
 }
 
+// Whether the form has enough info to submit. Mirrors the validation
+// inside the form submit handler so we surface the CTA exactly when a
+// click would succeed.
+function formIsPublishable() {
+  const title = (document.getElementById('p-title').value || '').trim();
+  const address = (document.getElementById('p-address').value || '').trim();
+  const price = parseInt(document.getElementById('p-price').value, 10);
+  return !!(title && address && Number.isFinite(price) && price > 0);
+}
+
 aiForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = aiInput.value.trim();
@@ -298,7 +304,7 @@ aiForm.addEventListener('submit', async (e) => {
     thinking.textContent = reply;
     aiHistory.push({ role: 'assistant', content: reply });
 
-    if (data.ready) {
+    if (data.ready || formIsPublishable()) {
       showPublishCta();
     }
   } catch (err) {
@@ -327,8 +333,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       const prop = await res.json();
       const set = (id, v) => { if (v !== undefined && v !== null && v !== '') setFieldValue(id, String(v)); };
       set('p-title', prop.title);
-      set('p-price-min', prop.priceMin ?? prop.price_min);
-      set('p-price-max', prop.priceMax ?? prop.price_max);
+      const existingPrice = prop.priceMin ?? prop.price_min ?? prop.priceMax ?? prop.price_max;
+      set('p-price', existingPrice);
       set('p-address', prop.address || prop.location);
       set('p-rooms', prop.rooms);
       set('p-area', prop.area);
@@ -358,9 +364,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (data.profile.city && !document.getElementById('p-address').value) {
           setFieldValue('p-address', data.profile.city);
         }
-        if (data.profile.budget && !document.getElementById('p-price-max').value) {
-          setFieldValue('p-price-max', String(data.profile.budget));
-          setFieldValue('p-price-min', String(Math.max(0, data.profile.budget - 500)));
+        if (data.profile.budget && !document.getElementById('p-price').value) {
+          setFieldValue('p-price', String(data.profile.budget));
         }
         if (data.profile.extras && !document.getElementById('p-amenities').value) {
           setFieldValue('p-amenities', data.profile.extras.split(',').join('\n'));
