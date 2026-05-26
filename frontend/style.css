@@ -2879,15 +2879,16 @@ h1, h2, h3 {
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 7px;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 1px solid currentColor;
   font-family: inherit;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .status-badge::before {
   content: '';
@@ -2896,9 +2897,25 @@ h1, h2, h3 {
   border-radius: 50%;
   background: currentColor;
 }
+.status-badge::after {
+  content: '▾';
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.75;
+  margin-inline-start: 2px;
+  transition: transform 0.15s ease;
+}
 .status-badge:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  filter: brightness(0.97);
+}
+.status-badge:hover::after {
+  transform: translateY(1px);
+}
+.status-badge:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 .status-badge.available { background: #E8F8EE; color: #0E7A3A; }
 .status-badge.rented { background: #E5F0FF; color: #1F5DB5; }
@@ -2937,3 +2954,10 @@ h1, h2, h3 {
   font-weight: 700;
   color: #FF385C;
 }
+.status-menu .status-badge {
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+.status-menu .status-badge::after { display: none; }
