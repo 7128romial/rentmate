@@ -1,5 +1,5 @@
 import { renderMap } from './src/maps.js';
-import { getMatch, getMatches, getRole, getProfile, getChatMessages, addChatMessage } from './src/storage.js';
+import { getMatch, getMatches, getRole, getProfile, getChatMessages, addChatMessage, setUserPropertyStatus } from './src/storage.js';
 import { API_BASE, getToken, getUserId } from './src/config.js';
 import { notify, maybePromptOnce } from './src/notify.js';
 
@@ -326,6 +326,35 @@ if (ctx.isP2P || ctx.location) {
     printWindow.focus();
     printWindow.print();
   });
+
+  const btnMarkSigned = document.getElementById('mark-signed');
+  const propId = params.get('id');
+  if (btnMarkSigned && getRole() === 'landlord' && propId && /^\d+$/.test(String(propId))) {
+    btnMarkSigned.style.display = 'inline-block';
+    btnMarkSigned.addEventListener('click', async () => {
+      const confirmed = window.confirm(
+        'לסמן את הדירה כמושכרת? הדירה תוסתר מההצעות לשוכרים חדשים. אפשר לשנות זאת בכל עת מהדשבורד.'
+      );
+      if (!confirmed) return;
+      btnMarkSigned.disabled = true;
+      const originalText = btnMarkSigned.textContent;
+      btnMarkSigned.textContent = 'מעדכן…';
+      try {
+        await setUserPropertyStatus(propId, 'rented');
+        btnMarkSigned.textContent = '✓ הדירה סומנה כמושכרת';
+        setTimeout(() => {
+          leaseModal.style.display = 'none';
+          btnMarkSigned.disabled = false;
+          btnMarkSigned.textContent = originalText;
+        }, 1600);
+      } catch (e) {
+        console.error(e);
+        alert('לא הצלחנו לעדכן את הסטטוס. נסי שוב.');
+        btnMarkSigned.disabled = false;
+        btnMarkSigned.textContent = originalText;
+      }
+    });
+  }
 
   const btnScheduleMeeting = document.getElementById('btn-schedule-meeting');
   const scheduleModal = document.getElementById('schedule-modal');
