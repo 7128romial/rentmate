@@ -1490,8 +1490,7 @@ PROPERTY_EXTRACTION_TOOL = {
                     "description": "Property fields extracted from the conversation. Omit fields you have no info for.",
                     "properties": {
                         "title": {"type": "string", "description": "Short Hebrew listing title, e.g. 'דירת 3 חדרים בלב רוטשילד'."},
-                        "price_min": {"type": "integer", "description": "Minimum monthly rent in NIS."},
-                        "price_max": {"type": "integer", "description": "Maximum monthly rent in NIS."},
+                        "price": {"type": "integer", "description": "Monthly rent in NIS. A single number, not a range."},
                         "address": {"type": "string", "description": "Street address including city if known."},
                         "rooms": {"type": "number", "description": "Number of rooms (allow halves like 2.5)."},
                         "area": {"type": "integer", "description": "Apartment area in square meters."},
@@ -1510,7 +1509,7 @@ PROPERTY_EXTRACTION_TOOL = {
                 },
                 "ready": {
                     "type": "boolean",
-                    "description": "True when title, address, price_min and price_max are all populated."
+                    "description": "True when title, address and price are all populated."
                 }
             },
             "required": ["extracted", "next_question", "ready"],
@@ -1549,12 +1548,16 @@ def extract_property():
         'role': 'system',
         'content': (
             "אתה עוזר חכם של RentMate שעוזר למשכיר להוסיף דירה. דבר עברית, קצר וידידותי. "
-            "אסוף בהדרגה את הפרטים: כותרת, כתובת, טווח מחיר חודשי (מינימום ומקסימום), "
+            "אסוף בהדרגה את הפרטים על הדירה בלבד: כותרת, כתובת, מחיר חודשי (מספר אחד), "
             "חדרים, גודל במ\"ר, קומה, תאריך פינוי, תיאור, ותגיות/מאפיינים. "
+            "חשוב מאוד: שאל אך ורק שאלות שקשורות לדירה עצמה ולמאפייניה. "
+            "אל תשאל על המשכיר, על השוכר, על העדפות אישיות, על תקציב אישי, על מקום עבודה, על משפחה, "
+            "על סיבת ההשכרה, או על כל נושא שאינו תכונה של הדירה הנוכחית. "
+            "אם המשתמש מנסה לדבר על נושא אחר, החזר אותו בעדינות לשאלה הבאה על הדירה. "
             "בכל תגובה — קרא תמיד לכלי fill_property_form: בשדה extracted שים רק שדות שהמשתמש הזכיר במפורש; "
-            "ב-next_question שאל שאלה אחת קצרה על השדה החשוב הבא שחסר; "
-            "סמן ready=true רק כשכותרת, כתובת, price_min ו-price_max מולאו. "
-            "אל תמציא ערכים. אם המשתמש נתן מחיר אחד (\"6500\"), הצב אותו גם ב-price_min וגם ב-price_max."
+            "ב-next_question שאל שאלה אחת קצרה על השדה החשוב הבא שחסר על הדירה; "
+            "סמן ready=true רק כשכותרת, כתובת ו-price מולאו. "
+            "אל תמציא ערכים. המחיר הוא מספר אחד בלבד (לא טווח). אם המשתמש נותן טווח, בקש ממנו לבחור מחיר אחד."
         )
     }
     messages = [system_msg] + safe_messages
