@@ -210,6 +210,12 @@ function applyExtracted(extracted) {
     setFieldValue(elId, String(extracted[key]));
   }
 
+  if ((extracted.price === undefined || extracted.price === null || extracted.price === '')
+      && (extracted.price_max || extracted.price_min)) {
+    const legacyPrice = extracted.price_max || extracted.price_min;
+    setFieldValue('p-price', String(legacyPrice));
+  }
+
   if (Array.isArray(extracted.tags) && extracted.tags.length) {
     setFieldValue('p-tags', extracted.tags.join(', '));
   }
@@ -255,6 +261,14 @@ function formIsPublishable() {
   const price = parseInt(document.getElementById('p-price').value, 10);
   return !!(title && address && Number.isFinite(price) && price > 0);
 }
+
+['p-title', 'p-address', 'p-price'].forEach((id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('change', () => {
+    if (formIsPublishable()) autoPublish();
+  });
+});
 
 aiForm.addEventListener('submit', async (e) => {
   e.preventDefault();
