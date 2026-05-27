@@ -236,27 +236,14 @@ function appendMessage(role, text, opts = {}) {
   return div;
 }
 
-let publishCtaShown = false;
-function showPublishCta() {
-  if (publishCtaShown) return;
-  publishCtaShown = true;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'ai-msg assistant ai-publish-cta';
-
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'btn-primary';
-  btn.textContent = 'פרסמי עכשיו';
-  btn.addEventListener('click', () => {
-    btn.disabled = true;
-    btn.textContent = 'מפרסמת…';
-    form.requestSubmit();
-  });
-
-  wrap.appendChild(btn);
-  aiLog.appendChild(wrap);
-  aiLog.scrollTop = aiLog.scrollHeight;
+let autoPublished = false;
+function autoPublish() {
+  if (autoPublished) return;
+  if (isEdit) return;
+  if (!formIsPublishable()) return;
+  autoPublished = true;
+  appendMessage('assistant', 'מעולה, יש לי את כל הפרטים! מפרסמת את הדירה ומעבירה אותך לדשבורד…');
+  form.requestSubmit();
 }
 
 // Whether the form has enough info to submit. Mirrors the validation
@@ -305,7 +292,7 @@ aiForm.addEventListener('submit', async (e) => {
     aiHistory.push({ role: 'assistant', content: reply });
 
     if (data.ready || formIsPublishable()) {
-      showPublishCta();
+      autoPublish();
     }
   } catch (err) {
     thinking.classList.remove('thinking');
