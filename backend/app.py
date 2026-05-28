@@ -49,12 +49,15 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- Config ---
 basedir = os.path.abspath(os.path.dirname(__file__))
-database_url = os.environ.get(
-    'DATABASE_URL', 'sqlite:///' + os.path.join(basedir, 'rentmate_v3.db')
-)
+_db_url_from_env = os.environ.get('DATABASE_URL')
+database_url = _db_url_from_env or 'sqlite:///' + os.path.join(basedir, 'rentmate_v3.db')
 if database_url.startswith('postgres://'):
     database_url = 'postgresql://' + database_url[len('postgres://'):]
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+_db_kind = 'postgres' if database_url.startswith('postgresql') else ('sqlite' if database_url.startswith('sqlite') else 'other')
+_db_host = database_url.split('@', 1)[1].split('/', 1)[0] if '@' in database_url else '(local)'
+log.info('DB config: kind=%s host=%s DATABASE_URL_env_set=%s', _db_kind, _db_host, bool(_db_url_from_env))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 UPLOAD_FOLDER = os.path.join(basedir, 'uploads')

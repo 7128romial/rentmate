@@ -58,7 +58,9 @@ function clearError(form) {
 }
 
 function destinationFor(data) {
-  if (data && data.profile_complete) return '/swipe.html';
+  if (data && data.profile_complete) {
+    return data.role === 'landlord' ? '/landlord.html' : '/swipe.html';
+  }
   return '/onboarding.html';
 }
 
