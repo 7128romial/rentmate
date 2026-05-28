@@ -145,20 +145,12 @@ def _ensure_direct_message_read_at_column():
 
 
 with app.app_context():
-    try:
-        # First, just make sure base tables exist.
-        models.Property.query.first()
-    except Exception as e:
-        print(f"Schema mismatch detected on Property ({e}), recreating base tables.")
-        try:
-            db.session.rollback()
-        except Exception:
-            pass
-        try:
-            db.drop_all()
-        except Exception as drop_err:
-            print(f"drop_all skipped: {drop_err}")
-
+    # create_all() is idempotent — it creates missing tables but never
+    # drops existing ones. We intentionally do NOT drop_all on errors:
+    # silently wiping the DB on any schema hiccup destroyed real data
+    # in the past. If a true schema mismatch occurs, the app will fail
+    # loudly on the first query, which is the correct signal to write
+    # a proper migration.
     db.create_all()
     # Idempotent migration for the newly-added subscription columns. Avoids
     # the drop-everything path that would invalidate existing tokens.
@@ -686,6 +678,40 @@ def check_vibe(prop_id):
     except Exception as e:
         log.exception('Vibe check failed: %s', e)
         return jsonify({'vibe': 'האזור נראה מבטיח, אבל כרגע יש לי בעיה לגשת לנתונים. כדאי לבדוק שוב מאוחר יותר!'})
+
+@app.route('/api/admin/dump', methods=['GET'])
+def admin_dump():
+    """Temporary diagnostic endpoint. Returns users + properties + counts
+    so we can see whether properties are tied to a stale owner_id. Gate
+    with ?secret=<value of ADMIN_DEBUG_SECRET env var>. Remove once done."""
+    secret = request.args.get('secret', '')
+    expected = os.environ.get('ADMIN_DEBUG_SECRET', '')
+    if not expected or secret != expected:
+        return jsonify({'error': 'forbidden'}), 403
+    users = [
+        {'id': u.id, 'email': u.email, 'role': u.role}
+        for u in models.User.query.order_by(models.User.id).all()
+    ]
+    user_ids = {u['id'] for u in users}
+    properties = []
+    for p in models.Property.query.order_by(models.Property.id).all():
+        properties.append({
+            'id': p.id,
+            'title': p.title,
+            'owner_id': p.owner_id,
+            'status': p.status,
+            'orphan': p.owner_id is not None and p.owner_id not in user_ids,
+        })
+    return jsonify({
+        'users': users,
+        'properties': properties,
+        'counts': {
+            'users': len(users),
+            'properties': len(properties),
+            'orphan_properties': sum(1 for p in properties if p['orphan']),
+        },
+    })
+
 
 @app.route('/api/landlord/properties', methods=['GET'])
 @require_auth
