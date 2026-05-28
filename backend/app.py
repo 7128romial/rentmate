@@ -679,6 +679,94 @@ def check_vibe(prop_id):
         log.exception('Vibe check failed: %s', e)
         return jsonify({'vibe': 'האזור נראה מבטיח, אבל כרגע יש לי בעיה לגשת לנתונים. כדאי לבדוק שוב מאוחר יותר!'})
 
+@app.route('/api/admin/whoami', methods=['GET'])
+def admin_whoami():
+    """Look up a user by email and show their profile + filter diagnostics.
+    Usage: /api/admin/whoami?secret=X&email=user@example.com&city=Haifa"""
+    secret = request.args.get('secret', '')
+    expected = os.environ.get('ADMIN_DEBUG_SECRET', '')
+    if not expected or secret != expected:
+        return jsonify({'error': 'forbidden'}), 403
+    email = (request.args.get('email') or '').strip()
+    if not email:
+        return jsonify({'error': 'email required'}), 400
+    user = models.User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'user not found', 'email': email}), 404
+
+    profile = models.PreferenceProfile.query.filter_by(user_id=user.id).first()
+    profile_info = None
+    if profile:
+        profile_info = {
+            'city': profile.city,
+            'max_budget': profile.max_budget,
+            'name': profile.name,
+            'type': profile.type,
+        }
+
+    city = request.args.get('city', '').strip() or (profile.city if profile else None)
+
+    base = models.Property.query.filter(models.Property.status == 'available')
+    total_available = base.count()
+    not_mine = base.filter(models.Property.owner_id != user.id).count()
+    from sqlalchemy import func
+    apt_top = func.coalesce(models.Property.price_max, models.Property.price_min)
+    matches_budget = None
+    if profile and profile.max_budget:
+        matches_budget = base.filter(
+            models.Property.owner_id != user.id,
+            apt_top <= profile.max_budget,
+        ).count()
+
+    matches_city = None
+    if city:
+        pattern_he = f'%{city}%'
+        city_q = base.filter(
+            models.Property.owner_id != user.id,
+            db.or_(
+                models.Property.location.ilike(pattern_he),
+                models.Property.address.ilike(pattern_he),
+                models.Property.title.ilike(pattern_he),
+            ),
+        )
+        matches_city = city_q.count()
+        if profile and profile.max_budget:
+            matches_city_and_budget = city_q.filter(apt_top <= profile.max_budget).count()
+        else:
+            matches_city_and_budget = matches_city
+    else:
+        matches_city_and_budget = None
+
+    # Price distribution for properties in this city (or all if no city)
+    sample_q = base.filter(models.Property.owner_id != user.id)
+    if city:
+        pattern_he = f'%{city}%'
+        sample_q = sample_q.filter(db.or_(
+            models.Property.location.ilike(pattern_he),
+            models.Property.address.ilike(pattern_he),
+            models.Property.title.ilike(pattern_he),
+        ))
+    samples = sample_q.limit(10).all()
+    sample_data = [
+        {'id': p.id, 'title': p.title, 'price_min': p.price_min, 'price_max': p.price_max, 'location': p.location}
+        for p in samples
+    ]
+
+    return jsonify({
+        'user': {'id': user.id, 'email': user.email, 'role': user.role},
+        'profile': profile_info,
+        'city_filter': city,
+        'counts': {
+            'total_available_properties': total_available,
+            'not_owned_by_me': not_mine,
+            'within_my_budget': matches_budget,
+            'matches_city': matches_city,
+            'matches_city_and_budget': matches_city_and_budget,
+        },
+        'sample_properties_in_city': sample_data,
+    })
+
+
 @app.route('/api/admin/dump', methods=['GET'])
 def admin_dump():
     """Temporary diagnostic endpoint. Returns users + properties + counts
