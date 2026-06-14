@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RentMate – Architecture Diagrams</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --card: #21253a;
+    --border: #2e3348;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --accent4: #f7971e;
+    --text: #e2e8f0;
+    --muted: #8892a4;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #1a1d27 0%, #12162b 60%, #0f1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 48px;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(108,99,255,.18);
+    color: var(--accent);
+    border: 1px solid rgba(108,99,255,.4);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 4px 16px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -.03em;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .hero p { color: var(--muted); font-size: 1.05rem; max-width: 560px; margin: 0 auto; }
+
+  /* ── Layout ── */
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 32px 80px; }
+  .section { margin-top: 72px; }
+  .section-title {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 1.5rem; font-weight: 700;
+    margin-bottom: 28px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title .icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: grid; place-items: center; font-size: 18px;
+    background: rgba(108,99,255,.15);
+  }
+  .section-desc { color: var(--muted); margin-bottom: 32px; font-size: .95rem; max-width: 700px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  .card-title {
+    font-size: .8rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--accent); margin-bottom: 18px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media(max-width:900px) { .grid-2,.grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── Mermaid ── */
+  .mermaid-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    overflow-x: auto;
+  }
+  .mermaid { max-width: 100%; }
+
+  /* ── Infra boxes ── */
+  .infra-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .infra-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: border-color .2s;
+  }
+  .infra-box:hover { border-color: var(--accent); }
+  .infra-box .ib-icon { font-size: 2rem; margin-bottom: 10px; }
+  .infra-box .ib-name { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+  .infra-box .ib-desc { color: var(--muted); font-size: .8rem; }
+  .tag-pill {
+    display: inline-block;
+    background: rgba(108,99,255,.12);
+    color: #a89dff;
+    border: 1px solid rgba(108,99,255,.25);
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    margin: 2px;
+  }
+  .tag-pill.green { background: rgba(67,233,123,.1); color: #43e97b; border-color: rgba(67,233,123,.25); }
+  .tag-pill.orange { background: rgba(247,151,30,.1); color: var(--accent4); border-color: rgba(247,151,30,.25); }
+  .tag-pill.red { background: rgba(255,101,132,.1); color: var(--accent2); border-color: rgba(255,101,132,.25); }
+
+  /* ── API table ── */
+  .api-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .api-table th {
+    text-align: left; padding: 10px 14px;
+    background: rgba(108,99,255,.08);
+    color: var(--muted); font-size: .75rem;
+    text-transform: uppercase; letter-spacing: .08em;
+    border-bottom: 1px solid var(--border);
+  }
+  .api-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+  .api-table tr:last-child td { border-bottom: none; }
+  .method {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 6px;
+    font-size: .72rem; font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .GET  { background: rgba(67,233,123,.15); color: #43e97b; }
+  .POST { background: rgba(108,99,255,.15); color: #a89dff; }
+  .PUT  { background: rgba(247,151,30,.15); color: var(--accent4); }
+  .PATCH{ background: rgba(247,151,30,.12); color: var(--accent4); }
+  .DELETE { background: rgba(255,101,132,.15); color: var(--accent2); }
+  .WS { background: rgba(0,200,255,.15); color: #00c8ff; }
+
+  .route { font-family: monospace; color: #c9d6e3; font-size: .82rem; }
+
+  /* ── metrics ── */
+  .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .metric {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .metric .m-val { font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1; }
+  .metric .m-label { color: var(--muted); font-size: .8rem; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">Technical Architecture · Investment Pitch</div>
+  <h1>RentMate Platform</h1>
+  <p>AI-powered rental marketplace connecting renters &amp; landlords in Israel — infrastructure, database, and API deep-dive.</p>
+</div>
+
+<div class="container">
+
+  <!-- ── 0. At a Glance ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">⚡</span> Platform at a Glance</div>
+    <div class="metric-row">
+      <div class="metric"><div class="m-val">8</div><div class="m-label">Database tables</div></div>
+      <div class="metric"><div class="m-val">35+</div><div class="m-label">REST API endpoints</div></div>
+      <div class="metric"><div class="m-val">7</div><div class="m-label">AI-powered features</div></div>
+      <div class="metric"><div class="m-val">2</div><div class="m-label">User roles</div></div>
+      <div class="metric"><div class="m-val">11</div><div class="m-label">Frontend screens</div></div>
+      <div class="metric"><div class="m-val">Real-time</div><div class="m-label">WebSocket messaging</div></div>
+    </div>
+  </div>
+
+  <!-- ── 1. System Architecture ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🏗️</span> 1 · System Architecture</div>
+    <p class="section-desc">Full-stack overview: how the frontend, backend, database, and third-party services connect.</p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+graph TB
+    subgraph CLIENT["🌐 Client (Browser)"]
+        direction TB
+        FE["Vite / Vanilla JS<br/>11 screens · RTL Hebrew UI"]
+        SW["Swipe Deck<br/>Gesture Engine"]
+        LS["localStorage<br/>Offline Cache"]
+        FE --- SW
+        FE --- LS
+    end
+
+    subgraph RENDER["☁️ Render.com (Production)"]
+        direction TB
+        GW["HTTPS · CORS Gateway"]
+        subgraph BACKEND["🐍 Flask Backend  (Python 3)"]
+            REST["REST API<br/>35+ Endpoints"]
+            SOCK["Socket.IO<br/>WebSocket Server"]
+            AUTH["Auth Middleware<br/>Bearer Token"]
+            RL["Rate Limiter<br/>IP + User"]
+            REST --- AUTH
+            SOCK --- AUTH
+            REST --- RL
+        end
+        subgraph DB["🗄️ PostgreSQL (Managed)"]
+            TABLES["8 Tables:<br/>User · Property · Swipe<br/>Match · ChatMessage<br/>PropertyInterest<br/>DirectMessage<br/>PreferenceProfile"]
+        end
+        GW --> REST
+        GW --> SOCK
+        REST --> TABLES
+        SOCK --> TABLES
+    end
+
+    subgraph EXTERNAL["🔌 External Services"]
+        OAI["OpenAI API<br/>GPT-4o-mini + Vision"]
+        STRIPE["Stripe<br/>Payments (Pro tier)"]
+        GFONTS["Google Fonts<br/>Heebo · Jakarta Sans"]
+    end
+
+    FE -->|HTTPS REST + WS| GW
+    REST -->|Function calling<br/>Chat · Vision · Lease| OAI
+    REST -->|Payment intents| STRIPE
+    FE --> GFONTS
+
+    style CLIENT fill:#1e2235,stroke:#3b4068
+    style RENDER fill:#1a2535,stroke:#2e4d80
+    style BACKEND fill:#1d2b3a,stroke:#2e5080
+    style DB fill:#1d2635,stroke:#2e4570
+    style EXTERNAL fill:#1f2530,stroke:#2e4060
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. Infrastructure Stack ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🔧</span> 2 · Infrastructure Stack</div>
+    <p class="section-desc">Every layer of the technology stack with its role and deployment config.</p>
+
+    <div class="infra-grid">
+      <div class="infra-box">
+        <div class="ib-icon">⚡</div>
+        <div class="ib-name">Vite + Vanilla JS</div>
+        <div class="ib-desc">Zero-framework frontend. Fast builds, demo mode without backend.</div>
+        <br/><span class="tag-pill">ES Modules</span><span class="tag-pill">RTL / Hebrew</span>
+      </div>
+      <div class="infra-box">
+        <div class="ib-icon">🐍</div>
+        <div class="ib-name">Flask + Gunicorn</div>
+        <div class="ib-desc">Python REST API. 2 workers, 120s timeout, Socket.IO integrated.</div>
+        <br/><span class="tag-pill orange">Python 3</span><span class="tag-pill orange">SQLAlchemy ORM</span>
+      </div>
+      <div class="infra-box">
+        <div class="ib-icon">🗄️</div>
+        <div class="ib-name">PostgreSQL</div>
+        <div class="ib-desc">Managed on Render. SQLite locally. Auto-migration on startup.</div>
+        <br/><span class="tag-pill green">Managed DB</span><span class="tag-pill green">Auto-migrate</span>
+      </div>
+      <div class="infra-box">
+        <div class="ib-icon">🤖</div>
+        <div class="ib-name">OpenAI API</div>
+        <div class="ib-desc">gpt-4o-mini for chat, function calling &amp; lease gen; Vision for image analysis.</div>
+        <br/><span class="tag-pill">Chat</span><span class="tag-pill">Vision</span><span class="tag-pill">Function Calling</span>
+      </div>
+      <div class="infra-box">
+        <div class="ib-icon">⚡</div>
+        <div class="ib-name">Socket.IO</div>
+        <div class="ib-desc">Real-time P2P messaging. Rooms isolated per property+renter pair.</div>
+        <br/><span class="tag-pill">WebSocket</span><span class="tag-pill">Read Receipts</span>
+      </div>
+      <div class="infra-box">
+        <div class="ib-icon">💳</div>
+        <div class="ib-name">Stripe</div>
+        <div class="ib-desc">Payment intents for Pro subscription. Endpoints stubbed, ready to activate.</div>
+        <br/><span class="tag-pill red">Free → Pro</span>
+      </div>
+      <div class="infra-box">
+        <div class="ib-icon">☁️</div>
+        <div class="ib-name">Render.com</div>
+        <div class="ib-desc">Managed hosting: web service + PostgreSQL. Deploy via render.yaml.</div>
+        <br/><span class="tag-pill green">IaC</span><span class="tag-pill green">render.yaml</span>
+      </div>
+      <div class="infra-box">
+        <div class="ib-icon">🔐</div>
+        <div class="ib-name">Auth (itsdangerous)</div>
+        <div class="ib-desc">Stateless Bearer tokens, 7-day TTL, bcrypt hashed passwords.</div>
+        <br/><span class="tag-pill">JWT-style</span><span class="tag-pill">Rate limited</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. Database ERD ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🗃️</span> 3 · Database Schema (ERD)</div>
+    <p class="section-desc">All 8 tables, their key fields, and the relationships between them.</p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+erDiagram
+    User {
+        int id PK
+        string email UK
+        string password_hash
+        string role
+        string name
+        string subscription
+        datetime subscription_until
+        datetime created_at
+    }
+    PreferenceProfile {
+        int id PK
+        int user_id FK
+        string name
+        string city
+        float max_budget
+        string type
+        string extras
+    }
+    Property {
+        int id PK
+        int owner_id FK
+        string title
+        float price_min
+        float price_max
+        string price_label
+        string location
+        string address
+        string image
+        text tags
+        float rooms
+        float area
+        int floor
+        int total_floors
+        bool available
+        text description
+        json amenities
+        string status
+        datetime created_at
+    }
+    Swipe {
+        int id PK
+        int user_id FK
+        int property_id FK
+        string direction
+        datetime created_at
+    }
+    Match {
+        int id PK
+        int user_id FK
+        int property_id FK
+        datetime created_at
+    }
+    ChatMessage {
+        int id PK
+        int user_id FK
+        string role
+        text content
+        datetime created_at
+    }
+    PropertyInterest {
+        int id PK
+        int property_id FK
+        int renter_id FK
+        string status
+        datetime created_at
+    }
+    DirectMessage {
+        int id PK
+        int sender_id FK
+        int receiver_id FK
+        int property_id FK
+        text content
+        datetime created_at
+        datetime read_at
+    }
+
+    User ||--o| PreferenceProfile : "has"
+    User ||--o{ Property : "owns"
+    User ||--o{ Swipe : "makes"
+    User ||--o{ Match : "receives"
+    User ||--o{ ChatMessage : "exchanges"
+    User ||--o{ PropertyInterest : "renter"
+    User ||--o{ DirectMessage : "sends/receives"
+    Property ||--o{ Swipe : "receives"
+    Property ||--o{ Match : "part of"
+    Property ||--o{ PropertyInterest : "has"
+    Property ||--o{ DirectMessage : "context"
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. API Map ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📡</span> 4 · API Endpoint Map</div>
+    <p class="section-desc">All REST and WebSocket endpoints organised by feature domain.</p>
+
+    <!-- Auth -->
+    <div class="card">
+      <div class="card-title">Authentication &amp; Session</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/auth/register</span></td><td>Create account (email, password, role)</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/auth/login</span></td><td>Login → Bearer token + profile status</td></tr>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/profile</span></td><td>Fetch current user profile &amp; preferences</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/profile</span></td><td>Update name, city, budget, role, extras</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/reset</span></td><td>Clear chat history, swipes &amp; matches</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Property Discovery -->
+    <div class="card">
+      <div class="card-title">Property Discovery (Renter)</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/properties</span></td><td>Smart-filtered listing with AI match scores (75–99%)</td></tr>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/properties/:id/vibe</span></td><td>AI-generated neighbourhood vibe description</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/swipe</span></td><td>Record swipe (right/left/up) → creates PropertyInterest</td></tr>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/matches</span></td><td>Approved matches with unread message counts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Landlord -->
+    <div class="card">
+      <div class="card-title">Landlord Property Management</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/landlord/properties</span></td><td>List all properties owned by authenticated landlord</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/properties</span></td><td>Create new property listing</td></tr>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/landlord/properties/:id</span></td><td>Single property detail view</td></tr>
+          <tr><td><span class="method PUT">PUT</span></td><td><span class="route">/api/landlord/properties/:id</span></td><td>Full property update</td></tr>
+          <tr><td><span class="method PATCH">PATCH</span></td><td><span class="route">/api/landlord/properties/:id</span></td><td>Partial property update</td></tr>
+          <tr><td><span class="method DELETE">DELETE</span></td><td><span class="route">/api/landlord/properties/:id</span></td><td>Remove property</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/landlord/properties/:id/status</span></td><td>Set status: available / rented / off_market</td></tr>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/landlord/properties/:id/interests</span></td><td>All interested renters for a property</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/landlord/approve</span></td><td>Approve renter interest → creates Match</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/landlord/reject</span></td><td>Reject renter interest</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/landlord/reopen</span></td><td>Revert decision back to pending</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- AI Services -->
+    <div class="card">
+      <div class="card-title">AI-Powered Features (OpenAI)</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/chat</span></td><td>Conversational onboarding — extracts city, budget, role</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/chat/roleplay</span></td><td>Context-aware chatbot (landlord / tenant / roommate persona)</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/landlord/extract-property</span></td><td>AI form-filling via OpenAI function calling</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/analyze-property-image</span></td><td>Vision API → Hebrew description + tags from photo</td></tr>
+          <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/lease/generate</span></td><td>Generate lease agreement HTML (standard or roommate)</td></tr>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/roommates/compatibility/:id</span></td><td>AI compatibility score (0–100) between two users</td></tr>
+          <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/properties/:id/vibe</span></td><td>Neighbourhood lifestyle vibe (GPT-generated)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Media + Subscription + WebSocket -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Media &amp; Subscription</div>
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/upload</span></td><td>Upload property images</td></tr>
+            <tr><td><span class="method GET">GET</span></td><td><span class="route">/uploads/:name</span></td><td>Serve uploaded files</td></tr>
+            <tr><td><span class="method GET">GET</span></td><td><span class="route">/api/subscription</span></td><td>Current subscription status</td></tr>
+            <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/subscription/checkout</span></td><td>Stripe payment intent</td></tr>
+            <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/subscription/confirm</span></td><td>Activate Pro after payment</td></tr>
+            <tr><td><span class="method POST">POST</span></td><td><span class="route">/api/subscription/cancel</span></td><td>Cancel Pro subscription</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">WebSocket Events (Socket.IO)</div>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>Direction</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method WS">WS</span> <span class="route">join_chat</span></td><td>Client → Server</td><td>Join room, fetch history</td></tr>
+            <tr><td><span class="method WS">WS</span> <span class="route">send_message</span></td><td>Client → Server</td><td>Send P2P message</td></tr>
+            <tr><td><span class="method WS">WS</span> <span class="route">new_message</span></td><td>Server → Client</td><td>Broadcast to room</td></tr>
+            <tr><td><span class="method WS">WS</span> <span class="route">chat_history</span></td><td>Server → Client</td><td>Replay messages on join</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. User Flows ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🔄</span> 5 · User Journey Flows</div>
+    <p class="section-desc">End-to-end journeys for both user roles — from registration to active deal.</p>
+
+    <div class="grid-2">
+      <!-- Renter Flow -->
+      <div>
+        <div class="card-title" style="color:#43e97b;margin-bottom:16px;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;">Renter Journey</div>
+        <div class="mermaid-wrap">
+          <div class="mermaid">
+flowchart TD
+    R1(["👤 Register\n(role: renter)"])
+    R2["AI Onboarding Chat\n/api/chat\nextract city, budget, type"]
+    R3["Profile Saved\n/api/profile"]
+    R4["Browse Properties\n/api/properties\nwith match scores"]
+    R5{Swipe?}
+    R6["Swipe Right / Up\n/api/swipe\n→ PropertyInterest"]
+    R7["Swipe Left\n→ skip"]
+    R8{Limit hit?}
+    R9["Upgrade to Pro\n/api/subscription/checkout\n(Stripe)"]
+    R10["Wait for\nLandlord Decision"]
+    R11["Match Created ✓\n/api/matches"]
+    R12["Real-time Chat\nSocket.IO\njoin_chat / send_message"]
+    R13["Generate Lease\n/api/lease/generate"]
+
+    R1 --> R2 --> R3 --> R4 --> R5
+    R5 -->|right / up| R6 --> R8
+    R5 -->|left| R7 --> R4
+    R8 -->|Free: 2/day| R9 --> R4
+    R8 -->|Pro: unlimited| R10
+    R10 -->|approved| R11 --> R12 --> R13
+    R10 -->|rejected| R4
+
+    style R1 fill:#1e3a2f,stroke:#43e97b,color:#fff
+    style R11 fill:#1e3a2f,stroke:#43e97b,color:#fff
+    style R9 fill:#3a2a1a,stroke:#f7971e,color:#fff
+          </div>
+        </div>
+      </div>
+
+      <!-- Landlord Flow -->
+      <div>
+        <div class="card-title" style="color:#a89dff;margin-bottom:16px;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;">Landlord Journey</div>
+        <div class="mermaid-wrap">
+          <div class="mermaid">
+flowchart TD
+    L1(["🏠 Register\n(role: landlord)"])
+    L2["Landlord Dashboard\n/api/landlord/properties"]
+    L3["Add Property\n/api/properties"]
+    L4["AI Form Assist\n/api/landlord/extract-property\n(function calling)"]
+    L5["Upload Photo\n/api/upload\n+ /api/analyze-property-image\n(Vision API)"]
+    L6["Publish Listing\nstatus: available"]
+    L7["Renters Swipe Right\n→ PropertyInterest (pending)"]
+    L8["Review Inquiries\n/api/landlord/properties/:id/interests"]
+    L9{Decision}
+    L10["Approve\n/api/landlord/approve\n→ Match created"]
+    L11["Reject\n/api/landlord/reject"]
+    L12["Chat with Renter\nSocket.IO"]
+    L13["Generate Lease\n/api/lease/generate"]
+    L14["Mark as Rented\n/api/landlord/properties/:id/status"]
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7 --> L8 --> L9
+    L9 -->|approve| L10 --> L12 --> L13 --> L14
+    L9 -->|reject| L11 --> L8
+
+    style L1 fill:#1e1e3a,stroke:#a89dff,color:#fff
+    style L10 fill:#1e1e3a,stroke:#a89dff,color:#fff
+    style L14 fill:#1e2f1e,stroke:#43e97b,color:#fff
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. AI Features Map ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🤖</span> 6 · AI Feature Architecture</div>
+    <p class="section-desc">How OpenAI is woven across seven distinct product features.</p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+graph LR
+    OAI(["🤖 OpenAI API\ngpt-4o-mini"])
+
+    subgraph CHAT["Conversational"]
+        C1["Onboarding Chat\nExtracts profile via PROFILE_JSON\nfrom multi-turn conversation"]
+        C2["Roleplay Chatbot\nLandlord · Tenant · Roommate\npersonas in Hebrew"]
+    end
+    subgraph STRUCT["Structured Extraction"]
+        S1["Property Form AI\nFunction Calling\nExtracts title, price, rooms, amenities"]
+        S2["Roommate Compatibility\nJSON score 0–100\n+ Hebrew explanation"]
+    end
+    subgraph VISION["Vision & Media"]
+        V1["Image Analysis\nGPT-4V\nPhoto → Hebrew description + tags"]
+        V2["Neighbourhood Vibe\nArea lifestyle description\ncafés, transport, culture"]
+    end
+    subgraph DOCS["Document Generation"]
+        D1["Lease Generator\nHTML output\nStandard or Roommate agreement"]
+    end
+
+    OAI --> C1 & C2
+    OAI --> S1 & S2
+    OAI --> V1 & V2
+    OAI --> D1
+
+    style OAI fill:#1a2a3a,stroke:#6c63ff,color:#fff
+    style CHAT fill:#1e2235,stroke:#3b4068
+    style STRUCT fill:#1e2235,stroke:#3b4068
+    style VISION fill:#1e2235,stroke:#3b4068
+    style DOCS fill:#1e2235,stroke:#3b4068
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. Security & Rate Limiting ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🔐</span> 7 · Security &amp; Rate Limiting</div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">Authentication</div>
+        <ul style="color:var(--muted);font-size:.88rem;padding-left:18px;line-height:2">
+          <li>itsdangerous URLSafeTimedSerializer tokens</li>
+          <li>bcrypt password hashing</li>
+          <li>7-day token TTL (configurable)</li>
+          <li><code style="color:#a89dff">@require_auth</code> decorator on all private routes</li>
+          <li>CORS origin whitelist enforced in production</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Rate Limiting</div>
+        <ul style="color:var(--muted);font-size:.88rem;padding-left:18px;line-height:2">
+          <li>Login / register: 10 per IP / 15 min</li>
+          <li>Chat: 60 messages / user / hour</li>
+          <li>Chat interval: 2 seconds minimum</li>
+          <li>Message length: 2 000 chars max</li>
+          <li>Swipes: 2 / day (Free), unlimited (Pro)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Subscription Tiers</div>
+        <ul style="color:var(--muted);font-size:.88rem;padding-left:18px;line-height:2">
+          <li><span class="tag-pill">Free</span> 2 swipes / day</li>
+          <li><span class="tag-pill green">Pro</span> Unlimited swipes</li>
+          <li>Stripe payment integration (ready)</li>
+          <li>subscription_until enforced server-side</li>
+          <li>7-day trial period supported</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 8. Deployment Flow ── -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🚀</span> 8 · Deployment Pipeline</div>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+    DEV["🖥 Developer\nLocal machine"]
+    GIT["📦 Git Repository\nSource code"]
+    RENDER_BUILD["⚙️ Render Build\npip install\nnpm run build"]
+    BE_SVC["🐍 Backend Service\nFlask + Gunicorn\n2 workers · Port $PORT"]
+    FE_STATIC["🌐 Frontend\nVite static build\nVITE_API_BASE env var"]
+    PG["🗄️ PostgreSQL\nManaged by Render\nDATABASE_URL env"]
+    CDN["🔗 HTTPS Endpoints\nbackend.onrender.com\nfrontend.onrender.com"]
+
+    DEV -->|git push| GIT
+    GIT -->|webhook trigger| RENDER_BUILD
+    RENDER_BUILD --> BE_SVC
+    RENDER_BUILD --> FE_STATIC
+    BE_SVC <-->|SQLAlchemy ORM| PG
+    BE_SVC --> CDN
+    FE_STATIC --> CDN
+
+    style DEV fill:#1e1e2e,stroke:#6c63ff
+    style GIT fill:#1e2535,stroke:#4080ff
+    style CDN fill:#1e3020,stroke:#43e97b
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:48px 0 0;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:72px;">
+    RentMate · Technical Architecture · Confidential Investment Materials · 2026
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#21253a',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#3b4068',
+      lineColor: '#6c63ff',
+      secondaryColor: '#1a1d27',
+      tertiaryColor: '#12162b',
+      background: '#0f1117',
+      mainBkg: '#21253a',
+      nodeBorder: '#3b4068',
+      clusterBkg: '#1a1d27',
+      titleColor: '#e2e8f0',
+      edgeLabelBackground: '#1a1d27',
+      attributeBackgroundColorEven: '#1a1d27',
+      attributeBackgroundColorOdd: '#21253a',
+    },
+    er: { diagramPadding: 30, useMaxWidth: true },
+    flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+  });
+</script>
+</body>
+</html>
