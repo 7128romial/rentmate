@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RentMate – Architecture Diagrams v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root{
+  --bg:#07080f;
+  --s1:#0e1018;
+  --s2:#12141f;
+  --s3:#1a1d2e;
+  --border:#ffffff0f;
+  --border2:#ffffff1a;
+  --text:#f0f2ff;
+  --muted:#8891a8;
+  --dim:#4a5168;
+
+  --purple:#7c6eff;
+  --purple-glow:rgba(124,110,255,.25);
+  --blue:#4da6ff;
+  --blue-glow:rgba(77,166,255,.22);
+  --teal:#2de2c2;
+  --teal-glow:rgba(45,226,194,.2);
+  --green:#3df577;
+  --green-glow:rgba(61,245,119,.2);
+  --orange:#ff9f43;
+  --orange-glow:rgba(255,159,67,.2);
+  --red:#ff5e84;
+  --red-glow:rgba(255,94,132,.2);
+  --yellow:#ffe066;
+  --yellow-glow:rgba(255,224,102,.18);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+
+/* ═══ HERO ═══════════════════════════════════════════════════════════════ */
+.hero{
+  position:relative;overflow:hidden;
+  padding:80px 40px 72px;text-align:center;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(124,110,255,.18) 0%,transparent 70%);
+  border-bottom:1px solid var(--border2);
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(circle 300px at 20% 50%,rgba(77,166,255,.07),transparent),
+    radial-gradient(circle 300px at 80% 50%,rgba(61,245,119,.07),transparent);
+  pointer-events:none;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(124,110,255,.12);border:1px solid rgba(124,110,255,.3);
+  border-radius:99px;padding:6px 18px;
+  font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--purple);margin-bottom:24px;
+}
+.hero h1{
+  font-size:clamp(2.4rem,6vw,4rem);font-weight:900;letter-spacing:-.04em;
+  line-height:1.05;margin-bottom:16px;
+  background:linear-gradient(135deg,#fff 20%,var(--purple) 60%,var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{color:var(--muted);font-size:1.05rem;max-width:520px;margin:0 auto 36px}
+.pill-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--s3);border:1px solid var(--border2);
+  border-radius:99px;padding:6px 16px;font-size:.78rem;font-weight:600;
+}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+/* ═══ LAYOUT ══════════════════════════════════════════════════════════════ */
+.wrap{max-width:1320px;margin:0 auto;padding:0 36px 100px}
+.sec{margin-top:80px}
+.sec-head{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+.sec-num{
+  width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+  font-size:13px;font-weight:800;flex-shrink:0;
+}
+.sec-title{font-size:1.6rem;font-weight:800;letter-spacing:-.03em}
+.sec-desc{color:var(--muted);font-size:.92rem;margin:8px 0 32px 48px;max-width:660px}
+
+/* ═══ METRIC BAR ══════════════════════════════════════════════════════════ */
+.metric-bar{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:1px;background:var(--border2);border-radius:16px;overflow:hidden;
+  border:1px solid var(--border2);margin-bottom:0;
+}
+.metric-cell{
+  background:var(--s2);padding:24px 20px;text-align:center;
+  transition:background .2s;
+}
+.metric-cell:hover{background:var(--s3)}
+.metric-val{
+  font-size:2.2rem;font-weight:900;letter-spacing:-.04em;line-height:1;
+  background:linear-gradient(135deg,var(--purple),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.metric-label{color:var(--muted);font-size:.75rem;font-weight:500;margin-top:6px}
+
+/* ═══ ARCHITECTURE DIAGRAM (custom SVG-style CSS) ═════════════════════════ */
+.arch-wrap{
+  background:var(--s2);border:1px solid var(--border2);border-radius:20px;
+  padding:40px 32px;position:relative;overflow:hidden;
+}
+.arch-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(124,110,255,.06),transparent);
+  pointer-events:none;
+}
+
+.arch-row{display:flex;align-items:center;justify-content:center;gap:0;position:relative;z-index:1}
+.arch-row+.arch-row{margin-top:0}
+.arch-connector{
+  display:flex;flex-direction:column;align-items:center;
+  margin:0 auto;width:2px;height:48px;position:relative;
+}
+.arch-connector::before{
+  content:'';position:absolute;left:50%;top:0;transform:translateX(-50%);
+  width:2px;height:100%;
+  background:linear-gradient(to bottom,var(--purple),var(--blue));
+  border-radius:2px;
+}
+.arch-connector::after{
+  content:'▼';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:var(--blue);
+}
+
+.layer{
+  display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+  background:rgba(255,255,255,.025);
+  border:1px solid var(--border2);border-radius:16px;
+  padding:20px 24px;width:100%;
+  position:relative;
+}
+.layer-label{
+  position:absolute;top:-11px;left:20px;
+  background:var(--s2);padding:2px 12px;border-radius:99px;
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid var(--border2);
+}
+.layer-box{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--s3);border:1px solid var(--border2);
+  border-radius:12px;padding:14px 20px;min-width:130px;text-align:center;
+  transition:transform .2s,box-shadow .2s;cursor:default;
+  position:relative;
+}
+.layer-box:hover{transform:translateY(-2px);}
+.layer-box .b-icon{font-size:1.6rem}
+.layer-box .b-name{font-size:.82rem;font-weight:700;margin-top:2px}
+.layer-box .b-sub{font-size:.68rem;color:var(--muted);line-height:1.4}
+
+/* glow variants */
+.glow-purple{box-shadow:0 0 0 1px rgba(124,110,255,.35),0 4px 24px rgba(124,110,255,.12)}
+.glow-blue{box-shadow:0 0 0 1px rgba(77,166,255,.35),0 4px 24px rgba(77,166,255,.12)}
+.glow-teal{box-shadow:0 0 0 1px rgba(45,226,194,.35),0 4px 24px rgba(45,226,194,.12)}
+.glow-green{box-shadow:0 0 0 1px rgba(61,245,119,.35),0 4px 24px rgba(61,245,119,.12)}
+.glow-orange{box-shadow:0 0 0 1px rgba(255,159,67,.35),0 4px 24px rgba(255,159,67,.12)}
+.glow-red{box-shadow:0 0 0 1px rgba(255,94,132,.35),0 4px 24px rgba(255,94,132,.12)}
+.glow-yellow{box-shadow:0 0 0 1px rgba(255,224,102,.3),0 4px 24px rgba(255,224,102,.1)}
+
+/* ═══ STACK CARDS ══════════════════════════════════════════════════════════ */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.stack-card{
+  background:var(--s2);border:1px solid var(--border2);border-radius:16px;
+  padding:24px;position:relative;overflow:hidden;
+  transition:transform .2s,box-shadow .2s;
+}
+.stack-card:hover{transform:translateY(-3px)}
+.stack-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0;
+}
+.sc-purple::before{background:linear-gradient(90deg,var(--purple),var(--blue))}
+.sc-blue::before{background:linear-gradient(90deg,var(--blue),var(--teal))}
+.sc-teal::before{background:linear-gradient(90deg,var(--teal),var(--green))}
+.sc-green::before{background:linear-gradient(90deg,var(--green),var(--teal))}
+.sc-orange::before{background:linear-gradient(90deg,var(--orange),var(--yellow))}
+.sc-red::before{background:linear-gradient(90deg,var(--red),var(--orange))}
+.sc-yellow::before{background:linear-gradient(90deg,var(--yellow),var(--orange))}
+.sc-dim::before{background:linear-gradient(90deg,var(--dim),var(--muted))}
+
+.sc-icon{font-size:2rem;margin-bottom:12px}
+.sc-name{font-size:.95rem;font-weight:700;margin-bottom:4px}
+.sc-desc{font-size:.78rem;color:var(--muted);line-height:1.55;margin-bottom:12px}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px}
+.tag{
+  display:inline-block;border-radius:99px;
+  font-size:.65rem;font-weight:700;letter-spacing:.05em;
+  padding:3px 10px;border:1px solid;
+}
+.tag-p{background:rgba(124,110,255,.12);color:#a89dff;border-color:rgba(124,110,255,.3)}
+.tag-b{background:rgba(77,166,255,.12);color:#7ec8ff;border-color:rgba(77,166,255,.3)}
+.tag-t{background:rgba(45,226,194,.1);color:#2de2c2;border-color:rgba(45,226,194,.3)}
+.tag-g{background:rgba(61,245,119,.1);color:#3df577;border-color:rgba(61,245,119,.3)}
+.tag-o{background:rgba(255,159,67,.1);color:#ff9f43;border-color:rgba(255,159,67,.3)}
+.tag-r{background:rgba(255,94,132,.1);color:#ff5e84;border-color:rgba(255,94,132,.3)}
+.tag-y{background:rgba(255,224,102,.1);color:#ffe066;border-color:rgba(255,224,102,.3)}
+
+/* ═══ ERD ════════════════════════════════════════════════════════════════ */
+.erd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.erd-card{
+  background:var(--s2);border-radius:14px;overflow:hidden;
+  border:1px solid var(--border2);
+  transition:transform .2s;
+}
+.erd-card:hover{transform:translateY(-3px)}
+.erd-head{
+  padding:12px 16px;font-size:.82rem;font-weight:800;
+  letter-spacing:.05em;display:flex;align-items:center;gap:8px;
+}
+.erd-body{padding:4px 0 8px}
+.erd-row{
+  display:flex;align-items:center;gap:10px;
+  padding:5px 16px;font-size:.75rem;border-top:1px solid var(--border);
+}
+.erd-row:first-child{border-top:none}
+.field-icon{font-size:.7rem;min-width:14px;text-align:center}
+.field-name{flex:1;color:var(--text);font-weight:500}
+.field-type{color:var(--muted);font-size:.68rem}
+.badge{
+  font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:4px;
+  background:rgba(255,159,67,.18);color:var(--orange);
+}
+.badge.fk{background:rgba(124,110,255,.18);color:#a89dff}
+.badge.uk{background:rgba(45,226,194,.15);color:var(--teal)}
+
+/* ═══ RELATION LINES (SVG) ═══════════════════════════════════════════════ */
+.rel-wrap{
+  background:var(--s2);border:1px solid var(--border2);border-radius:20px;
+  padding:40px;margin-bottom:16px;
+}
+
+/* ═══ API MAP ════════════════════════════════════════════════════════════ */
+.api-sections{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.api-sections{grid-template-columns:1fr}}
+.api-group{
+  background:var(--s2);border:1px solid var(--border2);border-radius:16px;overflow:hidden;
+}
+.api-group-head{
+  padding:14px 20px;font-size:.78rem;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;
+  display:flex;align-items:center;gap:10px;
+}
+.api-group-head .gh-count{
+  margin-left:auto;background:rgba(255,255,255,.07);
+  border-radius:99px;padding:2px 10px;
+  font-size:.7rem;font-weight:600;color:var(--muted);
+}
+.api-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:9px 20px;border-top:1px solid var(--border);
+  transition:background .15s;
+}
+.api-item:hover{background:rgba(255,255,255,.025)}
+.method-badge{
+  flex-shrink:0;font-size:.65rem;font-weight:800;letter-spacing:.04em;
+  padding:3px 8px;border-radius:6px;min-width:46px;text-align:center;
+  margin-top:1px;
+}
+.m-get{background:rgba(61,245,119,.15);color:#3df577}
+.m-post{background:rgba(124,110,255,.18);color:#a89dff}
+.m-put{background:rgba(255,159,67,.15);color:#ff9f43}
+.m-patch{background:rgba(255,159,67,.12);color:#ff9f43}
+.m-del{background:rgba(255,94,132,.15);color:#ff5e84}
+.m-ws{background:rgba(77,166,255,.15);color:#7ec8ff}
+.api-route{font-family:monospace;font-size:.76rem;color:#c5cfe0;font-weight:500}
+.api-desc{font-size:.72rem;color:var(--muted);margin-top:2px;line-height:1.4}
+
+/* ═══ USER FLOW ═══════════════════════════════════════════════════════════ */
+.flow-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:860px){.flow-grid{grid-template-columns:1fr}}
+.flow-panel{
+  background:var(--s2);border:1px solid var(--border2);border-radius:18px;
+  overflow:hidden;
+}
+.flow-header{
+  padding:20px 24px;font-size:.9rem;font-weight:800;
+  display:flex;align-items:center;gap:12px;
+}
+.flow-steps{padding:8px 0 20px}
+.flow-step{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:10px 24px;position:relative;
+}
+.step-col{display:flex;flex-direction:column;align-items:center;gap:0}
+.step-num{
+  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  font-size:.72rem;font-weight:800;flex-shrink:0;z-index:1;
+}
+.step-line{width:2px;flex:1;min-height:20px;background:var(--border2);margin-top:2px}
+.flow-step:last-child .step-line{display:none}
+.step-content{padding-top:4px;padding-bottom:8px}
+.step-name{font-size:.82rem;font-weight:700;line-height:1.2}
+.step-detail{font-size:.72rem;color:var(--muted);margin-top:3px;line-height:1.5}
+.step-endpoint{
+  display:inline-block;margin-top:4px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border2);
+  border-radius:6px;padding:2px 8px;
+  font-family:monospace;font-size:.68rem;color:var(--muted);
+}
+.step-branch{
+  display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;
+}
+.branch-tag{
+  border-radius:99px;font-size:.65rem;font-weight:700;padding:2px 10px;border:1px solid;
+}
+
+/* ═══ AI HUB ═════════════════════════════════════════════════════════════ */
+.ai-hub-wrap{
+  background:var(--s2);border:1px solid var(--border2);border-radius:20px;padding:40px;
+  position:relative;
+}
+.ai-center{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,rgba(124,110,255,.2),rgba(77,166,255,.15));
+  border:2px solid rgba(124,110,255,.4);border-radius:20px;
+  padding:28px 40px;margin:0 auto 32px;max-width:340px;text-align:center;
+  box-shadow:0 0 60px rgba(124,110,255,.15);
+}
+.ai-center-icon{font-size:2.8rem;margin-bottom:8px}
+.ai-center-name{font-size:1.15rem;font-weight:800}
+.ai-center-sub{font-size:.8rem;color:var(--muted);margin-top:4px}
+.ai-features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.ai-feat{
+  background:var(--s3);border:1px solid var(--border2);border-radius:14px;
+  padding:18px;display:flex;gap:14px;align-items:flex-start;
+  transition:transform .2s;
+}
+.ai-feat:hover{transform:translateY(-2px)}
+.ai-feat-icon{
+  width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  font-size:1.2rem;flex-shrink:0;
+}
+.ai-feat-name{font-size:.82rem;font-weight:700;margin-bottom:3px}
+.ai-feat-desc{font-size:.72rem;color:var(--muted);line-height:1.5}
+
+/* ═══ SECURITY ══════════════════════════════════════════════════════════ */
+.security-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.sec-panel{
+  background:var(--s2);border:1px solid var(--border2);border-radius:16px;overflow:hidden;
+}
+.sec-panel-head{
+  padding:16px 20px;font-size:.82rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;
+  display:flex;align-items:center;gap:10px;
+}
+.sec-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 20px;border-top:1px solid var(--border);
+}
+.sec-item-icon{font-size:.9rem;flex-shrink:0;width:20px;text-align:center}
+.sec-item-text{font-size:.78rem;color:var(--muted);line-height:1.4}
+.sec-item-text strong{color:var(--text);font-weight:600}
+.sec-val{
+  margin-left:auto;font-size:.72rem;font-weight:700;
+  padding:2px 10px;border-radius:99px;
+  background:rgba(61,245,119,.1);color:#3df577;
+  border:1px solid rgba(61,245,119,.25);white-space:nowrap;
+}
+.sec-val.warn{background:rgba(255,159,67,.1);color:#ff9f43;border-color:rgba(255,159,67,.25)}
+
+/* ═══ DEPLOY PIPELINE ═══════════════════════════════════════════════════ */
+.pipeline{
+  display:flex;align-items:center;gap:0;
+  background:var(--s2);border:1px solid var(--border2);border-radius:20px;
+  padding:40px 32px;overflow-x:auto;
+}
+.pipe-step{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  min-width:140px;text-align:center;flex-shrink:0;
+}
+.pipe-icon-wrap{
+  width:64px;height:64px;border-radius:18px;
+  display:grid;place-items:center;font-size:1.8rem;
+  border:1px solid var(--border2);position:relative;
+}
+.pipe-icon-wrap::after{
+  content:'';position:absolute;inset:-1px;border-radius:18px;
+  background:var(--pipe-grad,linear-gradient(135deg,var(--purple),var(--blue)));
+  opacity:.1;
+}
+.pipe-name{font-size:.8rem;font-weight:700}
+.pipe-sub{font-size:.68rem;color:var(--muted);line-height:1.4}
+.pipe-arrow{
+  font-size:1.2rem;color:var(--purple);flex-shrink:0;
+  margin:0 4px;padding-bottom:24px;opacity:.7;
+}
+.pipe-sub-detail{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:6px;padding:2px 8px;
+  font-family:monospace;font-size:.64rem;color:var(--muted);margin-top:2px;
+}
+
+/* ═══ RELATIONSHIPS ═══════════════════════════════════════════════════════ */
+.rel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.rel-item{
+  background:var(--s3);border:1px solid var(--border2);border-radius:10px;
+  padding:10px 14px;font-size:.76rem;
+  display:flex;align-items:center;gap:10px;
+}
+.rel-from{font-weight:700;color:var(--text)}
+.rel-line{color:var(--dim);font-size:.85rem}
+.rel-to{font-weight:700;color:var(--muted)}
+.rel-type{
+  margin-left:auto;font-size:.65rem;font-weight:700;
+  padding:2px 8px;border-radius:99px;
+  background:rgba(124,110,255,.12);color:#a89dff;
+  border:1px solid rgba(124,110,255,.25);white-space:nowrap;
+}
+
+/* ═══ DIVIDER ═══════════════════════════════════════════════════════════ */
+.divider{height:1px;background:var(--border);margin:60px 0}
+.footer{text-align:center;padding:32px 0;color:var(--dim);font-size:.78rem}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    <span>⬡</span> Technical Architecture · Investment Pitch · 2026
+  </div>
+  <h1>RentMate Platform</h1>
+  <p class="hero-sub">AI-powered rental marketplace connecting renters &amp; landlords across Israel — full system deep-dive.</p>
+  <div class="pill-row">
+    <div class="pill"><span class="dot" style="background:#7c6eff"></span> Flask + Python</div>
+    <div class="pill"><span class="dot" style="background:#4da6ff"></span> PostgreSQL</div>
+    <div class="pill"><span class="dot" style="background:#2de2c2"></span> OpenAI GPT-4o</div>
+    <div class="pill"><span class="dot" style="background:#3df577"></span> Socket.IO</div>
+    <div class="pill"><span class="dot" style="background:#ff9f43"></span> Stripe</div>
+    <div class="pill"><span class="dot" style="background:#ff5e84"></span> Render.com</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ═══ 0 · METRICS ══════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="metric-bar">
+    <div class="metric-cell"><div class="metric-val">8</div><div class="metric-label">Database Tables</div></div>
+    <div class="metric-cell"><div class="metric-val">35+</div><div class="metric-label">API Endpoints</div></div>
+    <div class="metric-cell"><div class="metric-val">7</div><div class="metric-label">AI Features</div></div>
+    <div class="metric-cell"><div class="metric-val">2</div><div class="metric-label">User Roles</div></div>
+    <div class="metric-cell"><div class="metric-val">11</div><div class="metric-label">App Screens</div></div>
+    <div class="metric-cell"><div class="metric-val">WS</div><div class="metric-label">Real-time Chat</div></div>
+    <div class="metric-cell"><div class="metric-val">2-tier</div><div class="metric-label">Subscription Model</div></div>
+  </div>
+</div>
+
+<!-- ═══ 1 · SYSTEM ARCHITECTURE ════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(124,110,255,.18);color:var(--purple)">01</div>
+    <div class="sec-title">System Architecture</div>
+  </div>
+  <p class="sec-desc">How the browser, backend, database, and external services are wired together.</p>
+
+  <div class="arch-wrap">
+    <!-- Layer 1: Client -->
+    <div class="arch-row">
+      <div class="layer" style="max-width:780px">
+        <div class="layer-label" style="color:var(--blue);border-color:rgba(77,166,255,.3)">🌐 Client — Browser</div>
+        <div class="layer-box glow-blue">
+          <div class="b-icon">⚡</div>
+          <div class="b-name" style="color:var(--blue)">Vite / JS</div>
+          <div class="b-sub">11 screens · RTL Hebrew</div>
+        </div>
+        <div class="layer-box glow-blue">
+          <div class="b-icon">🃏</div>
+          <div class="b-name" style="color:var(--blue)">Swipe Deck</div>
+          <div class="b-sub">Gesture engine</div>
+        </div>
+        <div class="layer-box glow-blue">
+          <div class="b-icon">💾</div>
+          <div class="b-name" style="color:var(--blue)">localStorage</div>
+          <div class="b-sub">Offline-first cache</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow 1 -->
+    <div style="display:flex;justify-content:center;margin:0 auto">
+      <div style="display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:4px">
+        <div style="width:2px;height:30px;background:linear-gradient(to bottom,var(--blue),var(--purple));border-radius:2px"></div>
+        <div style="font-size:9px;color:var(--purple);background:rgba(124,110,255,.1);border:1px solid rgba(124,110,255,.25);border-radius:99px;padding:2px 10px;font-size:.65rem;font-weight:700">HTTPS · WSS</div>
+        <div style="width:2px;height:30px;background:linear-gradient(to bottom,var(--purple),var(--purple));border-radius:2px"></div>
+      </div>
+    </div>
+
+    <!-- Layer 2: Backend -->
+    <div class="arch-row">
+      <div class="layer" style="max-width:900px">
+        <div class="layer-label" style="color:var(--purple);border-color:rgba(124,110,255,.3)">☁️ Render.com — Backend (Python)</div>
+        <div class="layer-box glow-purple">
+          <div class="b-icon">🐍</div>
+          <div class="b-name" style="color:var(--purple)">Flask REST</div>
+          <div class="b-sub">35+ endpoints</div>
+        </div>
+        <div class="layer-box glow-purple">
+          <div class="b-icon">⚡</div>
+          <div class="b-name" style="color:var(--purple)">Socket.IO</div>
+          <div class="b-sub">Real-time P2P</div>
+        </div>
+        <div class="layer-box glow-purple">
+          <div class="b-icon">🔐</div>
+          <div class="b-name" style="color:var(--purple)">Auth Layer</div>
+          <div class="b-sub">Bearer tokens</div>
+        </div>
+        <div class="layer-box glow-purple">
+          <div class="b-icon">🛡️</div>
+          <div class="b-name" style="color:var(--purple)">Rate Limiter</div>
+          <div class="b-sub">IP + User level</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow 2 -->
+    <div style="display:flex;justify-content:center;gap:120px;margin:0 auto;padding:10px 0">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="width:2px;height:30px;background:linear-gradient(to bottom,var(--purple),var(--teal));border-radius:2px"></div>
+        <div style="font-size:.65rem;font-weight:700;color:var(--teal);background:rgba(45,226,194,.08);border:1px solid rgba(45,226,194,.25);border-radius:99px;padding:2px 10px">SQLAlchemy ORM</div>
+        <div style="width:2px;height:30px;background:linear-gradient(to bottom,var(--teal),var(--teal));border-radius:2px"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="width:2px;height:30px;background:linear-gradient(to bottom,var(--purple),var(--orange));border-radius:2px"></div>
+        <div style="font-size:.65rem;font-weight:700;color:var(--orange);background:rgba(255,159,67,.08);border:1px solid rgba(255,159,67,.25);border-radius:99px;padding:2px 10px">API Calls</div>
+        <div style="width:2px;height:30px;background:linear-gradient(to bottom,var(--orange),var(--orange));border-radius:2px"></div>
+      </div>
+    </div>
+
+    <!-- Layer 3: DB + External split -->
+    <div class="arch-row" style="gap:20px;align-items:stretch">
+      <div class="layer" style="flex:1;max-width:460px">
+        <div class="layer-label" style="color:var(--teal);border-color:rgba(45,226,194,.3)">🗄️ Database — PostgreSQL</div>
+        <div class="layer-box glow-teal" style="min-width:100px">
+          <div class="b-icon">📋</div>
+          <div class="b-name" style="color:var(--teal)">User &amp; Auth</div>
+          <div class="b-sub">Users · Profiles</div>
+        </div>
+        <div class="layer-box glow-teal" style="min-width:100px">
+          <div class="b-icon">🏠</div>
+          <div class="b-name" style="color:var(--teal)">Listings</div>
+          <div class="b-sub">Properties · Swipes</div>
+        </div>
+        <div class="layer-box glow-teal" style="min-width:100px">
+          <div class="b-icon">💬</div>
+          <div class="b-name" style="color:var(--teal)">Social</div>
+          <div class="b-sub">Matches · Messages</div>
+        </div>
+      </div>
+      <div class="layer" style="flex:1;max-width:460px">
+        <div class="layer-label" style="color:var(--orange);border-color:rgba(255,159,67,.3)">🔌 External Services</div>
+        <div class="layer-box glow-orange" style="min-width:100px">
+          <div class="b-icon">🤖</div>
+          <div class="b-name" style="color:var(--orange)">OpenAI</div>
+          <div class="b-sub">GPT-4o-mini · Vision</div>
+        </div>
+        <div class="layer-box glow-red" style="min-width:100px">
+          <div class="b-icon">💳</div>
+          <div class="b-name" style="color:var(--red)">Stripe</div>
+          <div class="b-sub">Pro subscriptions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 2 · TECH STACK ══════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(77,166,255,.15);color:var(--blue)">02</div>
+    <div class="sec-title">Technology Stack</div>
+  </div>
+  <p class="sec-desc">Every layer of the platform with its purpose, configuration, and capability tags.</p>
+
+  <div class="stack-grid">
+    <div class="stack-card sc-blue">
+      <div class="sc-icon">⚡</div>
+      <div class="sc-name">Vite + Vanilla JS</div>
+      <div class="sc-desc">Zero-framework frontend — fast cold-start, small bundle, works offline via localStorage cache and demo mode.</div>
+      <div class="tag-row"><span class="tag tag-b">ES Modules</span><span class="tag tag-b">RTL / Hebrew</span><span class="tag tag-b">Demo Mode</span></div>
+    </div>
+    <div class="stack-card sc-purple">
+      <div class="sc-icon">🐍</div>
+      <div class="sc-name">Flask + Gunicorn</div>
+      <div class="sc-desc">Python REST API with Flask-SocketIO. 2 Gunicorn workers, 120s timeout, SQLAlchemy ORM, itsdangerous auth.</div>
+      <div class="tag-row"><span class="tag tag-p">Python 3</span><span class="tag tag-p">Flask-SocketIO</span><span class="tag tag-p">ORM</span></div>
+    </div>
+    <div class="stack-card sc-teal">
+      <div class="sc-icon">🗄️</div>
+      <div class="sc-name">PostgreSQL</div>
+      <div class="sc-desc">Managed PostgreSQL on Render. SQLite for local dev. Schema auto-migrates on startup — zero downtime upgrades.</div>
+      <div class="tag-row"><span class="tag tag-t">Managed</span><span class="tag tag-t">Auto-migrate</span><span class="tag tag-t">SQLite dev</span></div>
+    </div>
+    <div class="stack-card sc-orange">
+      <div class="sc-icon">🤖</div>
+      <div class="sc-name">OpenAI API</div>
+      <div class="sc-desc">gpt-4o-mini for chat, onboarding, lease generation, roommate scoring. GPT-4V for image-to-description analysis.</div>
+      <div class="tag-row"><span class="tag tag-o">Chat</span><span class="tag tag-o">Vision</span><span class="tag tag-o">Function Calling</span></div>
+    </div>
+    <div class="stack-card sc-blue">
+      <div class="sc-icon">🔌</div>
+      <div class="sc-name">Socket.IO</div>
+      <div class="sc-desc">Real-time bi-directional messaging. Rooms isolated per <code style="font-size:.75em">chat_{property_id}_{renter_id}</code> pair. Read receipts tracked.</div>
+      <div class="tag-row"><span class="tag tag-b">WebSocket</span><span class="tag tag-b">Read Receipts</span><span class="tag tag-b">Rooms</span></div>
+    </div>
+    <div class="stack-card sc-red">
+      <div class="sc-icon">💳</div>
+      <div class="sc-name">Stripe</div>
+      <div class="sc-desc">Payment intents for Pro subscription. Free tier: 2 swipes/day. Pro: unlimited. Endpoints wired, ready to activate.</div>
+      <div class="tag-row"><span class="tag tag-r">Free Tier</span><span class="tag tag-r">Pro Tier</span><span class="tag tag-r">Checkout Ready</span></div>
+    </div>
+    <div class="stack-card sc-yellow">
+      <div class="sc-icon">☁️</div>
+      <div class="sc-name">Render.com</div>
+      <div class="sc-desc">Declarative deploy via render.yaml. Web service + managed PostgreSQL. Git push = live deploy.</div>
+      <div class="tag-row"><span class="tag tag-y">IaC render.yaml</span><span class="tag tag-y">Git deploy</span><span class="tag tag-y">Managed DB</span></div>
+    </div>
+    <div class="stack-card sc-purple">
+      <div class="sc-icon">🔐</div>
+      <div class="sc-name">Auth + Security</div>
+      <div class="sc-desc">Stateless Bearer tokens via itsdangerous. bcrypt password hashing. CORS origin whitelist in production.</div>
+      <div class="tag-row"><span class="tag tag-p">Bearer Token</span><span class="tag tag-p">bcrypt</span><span class="tag tag-p">CORS Guard</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 3 · DATABASE SCHEMA ═════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(45,226,194,.12);color:var(--teal)">03</div>
+    <div class="sec-title">Database Schema</div>
+  </div>
+  <p class="sec-desc">All 8 tables with their fields, types, and primary / foreign key relationships.</p>
+
+  <div class="erd-grid">
+    <!-- User -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(124,110,255,.12);color:#a89dff">
+        <span>👤</span> User
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">@</span><span class="field-name">email</span><span class="field-type">str</span><span class="badge uk">UK</span></div>
+        <div class="erd-row"><span class="field-icon">🔒</span><span class="field-name">password_hash</span><span class="field-type">str</span></div>
+        <div class="erd-row"><span class="field-icon">🏷</span><span class="field-name">role</span><span class="field-type">renter|landlord</span></div>
+        <div class="erd-row"><span class="field-icon">💎</span><span class="field-name">subscription</span><span class="field-type">free|pro</span></div>
+        <div class="erd-row"><span class="field-icon">📅</span><span class="field-name">subscription_until</span><span class="field-type">datetime</span></div>
+        <div class="erd-row"><span class="field-icon">📅</span><span class="field-name">created_at</span><span class="field-type">datetime</span></div>
+      </div>
+    </div>
+
+    <!-- PreferenceProfile -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(77,166,255,.12);color:#7ec8ff">
+        <span>⚙️</span> PreferenceProfile
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">user_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">🏙</span><span class="field-name">city</span><span class="field-type">str</span></div>
+        <div class="erd-row"><span class="field-icon">💰</span><span class="field-name">max_budget</span><span class="field-type">float</span></div>
+        <div class="erd-row"><span class="field-icon">🏠</span><span class="field-name">type</span><span class="field-type">str</span></div>
+        <div class="erd-row"><span class="field-icon">➕</span><span class="field-name">extras</span><span class="field-type">text</span></div>
+      </div>
+    </div>
+
+    <!-- Property -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(45,226,194,.1);color:#2de2c2">
+        <span>🏠</span> Property
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">owner_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">📝</span><span class="field-name">title</span><span class="field-type">str</span></div>
+        <div class="erd-row"><span class="field-icon">💰</span><span class="field-name">price_min / max</span><span class="field-type">float</span></div>
+        <div class="erd-row"><span class="field-icon">📍</span><span class="field-name">location / address</span><span class="field-type">str</span></div>
+        <div class="erd-row"><span class="field-icon">🛏</span><span class="field-name">rooms / area / floor</span><span class="field-type">float</span></div>
+        <div class="erd-row"><span class="field-icon">🏷</span><span class="field-name">amenities</span><span class="field-type">JSON</span></div>
+        <div class="erd-row"><span class="field-icon">✅</span><span class="field-name">status</span><span class="field-type">available|rented…</span></div>
+      </div>
+    </div>
+
+    <!-- Swipe -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(255,94,132,.1);color:#ff5e84">
+        <span>👆</span> Swipe
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">user_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">property_id</span><span class="field-type">int</span><span class="badge fk">FK→Prop</span></div>
+        <div class="erd-row"><span class="field-icon">↔️</span><span class="field-name">direction</span><span class="field-type">left|right|up</span></div>
+        <div class="erd-row"><span class="field-icon">📅</span><span class="field-name">created_at</span><span class="field-type">datetime</span></div>
+      </div>
+    </div>
+
+    <!-- Match -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(61,245,119,.1);color:#3df577">
+        <span>🤝</span> Match
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">user_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">property_id</span><span class="field-type">int</span><span class="badge fk">FK→Prop</span></div>
+        <div class="erd-row"><span class="field-icon">📅</span><span class="field-name">created_at</span><span class="field-type">datetime</span></div>
+      </div>
+    </div>
+
+    <!-- ChatMessage -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(255,224,102,.1);color:#ffe066">
+        <span>🗨️</span> ChatMessage
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">user_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">🏷</span><span class="field-name">role</span><span class="field-type">user|assistant</span></div>
+        <div class="erd-row"><span class="field-icon">📝</span><span class="field-name">content</span><span class="field-type">text</span></div>
+        <div class="erd-row"><span class="field-icon">📅</span><span class="field-name">created_at</span><span class="field-type">datetime</span></div>
+      </div>
+    </div>
+
+    <!-- PropertyInterest -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(255,159,67,.12);color:#ff9f43">
+        <span>👁️</span> PropertyInterest
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">property_id</span><span class="field-type">int</span><span class="badge fk">FK→Prop</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">renter_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">✅</span><span class="field-name">status</span><span class="field-type">pending|approved…</span></div>
+        <div class="erd-row"><span class="field-icon">📅</span><span class="field-name">created_at</span><span class="field-type">datetime</span></div>
+      </div>
+    </div>
+
+    <!-- DirectMessage -->
+    <div class="erd-card">
+      <div class="erd-head" style="background:rgba(77,166,255,.12);color:#7ec8ff">
+        <span>💬</span> DirectMessage
+      </div>
+      <div class="erd-body">
+        <div class="erd-row"><span class="field-icon">🔑</span><span class="field-name">id</span><span class="field-type">int</span><span class="badge">PK</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">sender_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">receiver_id</span><span class="field-type">int</span><span class="badge fk">FK→User</span></div>
+        <div class="erd-row"><span class="field-icon">🔗</span><span class="field-name">property_id</span><span class="field-type">int</span><span class="badge fk">FK→Prop</span></div>
+        <div class="erd-row"><span class="field-icon">📝</span><span class="field-name">content</span><span class="field-type">text</span></div>
+        <div class="erd-row"><span class="field-icon">👁</span><span class="field-name">read_at</span><span class="field-type">datetime?</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Relationships -->
+  <div style="margin-top:20px">
+    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">Table Relationships</div>
+    <div class="rel-grid">
+      <div class="rel-item"><span class="rel-from">User</span><span class="rel-line">──⊃</span><span class="rel-to">PreferenceProfile</span><span class="rel-type">1-to-1</span></div>
+      <div class="rel-item"><span class="rel-from">User</span><span class="rel-line">──⊃</span><span class="rel-to">Property</span><span class="rel-type">1-to-many</span></div>
+      <div class="rel-item"><span class="rel-from">User</span><span class="rel-line">──⊃</span><span class="rel-to">Swipe</span><span class="rel-type">1-to-many</span></div>
+      <div class="rel-item"><span class="rel-from">User</span><span class="rel-line">──⊃</span><span class="rel-to">Match</span><span class="rel-type">1-to-many</span></div>
+      <div class="rel-item"><span class="rel-from">User</span><span class="rel-line">──⊃</span><span class="rel-to">ChatMessage</span><span class="rel-type">1-to-many</span></div>
+      <div class="rel-item"><span class="rel-from">Property</span><span class="rel-line">──⊃</span><span class="rel-to">PropertyInterest</span><span class="rel-type">1-to-many</span></div>
+      <div class="rel-item"><span class="rel-from">Property</span><span class="rel-line">──⊃</span><span class="rel-to">DirectMessage</span><span class="rel-type">1-to-many</span></div>
+      <div class="rel-item"><span class="rel-from">Swipe→approved</span><span class="rel-line">──⊃</span><span class="rel-to">Match</span><span class="rel-type">implicit</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 4 · API MAP ═════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(61,245,119,.1);color:var(--green)">04</div>
+    <div class="sec-title">API Endpoint Map</div>
+  </div>
+  <p class="sec-desc">All REST and WebSocket endpoints colour-coded by HTTP method and grouped by feature domain.</p>
+
+  <div class="api-sections">
+
+    <div class="api-group">
+      <div class="api-group-head" style="background:rgba(124,110,255,.1);color:#a89dff;border-bottom:1px solid var(--border)">
+        🔐 Auth &amp; Profile <span class="gh-count">5 endpoints</span>
+      </div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/auth/register</div><div class="api-desc">Create account · returns Bearer token</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/auth/login</div><div class="api-desc">Login · returns token + profile status</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/profile</div><div class="api-desc">Fetch current user + preferences</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/profile</div><div class="api-desc">Update name, city, budget, role</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/reset</div><div class="api-desc">Clear swipes, matches, chat history</div></div></div>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-head" style="background:rgba(45,226,194,.08);color:var(--teal);border-bottom:1px solid var(--border)">
+        🏠 Property Discovery <span class="gh-count">4 endpoints</span>
+      </div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/properties</div><div class="api-desc">Smart-filtered listing · AI match scores 75–99%</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/properties/:id/vibe</div><div class="api-desc">AI neighbourhood lifestyle description</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/swipe</div><div class="api-desc">Record left/right/up → creates PropertyInterest</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/matches</div><div class="api-desc">Approved matches + unread message counts</div></div></div>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-head" style="background:rgba(77,166,255,.1);color:var(--blue);border-bottom:1px solid var(--border)">
+        🏗️ Landlord Management <span class="gh-count">11 endpoints</span>
+      </div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/landlord/properties</div><div class="api-desc">List all owned properties</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/properties</div><div class="api-desc">Create new listing</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/landlord/properties/:id</div><div class="api-desc">Single property detail</div></div></div>
+      <div class="api-item"><span class="method-badge m-put">PUT</span><div><div class="api-route">/api/landlord/properties/:id</div><div class="api-desc">Full update</div></div></div>
+      <div class="api-item"><span class="method-badge m-patch">PATCH</span><div><div class="api-route">/api/landlord/properties/:id</div><div class="api-desc">Partial update</div></div></div>
+      <div class="api-item"><span class="method-badge m-del">DEL</span><div><div class="api-route">/api/landlord/properties/:id</div><div class="api-desc">Delete listing</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/landlord/properties/:id/status</div><div class="api-desc">Set available / rented / off_market</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/landlord/properties/:id/interests</div><div class="api-desc">All interested renters for property</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/landlord/approve</div><div class="api-desc">Approve renter → creates Match</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/landlord/reject</div><div class="api-desc">Reject renter interest</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/landlord/reopen</div><div class="api-desc">Revert decision to pending</div></div></div>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-head" style="background:rgba(255,159,67,.1);color:var(--orange);border-bottom:1px solid var(--border)">
+        🤖 AI Features <span class="gh-count">7 endpoints</span>
+      </div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/chat</div><div class="api-desc">Onboarding AI — extracts city, budget, role</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/chat/roleplay</div><div class="api-desc">Persona chatbot — landlord / tenant / roommate</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/landlord/extract-property</div><div class="api-desc">AI form-fill via OpenAI function calling</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/analyze-property-image</div><div class="api-desc">Vision API → Hebrew desc + tags from photo</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/lease/generate</div><div class="api-desc">Generate lease HTML (standard or roommate)</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/roommates/compatibility/:id</div><div class="api-desc">Compatibility score 0–100 + Hebrew reason</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/properties/:id/vibe</div><div class="api-desc">Neighbourhood lifestyle (GPT-generated)</div></div></div>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-head" style="background:rgba(255,94,132,.1);color:var(--red);border-bottom:1px solid var(--border)">
+        💳 Subscription &amp; Media <span class="gh-count">6 endpoints</span>
+      </div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/api/subscription</div><div class="api-desc">Current tier + expiry date</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/subscription/checkout</div><div class="api-desc">Stripe payment intent</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/subscription/confirm</div><div class="api-desc">Activate Pro after payment</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/subscription/cancel</div><div class="api-desc">Cancel Pro subscription</div></div></div>
+      <div class="api-item"><span class="method-badge m-post">POST</span><div><div class="api-route">/api/upload</div><div class="api-desc">Upload property images</div></div></div>
+      <div class="api-item"><span class="method-badge m-get">GET</span><div><div class="api-route">/uploads/:filename</div><div class="api-desc">Serve uploaded files</div></div></div>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-head" style="background:rgba(77,166,255,.1);color:var(--blue);border-bottom:1px solid var(--border)">
+        ⚡ WebSocket (Socket.IO) <span class="gh-count">4 events</span>
+      </div>
+      <div class="api-item"><span class="method-badge m-ws">EMIT</span><div><div class="api-route">join_chat</div><div class="api-desc">Client → Server · join room, load history</div></div></div>
+      <div class="api-item"><span class="method-badge m-ws">EMIT</span><div><div class="api-route">send_message</div><div class="api-desc">Client → Server · send P2P message</div></div></div>
+      <div class="api-item"><span class="method-badge m-ws">ON</span><div><div class="api-route">new_message</div><div class="api-desc">Server → Client · broadcast to room</div></div></div>
+      <div class="api-item"><span class="method-badge m-ws">ON</span><div><div class="api-route">chat_history</div><div class="api-desc">Server → Client · replay on join</div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ 5 · USER JOURNEYS ═══════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(61,245,119,.1);color:var(--green)">05</div>
+    <div class="sec-title">User Journey Flows</div>
+  </div>
+  <p class="sec-desc">Step-by-step paths for both roles — from sign-up to a signed lease.</p>
+
+  <div class="flow-grid">
+
+    <!-- Renter -->
+    <div class="flow-panel">
+      <div class="flow-header" style="background:rgba(45,226,194,.08);border-bottom:1px solid var(--border)">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(45,226,194,.15);display:grid;place-items:center;font-size:1.1rem">🔍</div>
+        <div>
+          <div style="font-size:.95rem;font-weight:800;color:var(--teal)">Renter Journey</div>
+          <div style="font-size:.72rem;color:var(--muted);font-weight:400">Register → Onboard → Swipe → Match → Chat → Lease</div>
+        </div>
+      </div>
+      <div class="flow-steps">
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(45,226,194,.18);color:var(--teal)">1</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Register &amp; Sign In</div>
+            <div class="step-detail">Email + password · role auto-set to <strong>renter</strong></div>
+            <div class="step-endpoint">POST /api/auth/register</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(45,226,194,.18);color:var(--teal)">2</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">AI Onboarding Chat</div>
+            <div class="step-detail">Multi-turn conversation extracts city, budget &amp; preferences automatically</div>
+            <div class="step-endpoint">POST /api/chat</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(45,226,194,.18);color:var(--teal)">3</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Discover Properties</div>
+            <div class="step-detail">Filtered by city + budget. Each card shows AI-computed match score 75–99%</div>
+            <div class="step-endpoint">GET /api/properties</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(45,226,194,.18);color:var(--teal)">4</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Swipe Right / Up</div>
+            <div class="step-detail">Creates a <strong>PropertyInterest (pending)</strong>. Free users: 2 swipes/day</div>
+            <div class="step-endpoint">POST /api/swipe</div>
+            <div class="step-branch">
+              <span class="branch-tag" style="background:rgba(255,224,102,.1);color:#ffe066;border-color:rgba(255,224,102,.3)">Free → 2/day</span>
+              <span class="branch-tag" style="background:rgba(61,245,119,.1);color:#3df577;border-color:rgba(61,245,119,.3)">Pro → unlimited</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(45,226,194,.18);color:var(--teal)">5</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Landlord Approves</div>
+            <div class="step-detail">A <strong>Match</strong> record is created and appears in the Matches tab</div>
+            <div class="step-endpoint">GET /api/matches</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(45,226,194,.18);color:var(--teal)">6</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Real-time Chat</div>
+            <div class="step-detail">WebSocket room opened. Messages persisted, read receipts tracked</div>
+            <div class="step-endpoint">WS join_chat / send_message</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(45,226,194,.18);color:var(--teal)">7</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Generate Lease ✓</div>
+            <div class="step-detail">AI produces legally-structured HTML lease agreement</div>
+            <div class="step-endpoint">POST /api/lease/generate</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Landlord -->
+    <div class="flow-panel">
+      <div class="flow-header" style="background:rgba(124,110,255,.08);border-bottom:1px solid var(--border)">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,110,255,.15);display:grid;place-items:center;font-size:1.1rem">🏠</div>
+        <div>
+          <div style="font-size:.95rem;font-weight:800;color:var(--purple)">Landlord Journey</div>
+          <div style="font-size:.72rem;color:var(--muted);font-weight:400">Register → List → Review → Approve → Chat → Close</div>
+        </div>
+      </div>
+      <div class="flow-steps">
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(124,110,255,.18);color:var(--purple)">1</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Register as Landlord</div>
+            <div class="step-detail">Email + password · role set to <strong>landlord</strong> · redirected to dashboard</div>
+            <div class="step-endpoint">POST /api/auth/register</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(124,110,255,.18);color:var(--purple)">2</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">AI-Assisted Property Form</div>
+            <div class="step-detail">Chat with AI assistant that extracts title, price, rooms &amp; amenities via function calling</div>
+            <div class="step-endpoint">POST /api/landlord/extract-property</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(124,110,255,.18);color:var(--purple)">3</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Upload &amp; Analyse Photos</div>
+            <div class="step-detail">GPT-4V auto-generates Hebrew description and relevant tags from photos</div>
+            <div class="step-endpoint">POST /api/upload · /api/analyze-property-image</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(124,110,255,.18);color:var(--purple)">4</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Publish Listing</div>
+            <div class="step-detail">Status → <strong>available</strong>. Property appears in renters' swipe deck immediately</div>
+            <div class="step-endpoint">POST /api/properties</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(124,110,255,.18);color:var(--purple)">5</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Review Interested Renters</div>
+            <div class="step-detail">Centralised inbox shows all pending interests across all properties</div>
+            <div class="step-endpoint">GET /api/landlord/properties/:id/interests</div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(124,110,255,.18);color:var(--purple)">6</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Approve / Reject</div>
+            <div class="step-detail">Approve creates a Match. Reject notifies renter. Can reopen at any time.</div>
+            <div class="step-endpoint">POST /api/landlord/approve · /reject · /reopen</div>
+            <div class="step-branch">
+              <span class="branch-tag" style="background:rgba(61,245,119,.1);color:#3df577;border-color:rgba(61,245,119,.3)">Approve → Match</span>
+              <span class="branch-tag" style="background:rgba(255,94,132,.1);color:#ff5e84;border-color:rgba(255,94,132,.3)">Reject → notify</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-col">
+            <div class="step-num" style="background:rgba(124,110,255,.18);color:var(--purple)">7</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-name">Chat &amp; Close Deal ✓</div>
+            <div class="step-detail">Real-time chat → generate lease → set property to <strong>rented</strong></div>
+            <div class="step-endpoint">POST /api/lease/generate · /status</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ 6 · AI FEATURES ═════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(255,159,67,.12);color:var(--orange)">06</div>
+    <div class="sec-title">AI Feature Architecture</div>
+  </div>
+  <p class="sec-desc">Seven distinct OpenAI integrations powering the core product experience.</p>
+
+  <div class="ai-hub-wrap">
+    <div class="ai-center">
+      <div class="ai-center-icon">🤖</div>
+      <div class="ai-center-name">OpenAI API</div>
+      <div class="ai-center-sub">gpt-4o-mini · GPT-4V (Vision)<br/>20s timeout · Hebrew &amp; English</div>
+    </div>
+
+    <div class="ai-features-grid">
+      <div class="ai-feat">
+        <div class="ai-feat-icon" style="background:rgba(124,110,255,.15);color:var(--purple)">💬</div>
+        <div>
+          <div class="ai-feat-name">Onboarding Chat</div>
+          <div class="ai-feat-desc">Multi-turn conversation that silently extracts city, budget &amp; role into a structured PROFILE_JSON</div>
+        </div>
+      </div>
+      <div class="ai-feat">
+        <div class="ai-feat-icon" style="background:rgba(77,166,255,.15);color:var(--blue)">🎭</div>
+        <div>
+          <div class="ai-feat-name">Roleplay Chatbot</div>
+          <div class="ai-feat-desc">Context-aware personas: landlord, tenant, roommate host, seeker — answers in Hebrew</div>
+        </div>
+      </div>
+      <div class="ai-feat">
+        <div class="ai-feat-icon" style="background:rgba(45,226,194,.12);color:var(--teal)">📝</div>
+        <div>
+          <div class="ai-feat-name">Property Form AI</div>
+          <div class="ai-feat-desc">OpenAI function calling extracts title, price, rooms, amenities from natural language</div>
+        </div>
+      </div>
+      <div class="ai-feat">
+        <div class="ai-feat-icon" style="background:rgba(61,245,119,.1);color:var(--green)">📸</div>
+        <div>
+          <div class="ai-feat-name">Image Analysis</div>
+          <div class="ai-feat-desc">GPT-4V reads property photos → Hebrew marketing description + relevant tags</div>
+        </div>
+      </div>
+      <div class="ai-feat">
+        <div class="ai-feat-icon" style="background:rgba(255,159,67,.12);color:var(--orange)">🏙️</div>
+        <div>
+          <div class="ai-feat-name">Neighbourhood Vibe</div>
+          <div class="ai-feat-desc">GPT-generated area lifestyle summary: cafés, transport, noise, student culture</div>
+        </div>
+      </div>
+      <div class="ai-feat">
+        <div class="ai-feat-icon" style="background:rgba(255,224,102,.1);color:var(--yellow)">📄</div>
+        <div>
+          <div class="ai-feat-name">Lease Generator</div>
+          <div class="ai-feat-desc">Produces HTML lease agreements — standard rental or roommate agreement variant</div>
+        </div>
+      </div>
+      <div class="ai-feat">
+        <div class="ai-feat-icon" style="background:rgba(255,94,132,.12);color:var(--red)">👥</div>
+        <div>
+          <div class="ai-feat-name">Roommate Compatibility</div>
+          <div class="ai-feat-desc">Scores two user profiles 0–100 with a detailed Hebrew compatibility explanation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 7 · SECURITY ════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(255,94,132,.1);color:var(--red)">07</div>
+    <div class="sec-title">Security &amp; Rate Limiting</div>
+  </div>
+  <p class="sec-desc">Layered defences covering authentication, request throttling, and subscription enforcement.</p>
+
+  <div class="security-grid">
+
+    <div class="sec-panel">
+      <div class="sec-panel-head" style="background:rgba(124,110,255,.1);color:#a89dff;border-bottom:1px solid var(--border)">
+        🔐 Authentication
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">🎫</div>
+        <div class="sec-item-text"><strong>Bearer token</strong> via itsdangerous URLSafeTimedSerializer</div>
+        <div class="sec-val">7-day TTL</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">🔒</div>
+        <div class="sec-item-text"><strong>bcrypt</strong> password hashing on every stored credential</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">🛡️</div>
+        <div class="sec-item-text"><strong>@require_auth</strong> decorator enforced on all private routes</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">🌐</div>
+        <div class="sec-item-text"><strong>CORS</strong> origin whitelist enforced in production (no wildcard)</div>
+      </div>
+    </div>
+
+    <div class="sec-panel">
+      <div class="sec-panel-head" style="background:rgba(255,159,67,.1);color:var(--orange);border-bottom:1px solid var(--border)">
+        🚦 Rate Limits
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">🔑</div>
+        <div class="sec-item-text"><strong>Login / register</strong> — IP-level throttle</div>
+        <div class="sec-val warn">10 / 15 min</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">💬</div>
+        <div class="sec-item-text"><strong>Chat messages</strong> — per-user hourly cap</div>
+        <div class="sec-val warn">60 / hour</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">⏱️</div>
+        <div class="sec-item-text"><strong>Chat interval</strong> — min time between messages</div>
+        <div class="sec-val warn">2 s min</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">📏</div>
+        <div class="sec-item-text"><strong>Message length</strong> — hard cap per request</div>
+        <div class="sec-val warn">2 000 chars</div>
+      </div>
+    </div>
+
+    <div class="sec-panel">
+      <div class="sec-panel-head" style="background:rgba(61,245,119,.08);color:var(--green);border-bottom:1px solid var(--border)">
+        💎 Subscription Tiers
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">🆓</div>
+        <div class="sec-item-text"><strong>Free tier</strong> — limited daily swipes, server-enforced</div>
+        <div class="sec-val">2 / day</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">⭐</div>
+        <div class="sec-item-text"><strong>Pro tier</strong> — unlimited swipes via Stripe payment</div>
+        <div class="sec-val">Unlimited</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">📅</div>
+        <div class="sec-item-text"><strong>subscription_until</strong> field enforced server-side on every request</div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-item-icon">🔑</div>
+        <div class="sec-item-text"><strong>Admin endpoints</strong> protected by separate <strong>ADMIN_DEBUG_SECRET</strong> env var</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ 8 · DEPLOYMENT ══════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-head">
+    <div class="sec-num" style="background:rgba(61,245,119,.1);color:var(--green)">08</div>
+    <div class="sec-title">Deployment Pipeline</div>
+  </div>
+  <p class="sec-desc">From a git push to live production in one automated Render.com pipeline.</p>
+
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="pipe-icon-wrap" style="--pipe-grad:linear-gradient(135deg,var(--purple),var(--blue))">🖥️</div>
+      <div class="pipe-name">Developer</div>
+      <div class="pipe-sub">Local changes</div>
+      <div class="pipe-sub-detail">git push origin main</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="pipe-icon-wrap" style="--pipe-grad:linear-gradient(135deg,var(--blue),var(--teal))">📦</div>
+      <div class="pipe-name">Git Repo</div>
+      <div class="pipe-sub">Source of truth</div>
+      <div class="pipe-sub-detail">GitHub / GitLab</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="pipe-icon-wrap" style="--pipe-grad:linear-gradient(135deg,var(--teal),var(--green))">⚙️</div>
+      <div class="pipe-name">Render Build</div>
+      <div class="pipe-sub">Auto-triggered</div>
+      <div class="pipe-sub-detail">pip install -r requirements.txt</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="pipe-icon-wrap" style="--pipe-grad:linear-gradient(135deg,var(--purple),var(--blue))">🐍</div>
+      <div class="pipe-name">Backend Service</div>
+      <div class="pipe-sub">Flask + Gunicorn</div>
+      <div class="pipe-sub-detail">--workers 2 --timeout 120</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="pipe-icon-wrap" style="--pipe-grad:linear-gradient(135deg,var(--teal),var(--blue))">🗄️</div>
+      <div class="pipe-name">PostgreSQL</div>
+      <div class="pipe-sub">Managed by Render</div>
+      <div class="pipe-sub-detail">DATABASE_URL env var</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="pipe-icon-wrap" style="--pipe-grad:linear-gradient(135deg,var(--green),var(--teal))">🌐</div>
+      <div class="pipe-name">Live HTTPS</div>
+      <div class="pipe-sub">Public endpoints</div>
+      <div class="pipe-sub-detail">*.onrender.com</div>
+    </div>
+  </div>
+
+  <!-- Env var table -->
+  <div style="margin-top:20px;background:var(--s2);border:1px solid var(--border2);border-radius:14px;overflow:hidden">
+    <div style="padding:14px 20px;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)">
+      Key Environment Variables
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0">
+      <div style="padding:10px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);font-size:.78rem"><code style="color:#a89dff">SECRET_KEY</code> <span style="color:var(--muted)">— Token signing key</span></div>
+      <div style="padding:10px 20px;border-bottom:1px solid var(--border);font-size:.78rem"><code style="color:#7ec8ff">DATABASE_URL</code> <span style="color:var(--muted)">— PostgreSQL connection</span></div>
+      <div style="padding:10px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);font-size:.78rem"><code style="color:#ff9f43">OPENAI_API_KEY</code> <span style="color:var(--muted)">— AI services</span></div>
+      <div style="padding:10px 20px;border-bottom:1px solid var(--border);font-size:.78rem"><code style="color:#ff5e84">ALLOWED_ORIGIN</code> <span style="color:var(--muted)">— CORS whitelist</span></div>
+      <div style="padding:10px 20px;border-right:1px solid var(--border);font-size:.78rem"><code style="color:#3df577">VITE_API_BASE</code> <span style="color:var(--muted)">— Frontend API URL</span></div>
+      <div style="padding:10px 20px;font-size:.78rem"><code style="color:#ffe066">ADMIN_DEBUG_SECRET</code> <span style="color:var(--muted)">— Admin access key</span></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="footer">
+  RentMate · Technical Architecture · Confidential Investment Materials · 2026
+</div>
+
+</body>
+</html>
