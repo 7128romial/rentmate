@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RentMate – Pitch Deck</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --purple:#7c6eff;
+  --blue:#4da6ff;
+  --teal:#2de2c2;
+  --green:#3df577;
+  --orange:#ff9f43;
+  --red:#ff5e84;
+  --yellow:#ffe066;
+  --bg:#07080f;
+  --s1:#0e1018;
+  --s2:#12141f;
+  --s3:#1a1d2e;
+  --border:#ffffff12;
+  --text:#f0f2ff;
+  --muted:#8891a8;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Heebo',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── PRINT / SLIDE SIZE ── */
+@media print {
+  .slide { page-break-after: always; height: 100vh !important; }
+  .nav { display: none; }
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(7,8,15,.92); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 32px; gap: 16px;
+}
+.nav-logo { font-weight: 900; font-size: 1.1rem; color: var(--purple); }
+.nav-slides { display: flex; gap: 6px; flex-wrap: wrap; }
+.nav-btn {
+  background: var(--s3); border: 1px solid var(--border);
+  color: var(--muted); font-family: 'Heebo', sans-serif;
+  border-radius: 8px; padding: 4px 12px; font-size: .72rem;
+  cursor: pointer; transition: all .15s;
+}
+.nav-btn:hover, .nav-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+/* ── SLIDE BASE ── */
+.slide {
+  min-height: 100vh; padding: 100px 80px 60px;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative; overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+.slide::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+}
+
+/* SLIDE BACKGROUNDS */
+.s-cover::before {
+  background:
+    radial-gradient(ellipse 70% 60% at 50% -10%, rgba(124,110,255,.22) 0%, transparent 70%),
+    radial-gradient(circle 400px at 10% 80%, rgba(77,166,255,.07), transparent),
+    radial-gradient(circle 400px at 90% 20%, rgba(61,245,119,.06), transparent);
+}
+.s-purple::before { background: radial-gradient(ellipse 60% 50% at 0% 50%, rgba(124,110,255,.1), transparent 70%); }
+.s-teal::before   { background: radial-gradient(ellipse 60% 50% at 100% 50%, rgba(45,226,194,.08), transparent 70%); }
+.s-blue::before   { background: radial-gradient(ellipse 60% 50% at 50% 100%, rgba(77,166,255,.08), transparent 70%); }
+.s-orange::before { background: radial-gradient(ellipse 60% 50% at 0% 0%, rgba(255,159,67,.08), transparent 70%); }
+.s-red::before    { background: radial-gradient(ellipse 60% 50% at 100% 100%, rgba(255,94,132,.08), transparent 70%); }
+.s-green::before  { background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(61,245,119,.07), transparent 70%); }
+
+.slide-num {
+  position: absolute; top: 80px; left: 60px;
+  font-size: .72rem; font-weight: 700; color: var(--muted);
+  letter-spacing: .12em; text-transform: uppercase;
+}
+
+/* ── TYPOGRAPHY ── */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(124,110,255,.12); border: 1px solid rgba(124,110,255,.3);
+  border-radius: 99px; padding: 5px 18px;
+  font-size: .78rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--purple); margin-bottom: 20px;
+}
+h1.giant {
+  font-size: clamp(3rem,7vw,5.5rem); font-weight: 900;
+  letter-spacing: -.04em; line-height: 1.0; margin-bottom: 20px;
+}
+h2.slide-title {
+  font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 900;
+  letter-spacing: -.03em; line-height: 1.1; margin-bottom: 12px;
+}
+.grad-text {
+  background: linear-gradient(135deg, #fff 20%, var(--purple) 60%, var(--blue));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.grad-teal  { background: linear-gradient(135deg, var(--teal), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.grad-orange{ background: linear-gradient(135deg, var(--orange), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.grad-red   { background: linear-gradient(135deg, var(--red), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.grad-blue  { background: linear-gradient(135deg, var(--blue), var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.grad-green { background: linear-gradient(135deg, var(--green), var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.lead { font-size: 1.15rem; color: var(--muted); line-height: 1.7; max-width: 680px; margin-bottom: 32px; }
+.sub  { font-size: .9rem; color: var(--muted); line-height: 1.6; }
+
+/* ── CARDS / BOXES ── */
+.card {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px 28px;
+}
+.card-sm { padding: 18px 20px; border-radius: 12px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+/* ── STAT BOX ── */
+.stat { text-align: center; }
+.stat-val {
+  font-size: clamp(2rem,4vw,3.2rem); font-weight: 900;
+  letter-spacing: -.04em; line-height: 1;
+}
+.stat-label { font-size: .8rem; color: var(--muted); margin-top: 6px; font-weight: 500; }
+
+/* ── TAG / BADGE ── */
+.tag {
+  display: inline-block; border-radius: 99px;
+  font-size: .7rem; font-weight: 700; padding: 3px 12px; border: 1px solid;
+}
+.tag-p { background: rgba(124,110,255,.12); color: #a89dff; border-color: rgba(124,110,255,.3); }
+.tag-t { background: rgba(45,226,194,.1);  color: var(--teal);   border-color: rgba(45,226,194,.3); }
+.tag-g { background: rgba(61,245,119,.1);  color: var(--green);  border-color: rgba(61,245,119,.3); }
+.tag-o { background: rgba(255,159,67,.1);  color: var(--orange); border-color: rgba(255,159,67,.3); }
+.tag-r { background: rgba(255,94,132,.1);  color: var(--red);    border-color: rgba(255,94,132,.3); }
+.tag-b { background: rgba(77,166,255,.12); color: var(--blue);   border-color: rgba(77,166,255,.3); }
+.tag-y { background: rgba(255,224,102,.1); color: var(--yellow); border-color: rgba(255,224,102,.3); }
+
+/* ── DIVIDER ── */
+.hdiv { height: 1px; background: var(--border); margin: 28px 0; }
+
+/* ── ACCENT LINE ── */
+.accent-line {
+  width: 60px; height: 4px; border-radius: 2px; margin-bottom: 24px;
+  background: linear-gradient(90deg, var(--purple), var(--blue));
+}
+
+/* ── CHECK LIST ── */
+.check-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.check-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: .9rem; line-height: 1.5; color: var(--muted);
+}
+.check-list li strong { color: var(--text); }
+.check-list li::before {
+  content: '✓'; flex-shrink: 0; width: 22px; height: 22px;
+  border-radius: 50%; display: grid; place-items: center;
+  font-size: .7rem; font-weight: 900; margin-top: 1px;
+  background: rgba(61,245,119,.15); color: var(--green);
+  border: 1px solid rgba(61,245,119,.3);
+}
+
+/* ── FLOW STEPS ── */
+.flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+.flow-step {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; text-align: center; min-width: 100px;
+}
+.flow-icon {
+  width: 60px; height: 60px; border-radius: 18px;
+  display: grid; place-items: center; font-size: 1.6rem;
+  border: 1px solid var(--border);
+  background: var(--s3);
+}
+.flow-name { font-size: .78rem; font-weight: 700; }
+.flow-sub  { font-size: .68rem; color: var(--muted); line-height: 1.4; max-width: 90px; }
+.flow-arrow { color: var(--purple); font-size: 1.4rem; margin: 0 6px; padding-bottom: 28px; opacity: .7; flex-shrink: 0; }
+
+/* ── QUOTE BOX ── */
+.quote-box {
+  background: rgba(124,110,255,.07); border: 1px solid rgba(124,110,255,.25);
+  border-right: 4px solid var(--purple);
+  border-radius: 12px; padding: 20px 24px;
+  font-size: 1rem; line-height: 1.65; color: var(--text);
+  font-style: italic;
+}
+
+/* ── PROBLEM BOX ── */
+.prob {
+  background: rgba(255,94,132,.06); border: 1px solid rgba(255,94,132,.2);
+  border-radius: 14px; padding: 20px 24px;
+}
+.prob-icon { font-size: 1.6rem; margin-bottom: 10px; }
+.prob-title { font-size: .95rem; font-weight: 800; color: var(--red); margin-bottom: 6px; }
+.prob-desc { font-size: .82rem; color: var(--muted); line-height: 1.55; }
+
+/* ── SOL BOX ── */
+.sol {
+  background: rgba(45,226,194,.06); border: 1px solid rgba(45,226,194,.2);
+  border-radius: 14px; padding: 20px 24px;
+}
+.sol-icon { font-size: 1.6rem; margin-bottom: 10px; }
+.sol-title { font-size: .95rem; font-weight: 800; color: var(--teal); margin-bottom: 6px; }
+.sol-desc { font-size: .82rem; color: var(--muted); line-height: 1.55; }
+
+/* ── FEATURE CARD ── */
+.feat {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.feat-icon { font-size: 1.6rem; }
+.feat-name { font-size: .88rem; font-weight: 800; }
+.feat-desc { font-size: .75rem; color: var(--muted); line-height: 1.55; }
+
+/* ── TIER CARD ── */
+.tier {
+  border-radius: 16px; padding: 24px; text-align: center;
+  display: flex; flex-direction: column; gap: 14px;
+  position: relative; overflow: hidden;
+}
+.tier-free {
+  background: var(--s2); border: 1px solid var(--border);
+}
+.tier-pro {
+  background: linear-gradient(145deg,rgba(124,110,255,.15),rgba(77,166,255,.1));
+  border: 1px solid rgba(124,110,255,.4);
+  box-shadow: 0 0 60px rgba(124,110,255,.1);
+}
+.tier-name { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
+.tier-price { font-size: 2.4rem; font-weight: 900; letter-spacing: -.04em; line-height: 1; }
+.tier-price span { font-size: .9rem; font-weight: 500; color: var(--muted); }
+.tier-list { list-style: none; display: flex; flex-direction: column; gap: 8px; text-align: right; }
+.tier-list li { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.tier-list li::before { content: '✓'; color: var(--green); font-weight: 900; font-size: .75rem; }
+
+/* ── ROADMAP ── */
+.roadmap { display: flex; flex-direction: column; gap: 0; }
+.rmap-item {
+  display: flex; gap: 20px; align-items: flex-start;
+  position: relative; padding-bottom: 28px;
+}
+.rmap-item:last-child { padding-bottom: 0; }
+.rmap-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 40px; }
+.rmap-dot {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid;
+}
+.rmap-line { width: 2px; flex: 1; min-height: 30px; background: var(--border); margin-top: 4px; }
+.rmap-item:last-child .rmap-line { display: none; }
+.rmap-phase { font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+.rmap-title { font-size: .92rem; font-weight: 800; margin-bottom: 4px; }
+.rmap-desc  { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+/* ── TEAM CARD ── */
+.team-card {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px; text-align: center;
+}
+.team-avatar {
+  width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 14px;
+  display: grid; place-items: center; font-size: 2rem;
+  background: var(--s3); border: 2px solid var(--border);
+}
+.team-name  { font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
+.team-role  { font-size: .78rem; color: var(--purple); font-weight: 600; margin-bottom: 8px; }
+.team-desc  { font-size: .75rem; color: var(--muted); line-height: 1.55; }
+
+/* ── ASK BOX ── */
+.ask-box {
+  background: linear-gradient(135deg,rgba(124,110,255,.12),rgba(77,166,255,.08));
+  border: 1px solid rgba(124,110,255,.35);
+  border-radius: 20px; padding: 36px 40px; text-align: center;
+  box-shadow: 0 0 80px rgba(124,110,255,.1);
+}
+.ask-amount {
+  font-size: clamp(3rem,6vw,5rem); font-weight: 900;
+  letter-spacing: -.05em; line-height: 1;
+  background: linear-gradient(135deg,#fff,var(--purple),var(--blue));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 8px;
+}
+.use-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 28px; }
+.use-item {
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; text-align: center;
+}
+.use-pct { font-size: 1.6rem; font-weight: 900; }
+.use-label { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+
+/* ── FOOTER SLIDE ── */
+.footer-slide {
+  text-align: center;
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(124,110,255,.1), transparent);
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">RentMate</div>
+  <div class="nav-slides">
+    <button class="nav-btn" onclick="scrollTo('#s1')">כיסוי</button>
+    <button class="nav-btn" onclick="scrollTo('#s2')">הבעיה</button>
+    <button class="nav-btn" onclick="scrollTo('#s3')">הפתרון</button>
+    <button class="nav-btn" onclick="scrollTo('#s4')">שוק</button>
+    <button class="nav-btn" onclick="scrollTo('#s5')">מוצר</button>
+    <button class="nav-btn" onclick="scrollTo('#s6')">AI</button>
+    <button class="nav-btn" onclick="scrollTo('#s7')">מנוע מאצ'</button>
+    <button class="nav-btn" onclick="scrollTo('#s8')">מונטיזציה</button>
+    <button class="nav-btn" onclick="scrollTo('#s9')">טכנולוגיה</button>
+    <button class="nav-btn" onclick="scrollTo('#s10')">מפת דרכים</button>
+    <button class="nav-btn" onclick="scrollTo('#s11')">צוות</button>
+    <button class="nav-btn" onclick="scrollTo('#s12')">הבקשה</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     סלייד 1 — כיסוי
+══════════════════════════════════════════ -->
+<section class="slide s-cover" id="s1">
+  <div class="slide-num">01 / 12</div>
+  <div class="eyebrow">🏠 Real Estate · AI · PropTech</div>
+  <h1 class="giant grad-text">RentMate</h1>
+  <p class="lead">הפלטפורמה הראשונה בישראל שמחברת בין שוכרים ומשכירים בעזרת בינה מלאכותית — חוויה כמו טינדר, עם הכוח של ChatGPT.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:40px">
+    <span class="tag tag-p">AI-Native</span>
+    <span class="tag tag-t">Real-Time Chat</span>
+    <span class="tag tag-g">Two-Sided Marketplace</span>
+    <span class="tag tag-b">SaaS + Freemium</span>
+    <span class="tag tag-o">ישראל · 2026</span>
+  </div>
+  <div class="grid-4" style="max-width:700px">
+    <div class="stat"><div class="stat-val grad-text">2M+</div><div class="stat-label">שוכרים פוטנציאליים</div></div>
+    <div class="stat"><div class="stat-val grad-teal">₪8B</div><div class="stat-label">שוק השכירות הישראלי</div></div>
+    <div class="stat"><div class="stat-val grad-orange">7</div><div class="stat-label">פיצ'רי AI מובנים</div></div>
+    <div class="stat"><div class="stat-val grad-green">35+</div><div class="stat-label">נקודות API</div></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 2 — הבעיה
+══════════════════════════════════════════ -->
+<section class="slide s-red" id="s2">
+  <div class="slide-num">02 / 12</div>
+  <div class="eyebrow" style="background:rgba(255,94,132,.1);border-color:rgba(255,94,132,.3);color:var(--red)">⚠️ הבעיה</div>
+  <h2 class="slide-title">שוק השכירות בישראל <span class="grad-red">שבור</span></h2>
+  <p class="lead">מחפשי דירות ומשכירים כאחד סובלים מתהליך ארוך, מייגע, ולא שקוף.</p>
+
+  <div class="grid-3">
+    <div class="prob">
+      <div class="prob-icon">📋</div>
+      <div class="prob-title">אין סינון חכם</div>
+      <div class="prob-desc">Yad2 ו-Facebook מציגים מאות מודעות לא רלוונטיות. אין התאמה אישית, אין ציון "כמה זה מתאים לי".</div>
+    </div>
+    <div class="prob">
+      <div class="prob-icon">💬</div>
+      <div class="prob-title">תקשורת מחוץ לפלטפורמה</div>
+      <div class="prob-desc">ברגע שמשכיר ושוכר יוצרים קשר — הם עוברים ל-WhatsApp. הפלטפורמה מאבדת שליטה, נתונים, ויכולת מונטיזציה.</div>
+    </div>
+    <div class="prob">
+      <div class="prob-icon">⏳</div>
+      <div class="prob-title">תהליך ארוך ומסורבל</div>
+      <div class="prob-desc">ממוצע 47 ימים ממחפש פעיל עד חתימת חוזה. ניירת ידנית, פגישות מיותרות, חוסר שקיפות.</div>
+    </div>
+  </div>
+
+  <div class="hdiv"></div>
+  <div class="quote-box">
+    "ביליתי 3 חודשים בחיפוש דירה בתל אביב. פתחתי 200 מודעות, שלחתי 80 הודעות, ביקרתי 15 דירות. בסוף לקחתי את הדירה שגיליתי דרך חבר."
+    <div style="margin-top:10px;font-size:.78rem;color:var(--muted);font-style:normal">— מחפש דירה טיפוסי, תל אביב 2025</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 3 — הפתרון
+══════════════════════════════════════════ -->
+<section class="slide s-teal" id="s3">
+  <div class="slide-num">03 / 12</div>
+  <div class="eyebrow" style="background:rgba(45,226,194,.1);border-color:rgba(45,226,194,.3);color:var(--teal)">✅ הפתרון</div>
+  <h2 class="slide-title">חוויה כמו <span class="grad-teal">טינדר</span> — עם כוח של <span class="grad-blue">ChatGPT</span></h2>
+  <p class="lead">RentMate משתמשת ב-AI כדי להבין את הצרכים של השוכר, להתאים לו דירות בזמן אמת, ולסגור עסקה בתוך האפליקציה.</p>
+
+  <div class="grid-3">
+    <div class="sol">
+      <div class="sol-icon">🤖</div>
+      <div class="sol-title">Onboarding בשיחה</div>
+      <div class="sol-desc">במקום טפסים ארוכים — שיחה טבעית עם AI שמבין מה השוכר מחפש ובונה פרופיל אוטומטית.</div>
+    </div>
+    <div class="sol">
+      <div class="sol-icon">🃏</div>
+      <div class="sol-title">סווייפ חכם + ציון התאמה</div>
+      <div class="sol-desc">כל דירה מקבלת ציון התאמה (75–99%) מבוסס AI. שוכרים רואים רק דירות שבאמת מתאימות להם.</div>
+    </div>
+    <div class="sol">
+      <div class="sol-icon">💬</div>
+      <div class="sol-title">הכל בפנים</div>
+      <div class="sol-desc">צ'אט בזמן אמת, חוזה שכירות AI, ותשלום — הכל בתוך RentMate. אף שלב לא יוצא החוצה.</div>
+    </div>
+  </div>
+
+  <div class="hdiv"></div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-icon" style="background:rgba(45,226,194,.1);border-color:rgba(45,226,194,.3)">🤖</div>
+      <div class="flow-name">שיחה עם AI</div>
+      <div class="flow-sub">בניית פרופיל אוטומטי</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-step">
+      <div class="flow-icon" style="background:rgba(77,166,255,.1);border-color:rgba(77,166,255,.3)">🃏</div>
+      <div class="flow-name">סווייפ על דירות</div>
+      <div class="flow-sub">ציון AI לכל דירה</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-step">
+      <div class="flow-icon" style="background:rgba(124,110,255,.1);border-color:rgba(124,110,255,.3)">🤝</div>
+      <div class="flow-name">מאצ'</div>
+      <div class="flow-sub">המשכיר אישר</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-step">
+      <div class="flow-icon" style="background:rgba(61,245,119,.1);border-color:rgba(61,245,119,.3)">💬</div>
+      <div class="flow-name">צ'אט בזמן אמת</div>
+      <div class="flow-sub">WebSocket · Read Receipts</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-step">
+      <div class="flow-icon" style="background:rgba(255,159,67,.1);border-color:rgba(255,159,67,.3)">📄</div>
+      <div class="flow-name">חוזה AI</div>
+      <div class="flow-sub">נוצר אוטומטית</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-step">
+      <div class="flow-icon" style="background:rgba(255,94,132,.1);border-color:rgba(255,94,132,.3)">💳</div>
+      <div class="flow-name">תשלום</div>
+      <div class="flow-sub">Stripe · Pro Tier</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 4 — שוק
+══════════════════════════════════════════ -->
+<section class="slide s-blue" id="s4">
+  <div class="slide-num">04 / 12</div>
+  <div class="eyebrow" style="background:rgba(77,166,255,.1);border-color:rgba(77,166,255,.3);color:var(--blue)">📊 גודל השוק</div>
+  <h2 class="slide-title">שוק ענק, <span class="grad-blue">דיגיטציה נמוכה</span></h2>
+  <p class="lead">שוק השכירות הישראלי מגלגל מיליארדים — אך עדיין מנוהל בעיקר דרך Yad2, WhatsApp, ומתווכים.</p>
+
+  <div class="grid-3" style="margin-bottom:32px">
+    <div class="card" style="text-align:center;border-color:rgba(255,94,132,.25)">
+      <div class="stat-val" style="font-size:2.8rem;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">₪80B+</div>
+      <div style="font-size:.78rem;font-weight:700;color:var(--red);margin-top:6px">TAM</div>
+      <div class="stat-label">שוק הנדל"ן הכולל בישראל</div>
+    </div>
+    <div class="card" style="text-align:center;border-color:rgba(255,159,67,.25)">
+      <div class="stat-val" style="font-size:2.8rem;font-weight:900;background:linear-gradient(135deg,var(--orange),var(--yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">₪8B</div>
+      <div style="font-size:.78rem;font-weight:700;color:var(--orange);margin-top:6px">SAM</div>
+      <div class="stat-label">שוק השכירות הרזידנציאלית</div>
+    </div>
+    <div class="card" style="text-align:center;border-color:rgba(45,226,194,.25)">
+      <div class="stat-val" style="font-size:2.8rem;font-weight:900;background:linear-gradient(135deg,var(--teal),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">₪400M</div>
+      <div style="font-size:.78rem;font-weight:700;color:var(--teal);margin-top:6px">SOM</div>
+      <div class="stat-label">שוק ניתן לכיבוש — 5%</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">המתחרים הנוכחיים</div>
+      <ul class="check-list" style="gap:8px">
+        <li style="color:var(--muted)"><strong>Yad2</strong> — אין AI, אין מאצ'ינג, אין צ'אט, ממשק מיושן</li>
+        <li style="color:var(--muted)"><strong>Facebook Groups</strong> — כאוס מוחלט, אין אמינות</li>
+        <li style="color:var(--muted)"><strong>מתווכים</strong> — עמלה 1–2 חודשי שכירות (₪5,000–₪15,000)</li>
+        <li style="color:var(--muted)"><strong>Airbnb / Booking</strong> — טווח קצר בלבד, לא שכירות ארוכה</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">היתרון שלנו</div>
+      <ul class="check-list" style="gap:8px">
+        <li><strong>AI-Native מהיום הראשון</strong> — לא Add-On, זה הליבה</li>
+        <li><strong>Two-Sided Marketplace</strong> — ערך לשני הצדדים</li>
+        <li><strong>הכל בפנים</strong> — צ'אט, חוזה, תשלום. אפס WhatsApp</li>
+        <li><strong>Hebrew-First</strong> — בנוי לשוק הישראלי, ממשק RTL מלא</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 5 — מוצר
+══════════════════════════════════════════ -->
+<section class="slide s-purple" id="s5">
+  <div class="slide-num">05 / 12</div>
+  <div class="eyebrow">📱 המוצר</div>
+  <h2 class="slide-title">11 מסכים. <span class="grad-text">חוויה אחת חלקה.</span></h2>
+  <p class="lead">שני זרימות משתמש מושלמות — לשוכר ולמשכיר — שמובילות לסגירת עסקה.</p>
+
+  <div class="grid-2">
+    <div>
+      <div style="font-size:.78rem;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span style="background:rgba(45,226,194,.12);border:1px solid rgba(45,226,194,.25);border-radius:8px;padding:4px 12px">🔍 מסלול השוכר</span>
+      </div>
+      <div class="roadmap">
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--teal);border-color:var(--teal)"></div><div class="rmap-line"></div></div>
+          <div><div class="rmap-phase">שלב 1</div><div class="rmap-title">רישום + שיחת AI</div><div class="rmap-desc">AI מבין מה אתה מחפש בשיחה טבעית — ללא טפסים</div></div>
+        </div>
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--blue);border-color:var(--blue)"></div><div class="rmap-line"></div></div>
+          <div><div class="rmap-phase">שלב 2</div><div class="rmap-title">גילוי + סווייפ</div><div class="rmap-desc">דירות מסוננות עם ציון התאמה AI. סווייפ ימין = עניין</div></div>
+        </div>
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--purple);border-color:var(--purple)"></div><div class="rmap-line"></div></div>
+          <div><div class="rmap-phase">שלב 3</div><div class="rmap-title">מאצ' + צ'אט</div><div class="rmap-desc">המשכיר אישר — ניפתח צ'אט WebSocket ישיר</div></div>
+        </div>
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--green);border-color:var(--green)"></div></div>
+          <div><div class="rmap-phase">שלב 4</div><div class="rmap-title">חוזה ✓</div><div class="rmap-desc">AI מייצר חוזה שכירות מותאם — סוגר עסקה בלחיצה</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:.78rem;font-weight:800;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span style="background:rgba(124,110,255,.12);border:1px solid rgba(124,110,255,.25);border-radius:8px;padding:4px 12px">🏠 מסלול המשכיר</span>
+      </div>
+      <div class="roadmap">
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--purple);border-color:var(--purple)"></div><div class="rmap-line"></div></div>
+          <div><div class="rmap-phase">שלב 1</div><div class="rmap-title">פרסום AI-מסייע</div><div class="rmap-desc">AI ממלא את הטופס אוטומטי מתוך שיחה. GPT-4V מנתח תמונות.</div></div>
+        </div>
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--orange);border-color:var(--orange)"></div><div class="rmap-line"></div></div>
+          <div><div class="rmap-phase">שלב 2</div><div class="rmap-title">תיבת דואר נכנס</div><div class="rmap-desc">כל המתעניינים מרוכזים בלוח אחד — ממויינים ומסוננים</div></div>
+        </div>
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--blue);border-color:var(--blue)"></div><div class="rmap-line"></div></div>
+          <div><div class="rmap-phase">שלב 3</div><div class="rmap-title">אישור / דחייה</div><div class="rmap-desc">לחיצה אחת = מאצ'. ניתן לפתוח מחדש בכל עת.</div></div>
+        </div>
+        <div class="rmap-item">
+          <div class="rmap-left"><div class="rmap-dot" style="background:var(--green);border-color:var(--green)"></div></div>
+          <div><div class="rmap-phase">שלב 4</div><div class="rmap-title">עסקה סגורה ✓</div><div class="rmap-desc">צ'אט + חוזה + עדכון סטטוס "הושכר" — הכל אוטומטי</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 6 — AI
+══════════════════════════════════════════ -->
+<section class="slide s-orange" id="s6">
+  <div class="slide-num">06 / 12</div>
+  <div class="eyebrow" style="background:rgba(255,159,67,.1);border-color:rgba(255,159,67,.3);color:var(--orange)">🤖 בינה מלאכותית</div>
+  <h2 class="slide-title">AI הוא לא פיצ'ר — <span class="grad-orange">הוא התשתית</span></h2>
+  <p class="lead">7 נקודות שונות שבהן OpenAI מחולל ערך ישיר בתוך המוצר — לא chatbot נפרד, אלא שכבה שעוטפת כל זרימה.</p>
+
+  <div class="grid-3" style="gap:14px">
+    <div class="feat">
+      <div class="feat-icon">💬</div>
+      <div class="feat-name">Onboarding בשיחה</div>
+      <div class="feat-desc">AI מחלץ עיר, תקציב ופרופיל שלם מתוך שיחה טבעית. אפס טפסים.</div>
+      <span class="tag tag-p" style="margin-top:4px">gpt-4o-mini</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🎭</div>
+      <div class="feat-name">Chatbot עם פרסונה</div>
+      <div class="feat-desc">עונה בתור: משכיר, דייר, שוכר, שותף — בעברית, מותאם הקשר.</div>
+      <span class="tag tag-p" style="margin-top:4px">Role-play</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📝</div>
+      <div class="feat-name">מילוי טפסים אוטומטי</div>
+      <div class="feat-desc">Function Calling מחלץ מחיר, חדרים, קומה, נוחיות — ממשפט אחד.</div>
+      <span class="tag tag-o" style="margin-top:4px">Function Calling</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📸</div>
+      <div class="feat-name">ניתוח תמונות</div>
+      <div class="feat-desc">GPT-4V קורא תמונת דירה ומייצר תיאור שיווקי בעברית + תגיות.</div>
+      <span class="tag tag-b" style="margin-top:4px">Vision API</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🏙️</div>
+      <div class="feat-name">Vibe של השכונה</div>
+      <div class="feat-desc">תיאור חיים בשכונה: בתי קפה, תחבורה, רעש, אוכלוסייה — per location.</div>
+      <span class="tag tag-t" style="margin-top:4px">RAG-ready</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📄</div>
+      <div class="feat-name">יצירת חוזה שכירות</div>
+      <div class="feat-desc">חוזה שכירות או דירה משותפת — HTML מלא, מותאם לצדדים.</div>
+      <span class="tag tag-g" style="margin-top:4px">Legal AI</span>
+    </div>
+    <div class="feat" style="grid-column:span 3">
+      <div style="display:flex;gap:16px;align-items:center">
+        <div class="feat-icon" style="flex-shrink:0">👥</div>
+        <div>
+          <div class="feat-name">התאמת שותפים לדירה</div>
+          <div class="feat-desc">ציון התאמה 0–100 בין שני משתמשים — עם הסבר מפורט בעברית. מאפשר מוצר Roommate נפרד בעתיד.</div>
+        </div>
+        <span class="tag tag-y" style="margin-right:auto;flex-shrink:0">Compatibility Score</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 7 — מנוע המאצ' (הסוד)
+══════════════════════════════════════════ -->
+<section class="slide s-purple" id="s7">
+  <div class="slide-num">07 / 12</div>
+  <div class="eyebrow">⚙️ הטכנולוגיה</div>
+  <h2 class="slide-title">מנוע המאצ' — <span class="grad-text">הרוטב הסודי</span></h2>
+  <p class="lead">זרימת "Swipe ← Match ← Chat ← Pay" שומרת את שני הצדדים <strong>בתוך הפלטפורמה</strong> — וזה מה שמאפשר מונטיזציה בכל שלב.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="accent-line"></div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div class="card card-sm" style="border-color:rgba(45,226,194,.25)">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="font-size:1.4rem">🃏</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:800;color:var(--teal)">שלב 1 — סווייפ</div>
+              <div class="sub">שוכר סווייפ ימין → נוצר <code style="font-size:.75em;color:#a89dff">PropertyInterest(pending)</code></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:center;color:var(--purple);font-size:1.2rem;opacity:.6">↓</div>
+
+        <div class="card card-sm" style="border-color:rgba(124,110,255,.25)">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="font-size:1.4rem">🏠</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:800;color:var(--purple)">שלב 2 — החלטת משכיר</div>
+              <div class="sub">משכיר רואה רשימה מסוננת. לחיצה אחת = אישור → <code style="font-size:.75em;color:#3df577">Match()</code></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:center;color:var(--purple);font-size:1.2rem;opacity:.6">↓</div>
+
+        <div class="card card-sm" style="border-color:rgba(77,166,255,.25)">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="font-size:1.4rem">💬</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:800;color:var(--blue)">שלב 3 — צ'אט בזמן אמת</div>
+              <div class="sub">חדר WebSocket נפתח אוטומטית. הודעות נשמרות + Read Receipts</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:center;color:var(--purple);font-size:1.2rem;opacity:.6">↓</div>
+
+        <div class="card card-sm" style="border-color:rgba(255,94,132,.25)">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="font-size:1.4rem">💳</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:800;color:var(--red)">שלב 4 — תשלום</div>
+              <div class="sub">שוכר מגיע לחסימת סווייפ (Free) → מוביל ל-Stripe Checkout</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card" style="border-color:rgba(255,159,67,.2)">
+        <div style="font-size:.8rem;font-weight:800;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">🔑 למה הצ'אט הפנימי קריטי</div>
+        <ul class="check-list">
+          <li>ברגע שהם עוברים ל-WhatsApp — <strong>אתה מאבד</strong> נתונים, שליטה ויכולת מונטיזציה</li>
+          <li>צ'אט פנימי = <strong>כל ההודעות אצלנו</strong> → אפשר לגבות עמלה עתידית על עסקה</li>
+          <li>Read Receipts ו-Message History = <strong>Engagement מדיד</strong> למשקיעים</li>
+          <li>המסלול מוביל ישירות ל-<strong>checkout.js</strong> בדרך הכי קצרה</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(61,245,119,.2)">
+        <div style="font-size:.8rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">📊 מדדים שמדידים</div>
+        <div class="grid-2" style="gap:12px">
+          <div class="stat"><div class="stat-val" style="font-size:1.6rem" >75–99%</div><div class="stat-label">ציון התאמה לדירה</div></div>
+          <div class="stat"><div class="stat-val" style="font-size:1.6rem">0–100</div><div class="stat-label">ציון התאמת שותפים</div></div>
+          <div class="stat"><div class="stat-val" style="font-size:1.6rem">8</div><div class="stat-label">טבלאות DB ממוטבות</div></div>
+          <div class="stat"><div class="stat-val" style="font-size:1.6rem">&lt;2s</div><div class="stat-label">זמן תגובת API</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 8 — מונטיזציה
+══════════════════════════════════════════ -->
+<section class="slide s-green" id="s8">
+  <div class="slide-num">08 / 12</div>
+  <div class="eyebrow" style="background:rgba(61,245,119,.1);border-color:rgba(61,245,119,.3);color:var(--green)">💰 מודל עסקי</div>
+  <h2 class="slide-title">שלוש שכבות <span class="grad-green">הכנסה</span></h2>
+  <p class="lead">Freemium שמוביל ל-Pro, בנוסף להכנסות עסקיות ועמלות עסקאות בעתיד.</p>
+
+  <div class="grid-3" style="margin-bottom:28px">
+    <div class="tier tier-free">
+      <div class="tier-name" style="color:var(--muted)">Free</div>
+      <div class="tier-price">₪0 <span>/ חודש</span></div>
+      <ul class="tier-list">
+        <li>2 סווייפים ביום</li>
+        <li>גישה לצ'אט</li>
+        <li>AI Onboarding</li>
+        <li style="color:var(--muted);text-decoration:line-through">סווייפים בלתי מוגבלים</li>
+        <li style="color:var(--muted);text-decoration:line-through">ניתוח תמונות מלא</li>
+      </ul>
+    </div>
+    <div class="tier tier-pro">
+      <div style="position:absolute;top:-1px;right:50%;transform:translateX(50%)">
+        <span class="tag tag-p" style="border-radius:0 0 8px 8px">הכי פופולרי</span>
+      </div>
+      <div class="tier-name" style="color:var(--purple)">Pro</div>
+      <div class="tier-price grad-text">₪49 <span>/ חודש</span></div>
+      <ul class="tier-list">
+        <li>סווייפים בלתי מוגבלים</li>
+        <li>AI צ'אטבוט מלא</li>
+        <li>ניתוח תמונות (Vision)</li>
+        <li>יצירת חוזה שכירות</li>
+        <li>ציון התאמת שותפים</li>
+      </ul>
+    </div>
+    <div class="tier" style="background:linear-gradient(145deg,rgba(255,159,67,.1),rgba(255,224,102,.07));border-color:rgba(255,159,67,.35)">
+      <div class="tier-name" style="color:var(--orange)">עסקי (עתיד)</div>
+      <div class="tier-price grad-orange">₪299 <span>/ חודש</span></div>
+      <ul class="tier-list">
+        <li>ניהול תיק נכסים מלא</li>
+        <li>API גישה לנתוני שוק</li>
+        <li>White-label לסוכנויות</li>
+        <li>Analytics מתקדם</li>
+        <li>עמלת עסקה: 0.5%</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="border-color:rgba(255,159,67,.2)">
+    <div style="font-size:.8rem;font-weight:800;color:var(--orange);margin-bottom:14px;text-transform:uppercase;letter-spacing:.1em">📈 הכנסות נוספות (Roadmap)</div>
+    <div class="grid-3" style="gap:16px">
+      <div style="text-align:center">
+        <div style="font-size:1.4rem;margin-bottom:6px">💸</div>
+        <div style="font-size:.85rem;font-weight:700">עמלת עסקה</div>
+        <div style="font-size:.75rem;color:var(--muted)">0.5%–1% מדמי שכירות ראשונים — ברגע שסגירת עסקה מתבצעת בתוך האפליקציה</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:1.4rem;margin-bottom:6px">🏢</div>
+        <div style="font-size:.85rem;font-weight:700">תוכנית B2B</div>
+        <div style="font-size:.75rem;color:var(--muted)">חברות ניהול נכסים, קבלנים, חברות בנייה — מינוי קבוע + API</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:1.4rem;margin-bottom:6px">📊</div>
+        <div style="font-size:.85rem;font-weight:700">נתוני שוק</div>
+        <div style="font-size:.75rem;color:var(--muted)">מכירת תובנות שוק אנונימיות לבנקים, קרנות נדל"ן, רשויות מקומיות</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 9 — טכנולוגיה
+══════════════════════════════════════════ -->
+<section class="slide s-blue" id="s9">
+  <div class="slide-num">09 / 12</div>
+  <div class="eyebrow" style="background:rgba(77,166,255,.1);border-color:rgba(77,166,255,.3);color:var(--blue)">🔧 הטכנולוגיה</div>
+  <h2 class="slide-title">בנוי לגדול — <span class="grad-blue">Cloud-Native מהיום הראשון</span></h2>
+  <p class="lead">ארכיטקטורה נקייה, Stateless, עם הפרדה מלאה בין Frontend ל-Backend — ניתן להרחבה ללא refactor.</p>
+
+  <div class="grid-2">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card card-sm" style="display:flex;gap:14px;align-items:center">
+        <div style="font-size:1.4rem">⚡</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:800">Vite + Vanilla JS</div>
+          <div class="sub">11 מסכים, RTL עברי מלא, Demo Mode ללא Backend</div>
+        </div>
+        <span class="tag tag-b" style="margin-right:auto;white-space:nowrap">Frontend</span>
+      </div>
+      <div class="card card-sm" style="display:flex;gap:14px;align-items:center">
+        <div style="font-size:1.4rem">🐍</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:800">Flask + Gunicorn + Socket.IO</div>
+          <div class="sub">35+ Endpoints, WebSocket, Auto-migrate, Rate Limiting</div>
+        </div>
+        <span class="tag tag-p" style="margin-right:auto;white-space:nowrap">Backend</span>
+      </div>
+      <div class="card card-sm" style="display:flex;gap:14px;align-items:center">
+        <div style="font-size:1.4rem">🗄️</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:800">PostgreSQL (Managed)</div>
+          <div class="sub">8 טבלאות, SQLAlchemy ORM, Auto-migration בכל Deploy</div>
+        </div>
+        <span class="tag tag-t" style="margin-right:auto;white-space:nowrap">Database</span>
+      </div>
+      <div class="card card-sm" style="display:flex;gap:14px;align-items:center">
+        <div style="font-size:1.4rem">☁️</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:800">Render.com (render.yaml)</div>
+          <div class="sub">Deploy אוטומטי ב-git push. IaC מלא. Scalable Workers.</div>
+        </div>
+        <span class="tag tag-g" style="margin-right:auto;white-space:nowrap">Infra</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card" style="border-color:rgba(61,245,119,.2)">
+        <div style="font-size:.78rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">✅ עקרונות ארכיטקטורה</div>
+        <ul class="check-list">
+          <li><strong>Stateless Auth</strong> — Bearer Tokens, אין Sessions, Scalable אוטומטית</li>
+          <li><strong>localStorage-First</strong> — האפליקציה עובדת גם Offline</li>
+          <li><strong>Auto-migration</strong> — Schema Updates ללא Downtime</li>
+          <li><strong>Demo Mode</strong> — Frontend עצמאי לחלוטין, ללא Backend</li>
+          <li><strong>Function Calling</strong> — Structured Output מ-AI, לא Parse חופשי</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(255,159,67,.2)">
+        <div style="font-size:.78rem;font-weight:800;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">🔐 אבטחה ו-Rate Limiting</div>
+        <div class="grid-2" style="gap:8px">
+          <div style="font-size:.78rem;color:var(--muted)">bcrypt <strong style="color:var(--text)">סיסמאות</strong></div>
+          <div style="font-size:.78rem;color:var(--muted)">7 ימים <strong style="color:var(--text)">TTL Token</strong></div>
+          <div style="font-size:.78rem;color:var(--muted)">10/15min <strong style="color:var(--text)">Login limit</strong></div>
+          <div style="font-size:.78rem;color:var(--muted)">60/hr <strong style="color:var(--text)">Chat limit</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 10 — מפת דרכים
+══════════════════════════════════════════ -->
+<section class="slide s-teal" id="s10">
+  <div class="slide-num">10 / 12</div>
+  <div class="eyebrow" style="background:rgba(45,226,194,.1);border-color:rgba(45,226,194,.3);color:var(--teal)">🗺️ מפת דרכים</div>
+  <h2 class="slide-title">מ-MVP ל-<span class="grad-teal">Market Leader</span></h2>
+  <p class="lead">4 רבעונים ברורים עם יעדים מדידים — מהשקה לגיוס Series A.</p>
+
+  <div class="grid-2">
+    <div class="roadmap">
+      <div class="rmap-item">
+        <div class="rmap-left">
+          <div class="rmap-dot" style="background:var(--green);border-color:var(--green)"></div>
+          <div class="rmap-line"></div>
+        </div>
+        <div>
+          <div class="rmap-phase">Q3 2026 — עכשיו ✓</div>
+          <div class="rmap-title">MVP פעיל בענן</div>
+          <div class="rmap-desc">פלטפורמה מלאה עם AI, WebSocket, Stripe ו-PostgreSQL בייצור. 7 פיצ'רי AI פעילים. ארכיטקטורה Cloud-Native מלאה.</div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-g">Done</span>
+            <span class="tag tag-t">Full Stack</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rmap-item">
+        <div class="rmap-left">
+          <div class="rmap-dot" style="background:var(--blue);border-color:var(--blue)"></div>
+          <div class="rmap-line"></div>
+        </div>
+        <div>
+          <div class="rmap-phase">Q4 2026</div>
+          <div class="rmap-title">גיוס משתמשים ראשונים — תל אביב</div>
+          <div class="rmap-desc">500 שוכרים + 100 משכירים בתל אביב. הפעלת Stripe. A/B Testing על Paywall. Seed Data אוטומטי ל-1,000+ דירות.</div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-b">Next</span>
+            <span class="tag tag-o">Stripe Live</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="roadmap">
+      <div class="rmap-item">
+        <div class="rmap-left">
+          <div class="rmap-dot" style="background:var(--purple);border-color:var(--purple)"></div>
+          <div class="rmap-line"></div>
+        </div>
+        <div>
+          <div class="rmap-phase">Q1 2027</div>
+          <div class="rmap-title">הרחבה לירושלים + חיפה + ב"ש</div>
+          <div class="rmap-desc">3 ערים נוספות. הפעלת מוצר Roommate Matching. 5,000 MAU. הכנסה חודשית ראשונה מ-Pro.</div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-p">Scale</span>
+            <span class="tag tag-r">₪ Revenue</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rmap-item">
+        <div class="rmap-left">
+          <div class="rmap-dot" style="background:var(--orange);border-color:var(--orange)"></div>
+        </div>
+        <div>
+          <div class="rmap-phase">Q2 2027</div>
+          <div class="rmap-title">Series A — ₪15M</div>
+          <div class="rmap-desc">20,000 MAU, ₪200K MRR, 40% Conversion Free→Pro. הרחבה לשוק DACH (גרמניה/אוסטריה/שוויץ) כ-beachhead בינלאומי.</div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-o">Series A</span>
+            <span class="tag tag-y">International</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 11 — צוות
+══════════════════════════════════════════ -->
+<section class="slide s-purple" id="s11">
+  <div class="slide-num">11 / 12</div>
+  <div class="eyebrow">👥 הצוות</div>
+  <h2 class="slide-title">בנוי על <span class="grad-text">Product × Tech × Domain</span></h2>
+  <p class="lead">השילוב הנכון בין ידע טכנולוגי עמוק לבין הבנת שוק הנדל"ן הישראלי.</p>
+
+  <div class="grid-3">
+    <div class="team-card">
+      <div class="team-avatar">👤</div>
+      <div class="team-name">[שם המייסד]</div>
+      <div class="team-role">CEO · Co-Founder</div>
+      <div class="team-desc">ניסיון בנדל"ן ישראלי. הבין את כאב השוק מניסיון אישי. מוביל Vision ו-Business Development.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">👤</div>
+      <div class="team-name">[שם המייסד]</div>
+      <div class="team-role">CTO · Co-Founder</div>
+      <div class="team-desc">בנה את כל הארכיטקטורה — Flask, Socket.IO, OpenAI Integration. Full-Stack עם ניסיון ב-AI.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">👤</div>
+      <div class="team-name">[שם המייסד]</div>
+      <div class="team-role">CPO · Product</div>
+      <div class="team-desc">עיצוב 11 מסכי המשתמש, זרימות UX בעברית, מחקר משתמשים ו-A/B Testing.</div>
+    </div>
+  </div>
+
+  <div class="hdiv"></div>
+
+  <div class="grid-3">
+    <div class="card card-sm" style="text-align:center;border-color:rgba(61,245,119,.2)">
+      <div style="font-size:1.3rem;margin-bottom:6px">🏆</div>
+      <div style="font-size:.85rem;font-weight:700">Domain Knowledge</div>
+      <div class="sub" style="margin-top:4px">הצוות חי את הבעיה — כולם עברו חיפוש דירה בישראל</div>
+    </div>
+    <div class="card card-sm" style="text-align:center;border-color:rgba(77,166,255,.2)">
+      <div style="font-size:1.3rem;margin-bottom:6px">⚡</div>
+      <div style="font-size:.85rem;font-weight:700">Execution Speed</div>
+      <div class="sub" style="margin-top:4px">MVP מלא עם AI + WebSocket + Payments — תוך חודשים</div>
+    </div>
+    <div class="card card-sm" style="text-align:center;border-color:rgba(255,159,67,.2)">
+      <div style="font-size:1.3rem;margin-bottom:6px">🤖</div>
+      <div style="font-size:.85rem;font-weight:700">AI-First Mindset</div>
+      <div class="sub" style="margin-top:4px">לא "הוספנו AI" — AI הוא הליבה של כל פיצ'ר מהיום הראשון</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     סלייד 12 — הבקשה
+══════════════════════════════════════════ -->
+<section class="slide footer-slide" id="s12">
+  <div class="slide-num">12 / 12</div>
+  <div style="max-width:700px;margin:0 auto;text-align:center">
+    <div class="eyebrow" style="justify-content:center">💰 גיוס הון</div>
+    <h2 class="slide-title" style="text-align:center">אנחנו מגייסים <span class="grad-text">₪2M Seed</span></h2>
+    <p class="lead" style="text-align:center;margin:0 auto 32px">18 חודשים של Runway — לצמיחה, גיוס משתמשים, והפעלת מנוע ההכנסות.</p>
+
+    <div class="ask-box">
+      <div class="ask-amount">₪2,000,000</div>
+      <div style="color:var(--muted);font-size:.88rem">Seed Round · Equity</div>
+      <div class="use-grid">
+        <div class="use-item">
+          <div class="use-pct grad-text">40%</div>
+          <div class="use-label">פיתוח מוצר<br/>& AI Features</div>
+        </div>
+        <div class="use-item">
+          <div class="use-pct grad-teal">35%</div>
+          <div class="use-label">Growth<br/>& Marketing</div>
+        </div>
+        <div class="use-item">
+          <div class="use-pct grad-orange">25%</div>
+          <div class="use-label">Operations<br/>& Infrastructure</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hdiv" style="margin:28px 0"></div>
+
+    <div class="grid-3" style="margin-bottom:32px">
+      <div class="stat"><div class="stat-val grad-text">500</div><div class="stat-label">שוכרים ב-6 חודשים</div></div>
+      <div class="stat"><div class="stat-val grad-teal">₪50K</div><div class="stat-label">MRR בחודש 12</div></div>
+      <div class="stat"><div class="stat-val grad-orange">Series A</div><div class="stat-label">יעד בחודש 18</div></div>
+    </div>
+
+    <div class="card" style="text-align:right;border-color:rgba(124,110,255,.3)">
+      <div style="font-size:.8rem;font-weight:800;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;text-align:center">מה תקבלו כמשקיעים</div>
+      <ul class="check-list">
+        <li><strong>מוצר עובד</strong> — לא Idea Stage. MVP מלא בייצור עם AI, WebSocket, Payments</li>
+        <li><strong>שוק ברור</strong> — ₪8B שוק שכירות ישראלי עם פתרונות מיושנים</li>
+        <li><strong>טכנולוגיה ברת-הרחבה</strong> — Cloud-Native, Stateless, Auto-Deploy</li>
+        <li><strong>Defensible Moat</strong> — AI Native + Chat בפנים + Data Network Effects</li>
+      </ul>
+    </div>
+
+    <div style="margin-top:32px;font-size:1.1rem;font-weight:700;color:var(--muted)">
+      📧 contact@rentmate.co · rentmate.co
+    </div>
+  </div>
+</section>
+
+<script>
+function scrollTo(id){
+  document.querySelector(id).scrollIntoView({behavior:'smooth'});
+}
+// active nav
+const sections=[...document.querySelectorAll('section[id]')];
+const btns=[...document.querySelectorAll('.nav-btn')];
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const i=sections.indexOf(e.target);
+      btns.forEach((b,j)=>b.classList.toggle('active',i===j));
+    }
+  });
+},{threshold:.5});
+sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
